@@ -55,3 +55,7 @@ Tests DSP (accordeur, gate, compresseur, octaver, modèles d'ampli, baffles, pre
 - **IN CLIP** : l'entrée de la carte son sature, baisse le gain de l'interface. **OUT CLIP** : la sortie sature, baisse le Master.
 - Clic sur le bloc LEVELS : efface les témoins CLIP.
 - **MUTE** dans l'accordeur coupe la sortie pendant l'accordage.
+
+## Licence
+
+AGPLv3 (voir `LICENSE`), comme l'impose l'usage gratuit de JUCE. Le SDK ASIO dans `libs/asiosdk` est utilisé sous sa licence GPLv3.
