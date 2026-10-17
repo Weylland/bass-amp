@@ -43,7 +43,11 @@ namespace
     struct RenderResult
     {
         float peak = 0.0f;
+        double sumOfSquares = 0.0;
+        int numSamples = 0;
         bool finite = true;
+
+        float rmsDb() const { return juce::Decibels::gainToDecibels ((float) std::sqrt (sumOfSquares / juce::jmax (1, numSamples)), -120.0f); }
     };
 
     RenderResult render (BassAmpProcessor& processor, const Signal& signal, double seconds, Tuner* outputTuner = nullptr)
@@ -67,6 +71,8 @@ namespace
                 const auto value = buffer.getSample (0, i);
                 result.finite = result.finite && std::isfinite (value);
                 result.peak = juce::jmax (result.peak, std::abs (value));
+                result.sumOfSquares += (double) value * value;
+                ++result.numSamples;
             }
 
             if (outputTuner != nullptr)
@@ -80,6 +86,15 @@ namespace
     {
         auto processor = std::make_unique<BassAmpProcessor>();
         processor->setPlayConfigDetails (1, 2, testSampleRate, blockSize);
+
+        // Neutral baseline: every parameter at its default, clean amp, no cabinet.
+        for (auto* parameter : processor->getParameters())
+            if (auto* ranged = dynamic_cast<juce::RangedAudioParameter*> (parameter))
+                ranged->setValueNotifyingHost (ranged->getDefaultValue());
+
+        setParam (*processor, ParamIds::ampModel, 0.0f);
+        setParam (*processor, ParamIds::ampCab, 0.0f);
+
         processor->prepareToPlay (testSampleRate, blockSize);
         return processor;
     }
@@ -193,6 +208,165 @@ namespace
         check (result.peak > 0.07f && result.peak < 0.13f, "all effects off: level preserved", "peak " + juce::String (result.peak, 4));
     }
 
+    void testAmpModels()
+    {
+        const char* modelNames[] { "Clean", "Vintage", "Modern" };
+        float levelsAtGainFive[3] {};
+
+        for (int model = 0; model < 3; ++model)
+        {
+            for (const auto gainValue : { 2.0f, 5.0f, 8.0f })
+            {
+                auto processor = makeProcessor();
+                setParam (*processor, ParamIds::ampModel, (float) model);
+                setParam (*processor, ParamIds::ampCab, 1.0f);
+                setParam (*processor, ParamIds::ampBlend, 0.0f);
+                setParam (*processor, ParamIds::ampMaster, 0.0f);
+                setParam (*processor, ParamIds::ampGain, gainValue);
+
+                render (*processor, bassTone (55.0f, 0.2f), 0.5);
+                const auto result = render (*processor, bassTone (55.0f, 0.2f), 1.0);
+
+                if (gainValue == 5.0f)
+                    levelsAtGainFive[model] = result.rmsDb();
+
+                check (result.finite && result.rmsDb() > -30.0f && result.peak < 1.5f,
+                       juce::String ("amp ") + modelNames[model] + " gain " + juce::String (gainValue, 0),
+                       "rms " + juce::String (result.rmsDb(), 1) + " dB, peak " + juce::String (result.peak, 3));
+            }
+        }
+
+        const auto spread = juce::jmax (levelsAtGainFive[0], levelsAtGainFive[1], levelsAtGainFive[2])
+                          - juce::jmin (levelsAtGainFive[0], levelsAtGainFive[1], levelsAtGainFive[2]);
+        check (spread < 6.0f, "amp models are level-matched at gain 5", "spread " + juce::String (spread, 1) + " dB");
+    }
+
+    // Harmonic distortion of a pure 110 Hz sine through each amp model, cabinet off.
+    void testAmpModelCharacter()
+    {
+        constexpr int fftOrder = 15;
+        constexpr int fftSize = 1 << fftOrder;
+        constexpr int fundamentalBin = 75;
+        const auto frequency = (float) (testSampleRate * fundamentalBin / fftSize);
+        float distortion[3] {};
+
+        for (int model = 0; model < 3; ++model)
+        {
+            auto processor = makeProcessor();
+            setParam (*processor, ParamIds::ampModel, (float) model);
+            setParam (*processor, ParamIds::ampMaster, 0.0f);
+            setParam (*processor, ParamIds::ampGain, 5.0f);
+            render (*processor, sine (frequency, 0.2f), 0.5);
+
+            std::vector<float> samples ((size_t) fftSize * 2, 0.0f);
+            juce::AudioBuffer<float> buffer (2, blockSize);
+            juce::MidiBuffer midi;
+            auto index = 0;
+
+            while (index < fftSize)
+            {
+                for (int i = 0; i < blockSize; ++i)
+                    buffer.setSample (0, i, sine (frequency, 0.2f) (index + i));
+
+                processor->processBlock (buffer, midi);
+                std::copy_n (buffer.getReadPointer (0), blockSize, samples.begin() + index);
+                index += blockSize;
+            }
+
+            juce::dsp::WindowingFunction<float> window ((size_t) fftSize, juce::dsp::WindowingFunction<float>::hann, false);
+            window.multiplyWithWindowingTable (samples.data(), (size_t) fftSize);
+            juce::dsp::FFT (fftOrder).performFrequencyOnlyForwardTransform (samples.data());
+
+            auto bandEnergy = [&samples] (int bin)
+            {
+                auto sum = 0.0f;
+
+                for (int b = bin - 2; b <= bin + 2; ++b)
+                    sum += samples[(size_t) b] * samples[(size_t) b];
+
+                return sum;
+            };
+
+            auto harmonics = 0.0f;
+
+            for (int h = 2; h <= 10; ++h)
+                harmonics += bandEnergy (fundamentalBin * h);
+
+            distortion[model] = 100.0f * std::sqrt (harmonics / bandEnergy (fundamentalBin));
+        }
+
+        // Modern keeps the fundamental clean under its crossover, so it only has to beat Clean.
+        check (distortion[0] < 3.0f && distortion[1] > 3.0f && distortion[1] < 15.0f && distortion[2] > distortion[0],
+               "amp models: clean, warm tube, driven top",
+               "THD " + juce::String (distortion[0], 1) + " % / " + juce::String (distortion[1], 1) + " % / "
+                   + juce::String (distortion[2], 1) + " %");
+    }
+
+    void testCabinetsAndBlend()
+    {
+        for (int cab = 0; cab < 4; ++cab)
+        {
+            auto processor = makeProcessor();
+            setParam (*processor, ParamIds::ampModel, 1.0f);
+            setParam (*processor, ParamIds::ampCab, (float) cab);
+            setParam (*processor, ParamIds::ampBlend, 0.3f);
+            setParam (*processor, ParamIds::ampMaster, 0.0f);
+
+            const auto result = render (*processor, bassTone (41.2f, 0.3f), 1.0);
+            check (result.finite && result.rmsDb() > -30.0f && result.peak < 1.5f, "cabinet " + juce::String (cab),
+                   "rms " + juce::String (result.rmsDb(), 1) + " dB, peak " + juce::String (result.peak, 3));
+        }
+    }
+
+    void testFactoryPresets()
+    {
+        auto processor = makeProcessor();
+        check (processor->getNumPrograms() >= 10, "factory presets exposed as programs", juce::String (processor->getNumPrograms()));
+        auto quietest = 0.0f, loudest = -120.0f;
+
+        for (int i = 0; i < processor->getNumPrograms(); ++i)
+        {
+            processor->setCurrentProgram (i);
+            processor->prepareToPlay (testSampleRate, blockSize);
+
+            render (*processor, bassTone (41.2f, 0.3f), 0.5);
+            const auto result = render (*processor, bassTone (41.2f, 0.3f), 1.5);
+            const auto name = processor->getProgramName (i);
+            quietest = juce::jmin (quietest, result.rmsDb());
+            loudest = juce::jmax (loudest, result.rmsDb());
+
+            check (result.finite && result.peak < 1.2f && result.rmsDb() > -30.0f
+                       && processor->presets.getCurrentPresetName() == name,
+                   "preset " + name, "rms " + juce::String (result.rmsDb(), 1) + " dB, peak " + juce::String (result.peak, 3));
+        }
+
+        check (loudest - quietest < 6.0f, "presets are level-matched", "spread " + juce::String (loudest - quietest, 1) + " dB");
+    }
+
+    void testUserPresetRoundTrip()
+    {
+        auto processor = makeProcessor();
+        const auto directory = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("BassAmpPresetTest");
+        directory.deleteRecursively();
+        PresetManager presets (processor->parameters, directory);
+
+        setParam (*processor, ParamIds::ampGain, 7.3f);
+        setParam (*processor, ParamIds::reverbOn, 1.0f);
+        const auto file = presets.saveUserPreset ("My Sound");
+
+        setParam (*processor, ParamIds::ampGain, 1.0f);
+        setParam (*processor, ParamIds::reverbOn, 0.0f);
+        const auto loaded = presets.loadUserPreset (file);
+
+        const auto gainValue = processor->parameters.getRawParameterValue (ParamIds::ampGain)->load();
+        const auto reverbValue = processor->parameters.getRawParameterValue (ParamIds::reverbOn)->load();
+        check (loaded && std::abs (gainValue - 7.3f) < 0.01f && reverbValue > 0.5f
+                   && presets.getUserPresets().size() == 1 && presets.getCurrentPresetName() == "My Sound",
+               "user preset save and load", file.getFileName() + ", gain " + juce::String (gainValue, 2));
+
+        directory.deleteRecursively();
+    }
+
     void testMeters()
     {
         auto processor = makeProcessor();
@@ -234,6 +408,11 @@ int main (int argc, char* argv[])
     testOctaver();
     testFullChainIsStable();
     testBypassIsTransparentEnough();
+    testAmpModels();
+    testAmpModelCharacter();
+    testCabinetsAndBlend();
+    testFactoryPresets();
+    testUserPresetRoundTrip();
     testMeters();
 
     std::cout << std::endl << (failures == 0 ? "All tests passed" : juce::String (failures) + " test(s) failed") << std::endl;

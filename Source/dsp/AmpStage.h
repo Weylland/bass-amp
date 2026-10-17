@@ -3,92 +3,221 @@
 #include <juce_dsp/juce_dsp.h>
 
 #include "../Parameters.h"
+#include "AmpModels.h"
 
-// Preamp saturation, 3-band tone stack, fixed cabinet filtering and master volume.
+// Tube-style bass head: preamp gain stages, model voicing, tone stack and power amp
+// with sag, all 2x oversampled; then the cabinet and a clean DI blended in.
 class AmpStage
 {
 public:
     void bind (juce::AudioProcessorValueTreeState& state)
     {
-        gain   = rawParam (state, ParamIds::ampGain);
-        bass   = rawParam (state, ParamIds::ampBass);
-        mid    = rawParam (state, ParamIds::ampMid);
-        treble = rawParam (state, ParamIds::ampTreble);
-        master = rawParam (state, ParamIds::ampMaster);
+        model   = rawParam (state, ParamIds::ampModel);
+        cab     = rawParam (state, ParamIds::ampCab);
+        gain    = rawParam (state, ParamIds::ampGain);
+        bass    = rawParam (state, ParamIds::ampBass);
+        mid     = rawParam (state, ParamIds::ampMid);
+        midFreq = rawParam (state, ParamIds::ampMidFreq);
+        treble  = rawParam (state, ParamIds::ampTreble);
+        master  = rawParam (state, ParamIds::ampMaster);
+        blend   = rawParam (state, ParamIds::ampBlend);
     }
 
-    void prepare (const juce::dsp::ProcessSpec& monoSpec)
+    void prepare (double sampleRate, int maxBlockSize)
     {
-        sampleRate = monoSpec.sampleRate;
+        baseRate = sampleRate;
+        oversampling.initProcessing ((size_t) maxBlockSize);
+        oversampling.reset();
+        oversampledRate = sampleRate * (double) oversampling.getOversamplingFactor();
 
-        using Coeffs = juce::dsp::IIR::ArrayCoefficients<float>;
-        *cabHighPass.coefficients = Coeffs::makeHighPass (sampleRate, 35.0f, 0.707f);
-        *cabLowPass.coefficients  = Coeffs::makeLowPass (sampleRate, 4500.0f, 0.707f);
+        const juce::dsp::ProcessSpec oversampledSpec { oversampledRate,
+                                                       (juce::uint32) ((size_t) maxBlockSize * oversampling.getOversamplingFactor()), 1 };
+        const juce::dsp::ProcessSpec baseSpec { sampleRate, (juce::uint32) maxBlockSize, 1 };
 
-        lastBass = lastMid = lastTreble = std::numeric_limits<float>::quiet_NaN();
-        setToneStack (0.0f, 0.0f, 0.0f);
+        // Coefficients first: IIR filters size their state from the filter order when prepared.
+        currentModel = currentCab = -1;
+        lastBass = lastMid = lastMidFreq = lastTreble = std::numeric_limits<float>::quiet_NaN();
+        updateModel();
+        updateToneStack();
 
-        for (auto* filter : { &bassFilter, &midFilter, &trebleFilter, &cabHighPass, &cabLowPass })
-            filter->prepare (monoSpec);
+        crossoverLow.setType (juce::dsp::StateVariableTPTFilterType::lowpass);
+        crossoverHigh.setType (juce::dsp::StateVariableTPTFilterType::highpass);
+        crossoverLow.prepare (oversampledSpec);
+        crossoverHigh.prepare (oversampledSpec);
 
-        preGain.reset (sampleRate, 0.05);
+        const auto coupling = juce::dsp::IIR::ArrayCoefficients<float>::makeFirstOrderHighPass (oversampledRate, 15.0f);
+        *firstCoupling.coefficients = coupling;
+        *secondCoupling.coefficients = coupling;
+
+        for (auto* filter : { &firstCoupling, &secondCoupling, &bassFilter, &midFilter, &trebleFilter })
+            filter->prepare (oversampledSpec);
+
+        for (auto& filter : voicing)
+            filter.prepare (oversampledSpec);
+
+        for (auto& filter : cabinet)
+            filter.prepare (baseSpec);
+
+        diBuffer.assign ((size_t) maxBlockSize, 0.0f);
+
+        sagAttack = timeCoefficient (0.01f, oversampledRate);
+        sagRelease = timeCoefficient (0.15f, oversampledRate);
+        sagEnvelope = 0.0f;
+
+        preGain.reset (oversampledRate, 0.05);
         masterGain.reset (sampleRate, 0.05);
+        diBlend.reset (sampleRate, 0.05);
     }
 
     void process (juce::dsp::AudioBlock<float>& monoBlock)
     {
-        preGain.setTargetValue (juce::Decibels::decibelsToGain (gain->load() * 2.4f));
-        masterGain.setTargetValue (juce::Decibels::decibelsToGain (master->load()));
-        setToneStack (bass->load(), mid->load(), treble->load());
+        updateModel();
+        updateToneStack();
 
-        auto* data = monoBlock.getChannelPointer (0);
+        const auto& amp = ampModels[(size_t) currentModel];
+        const auto driveDb = juce::jmap (gain->load() / 10.0f, amp.minDriveDb, amp.maxDriveDb);
+        preGain.setTargetValue (juce::Decibels::decibelsToGain (driveDb));
+        masterGain.setTargetValue (juce::Decibels::decibelsToGain (master->load() + amp.outputTrimDb));
+        diBlend.setTargetValue (cabIsOff() ? 0.0f : blend->load());
 
-        for (size_t i = 0; i < monoBlock.getNumSamples(); ++i)
+        const auto numSamples = monoBlock.getNumSamples();
+        std::copy_n (monoBlock.getChannelPointer (0), numSamples, diBuffer.begin());
+
+        auto upsampled = oversampling.processSamplesUp (monoBlock);
+        auto* data = upsampled.getChannelPointer (0);
+        const auto biasOffset = std::tanh (amp.bias);
+
+        auto triode = [&amp, biasOffset] (float x) { return std::tanh (x + amp.bias) - biasOffset; };
+
+        for (size_t i = 0; i < upsampled.getNumSamples(); ++i)
         {
-            auto x = std::tanh (preGain.getNextValue() * data[i]);
-            x = bassFilter.processSample (x);
-            x = midFilter.processSample (x);
-            x = trebleFilter.processSample (x);
-            x = cabHighPass.processSample (x);
-            x = cabLowPass.processSample (x);
-            data[i] = x * masterGain.getNextValue();
+            auto x = data[i];
+            auto cleanLows = 0.0f;
+
+            if (amp.crossoverHz > 0.0f)
+            {
+                cleanLows = crossoverLow.processSample (0, x);
+                x = crossoverHigh.processSample (0, x);
+            }
+
+            const auto drive = preGain.getNextValue();
+            x = firstCoupling.processSample (triode (x * drive));
+
+            if (amp.secondStageGain > 0.0f)
+                x = secondCoupling.processSample (triode (x * amp.secondStageGain)) / amp.secondStageGain;
+
+            x = x / std::sqrt (drive) + cleanLows;
+
+            for (auto& filter : voicing)
+                x = filter.processSample (x);
+
+            x = trebleFilter.processSample (midFilter.processSample (bassFilter.processSample (x)));
+
+            const auto level = std::abs (x);
+            sagEnvelope = level + (level > sagEnvelope ? sagAttack : sagRelease) * (sagEnvelope - level);
+            x /= 1.0f + amp.sag * sagEnvelope;
+
+            data[i] = std::tanh (amp.powerDrive * x) / amp.powerDrive;
+        }
+
+        oversampling.processSamplesDown (monoBlock);
+
+        auto* output = monoBlock.getChannelPointer (0);
+
+        for (size_t i = 0; i < numSamples; ++i)
+        {
+            auto x = output[i];
+
+            for (auto& filter : cabinet)
+                x = filter.processSample (x);
+
+            const auto amount = diBlend.getNextValue();
+            output[i] = (x * (1.0f - amount) + diBuffer[i] * amount) * masterGain.getNextValue();
         }
     }
 
 private:
-    void setToneStack (float bassDb, float midDb, float trebleDb)
+    bool cabIsOff() const { return currentCab == 0; }
+
+    void updateModel()
+    {
+        const auto modelIndex = juce::jlimit (0, (int) ampModels.size() - 1, juce::roundToInt (model->load()));
+        const auto cabIndex = juce::jlimit (0, (int) cabModels.size() - 1, juce::roundToInt (cab->load()));
+
+        if (modelIndex != currentModel)
+        {
+            currentModel = modelIndex;
+            const auto& amp = ampModels[(size_t) modelIndex];
+
+            for (size_t band = 0; band < voicing.size(); ++band)
+                *voicing[band].coefficients = designBand (amp.voicing[band], oversampledRate);
+
+            if (amp.crossoverHz > 0.0f)
+            {
+                crossoverLow.setCutoffFrequency (amp.crossoverHz);
+                crossoverHigh.setCutoffFrequency (amp.crossoverHz);
+            }
+        }
+
+        if (cabIndex != currentCab)
+        {
+            currentCab = cabIndex;
+
+            for (size_t band = 0; band < cabinet.size(); ++band)
+                *cabinet[band].coefficients = designBand (cabModels[(size_t) cabIndex].bands[band], baseRate);
+        }
+    }
+
+    void updateToneStack()
     {
         using Coeffs = juce::dsp::IIR::ArrayCoefficients<float>;
         using juce::Decibels;
 
+        const auto bassDb = bass->load(), midDb = mid->load(), frequency = midFreq->load(), trebleDb = treble->load();
+
         if (bassDb != lastBass)
         {
-            *bassFilter.coefficients = Coeffs::makeLowShelf (sampleRate, 100.0f, 0.707f, Decibels::decibelsToGain (bassDb));
+            *bassFilter.coefficients = Coeffs::makeLowShelf (oversampledRate, 80.0f, 0.7f, Decibels::decibelsToGain (bassDb));
             lastBass = bassDb;
         }
 
-        if (midDb != lastMid)
+        if (midDb != lastMid || frequency != lastMidFreq)
         {
-            *midFilter.coefficients = Coeffs::makePeakFilter (sampleRate, 600.0f, 0.8f, Decibels::decibelsToGain (midDb));
+            *midFilter.coefficients = Coeffs::makePeakFilter (oversampledRate, frequency, 0.8f, Decibels::decibelsToGain (midDb));
             lastMid = midDb;
+            lastMidFreq = frequency;
         }
 
         if (trebleDb != lastTreble)
         {
-            *trebleFilter.coefficients = Coeffs::makeHighShelf (sampleRate, 2500.0f, 0.707f, Decibels::decibelsToGain (trebleDb));
+            *trebleFilter.coefficients = Coeffs::makeHighShelf (oversampledRate, 3000.0f, 0.7f, Decibels::decibelsToGain (trebleDb));
             lastTreble = trebleDb;
         }
     }
 
+    std::atomic<float>* model = nullptr;
+    std::atomic<float>* cab = nullptr;
     std::atomic<float>* gain = nullptr;
     std::atomic<float>* bass = nullptr;
     std::atomic<float>* mid = nullptr;
+    std::atomic<float>* midFreq = nullptr;
     std::atomic<float>* treble = nullptr;
     std::atomic<float>* master = nullptr;
+    std::atomic<float>* blend = nullptr;
 
-    double sampleRate = 44100.0;
-    float lastBass = 0.0f, lastMid = 0.0f, lastTreble = 0.0f;
+    double baseRate = 44100.0, oversampledRate = 88200.0;
+    int currentModel = -1, currentCab = -1;
+    float lastBass = 0.0f, lastMid = 0.0f, lastMidFreq = 0.0f, lastTreble = 0.0f;
 
-    juce::dsp::IIR::Filter<float> bassFilter, midFilter, trebleFilter, cabHighPass, cabLowPass;
+    juce::dsp::Oversampling<float> oversampling { 1, 1, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true };
+    juce::dsp::StateVariableTPTFilter<float> crossoverLow, crossoverHigh;
+    juce::dsp::IIR::Filter<float> firstCoupling, secondCoupling, bassFilter, midFilter, trebleFilter;
+    std::array<juce::dsp::IIR::Filter<float>, 3> voicing;
+    std::array<juce::dsp::IIR::Filter<float>, 6> cabinet;
+
+    std::vector<float> diBuffer;
+    float sagAttack = 0.0f, sagRelease = 0.0f, sagEnvelope = 0.0f;
+
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Multiplicative> preGain { 1.0f }, masterGain { 1.0f };
+    juce::SmoothedValue<float> diBlend;
 };

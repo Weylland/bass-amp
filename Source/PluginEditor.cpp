@@ -13,6 +13,7 @@ namespace
 BassAmpEditor::BassAmpEditor (BassAmpProcessor& audioProcessor)
     : AudioProcessorEditor (audioProcessor),
       bassAmp (audioProcessor),
+      presetBar (audioProcessor.presets),
       tuner (audioProcessor),
       meters (audioProcessor),
       gateSection (audioProcessor.parameters, "GATE", Palette::gate,
@@ -38,7 +39,9 @@ BassAmpEditor::BassAmpEditor (BassAmpProcessor& audioProcessor)
                          ParamIds::distOn),
       ampSection (audioProcessor.parameters, "AMP", Palette::amp,
                   { { ParamIds::ampGain, "Gain" }, { ParamIds::ampBass, "Bass" }, { ParamIds::ampMid, "Mid" },
-                    { ParamIds::ampTreble, "Treble" }, { ParamIds::ampMaster, "Master" } }),
+                    { ParamIds::ampMidFreq, "Mid Freq" }, { ParamIds::ampTreble, "Treble" },
+                    { ParamIds::ampBlend, "DI Blend" }, { ParamIds::ampMaster, "Master" } },
+                  nullptr, { ParamIds::ampModel, ParamIds::ampCab }),
       chorusSection (audioProcessor.parameters, "CHORUS", Palette::chorus,
                      { { ParamIds::chorusRate, "Rate" }, { ParamIds::chorusDepth, "Depth" }, { ParamIds::chorusMix, "Mix" } },
                      ParamIds::chorusOn),
@@ -49,6 +52,7 @@ BassAmpEditor::BassAmpEditor (BassAmpProcessor& audioProcessor)
                      { { ParamIds::reverbSize, "Size" }, { ParamIds::reverbDamping, "Damping" }, { ParamIds::reverbMix, "Mix" } },
                      ParamIds::reverbOn)
 {
+    addAndMakeVisible (presetBar);
     addAndMakeVisible (tuner);
     addAndMakeVisible (meters);
 
@@ -121,6 +125,8 @@ void BassAmpEditor::layoutRow (juce::Rectangle<int> area, std::initializer_list<
 
 void BassAmpEditor::resized()
 {
+    presetBar.setBounds (getLocalBounds().removeFromTop (headerHeight).reduced (margin, 10).withX (170).withWidth (430));
+
     auto area = getLocalBounds().reduced (margin);
     area.removeFromTop (headerHeight - margin);
 

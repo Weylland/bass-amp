@@ -3,6 +3,7 @@
 #include "PluginProcessor.h"
 #include "ui/AmpLookAndFeel.h"
 #include "ui/LevelMeters.h"
+#include "ui/PresetBar.h"
 #include "ui/Section.h"
 #include "ui/TunerDisplay.h"
 
@@ -23,6 +24,7 @@ private:
     AmpLookAndFeel lookAndFeel;
     juce::String shownDeviceInfo;
 
+    PresetBar presetBar;
     TunerDisplay tuner;
     LevelMeters meters;
 

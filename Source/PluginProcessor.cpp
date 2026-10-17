@@ -18,6 +18,8 @@ BassAmpProcessor::BassAmpProcessor()
     chorus.bind (parameters);
     delay.bind (parameters);
     reverb.bind (parameters);
+
+    presets.loadFactoryPreset (0);
 }
 
 bool BassAmpProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -43,7 +45,7 @@ void BassAmpProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     envelopeFilter.prepare (monoSpec);
     fuzz.prepare (sampleRate, samplesPerBlock);
     distortion.prepare (sampleRate, samplesPerBlock);
-    amp.prepare (monoSpec);
+    amp.prepare (sampleRate, samplesPerBlock);
     chorus.prepare (outputSpec);
     delay.prepare (outputSpec);
     reverb.prepare (outputSpec);

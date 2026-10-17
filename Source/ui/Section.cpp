@@ -9,7 +9,8 @@ namespace
 }
 
 Section::Section (juce::AudioProcessorValueTreeState& state, const juce::String& sectionTitle, juce::Colour sectionAccent,
-                  const std::vector<KnobSpec>& knobs, const char* toggleParamId)
+                  const std::vector<KnobSpec>& knobs, const char* toggleParamId,
+                  const std::vector<const char*>& choiceParamIds)
     : title (sectionTitle), accent (sectionAccent)
 {
     using Attachment = juce::AudioProcessorValueTreeState::SliderAttachment;
@@ -30,6 +31,17 @@ Section::Section (juce::AudioProcessorValueTreeState& state, const juce::String&
         label->setJustificationType (juce::Justification::centred);
         label->setFont (juce::FontOptions (12.0f));
         addAndMakeVisible (label);
+    }
+
+    for (const auto* paramId : choiceParamIds)
+    {
+        auto* combo = choices.add (new juce::ComboBox());
+
+        if (auto* parameter = dynamic_cast<juce::AudioParameterChoice*> (state.getParameter (paramId)))
+            combo->addItemList (parameter->choices, 1);
+
+        addAndMakeVisible (combo);
+        choiceAttachments.add (new juce::AudioProcessorValueTreeState::ComboBoxAttachment (state, paramId, *combo));
     }
 
     if (toggleParamId != nullptr)
@@ -77,6 +89,12 @@ void Section::resized()
 
     if (toggle != nullptr)
         toggle->setBounds (header.removeFromRight (64).withSizeKeepingCentre (64, 22));
+
+    for (int i = choices.size(); --i >= 0;)
+    {
+        choices[i]->setBounds (header.removeFromRight (110).withSizeKeepingCentre (110, 24));
+        header.removeFromRight (8);
+    }
 
     area.removeFromTop (6);
 

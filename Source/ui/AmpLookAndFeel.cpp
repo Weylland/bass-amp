@@ -8,6 +8,18 @@ AmpLookAndFeel::AmpLookAndFeel()
     setColour (juce::Slider::textBoxHighlightColourId, Palette::track);
     setColour (juce::Label::textColourId, Palette::text);
     setColour (juce::ResizableWindow::backgroundColourId, Palette::background);
+
+    setColour (juce::ComboBox::backgroundColourId, Palette::panel.brighter (0.08f));
+    setColour (juce::ComboBox::outlineColourId, Palette::track.brighter (0.2f));
+    setColour (juce::ComboBox::textColourId, Palette::text);
+    setColour (juce::ComboBox::arrowColourId, Palette::textDim);
+    setColour (juce::PopupMenu::backgroundColourId, Palette::panel);
+    setColour (juce::PopupMenu::textColourId, Palette::text);
+    setColour (juce::PopupMenu::headerTextColourId, Palette::textDim);
+    setColour (juce::PopupMenu::highlightedBackgroundColourId, Palette::track);
+    setColour (juce::PopupMenu::highlightedTextColourId, Palette::text);
+    setColour (juce::TextButton::buttonColourId, Palette::panel.brighter (0.08f));
+    setColour (juce::TextButton::textColourOffId, Palette::text);
 }
 
 void AmpLookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height, float sliderPos,

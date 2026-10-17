@@ -32,11 +32,15 @@ namespace ParamIds
     inline constexpr auto distTone  = "dist_tone";
     inline constexpr auto distBlend = "dist_blend";
 
-    inline constexpr auto ampGain   = "amp_gain";
-    inline constexpr auto ampBass   = "amp_bass";
-    inline constexpr auto ampMid    = "amp_mid";
-    inline constexpr auto ampTreble = "amp_treble";
-    inline constexpr auto ampMaster = "amp_master";
+    inline constexpr auto ampModel   = "amp_model";
+    inline constexpr auto ampCab     = "amp_cab";
+    inline constexpr auto ampGain    = "amp_gain";
+    inline constexpr auto ampBass    = "amp_bass";
+    inline constexpr auto ampMid     = "amp_mid";
+    inline constexpr auto ampMidFreq = "amp_mid_freq";
+    inline constexpr auto ampTreble  = "amp_treble";
+    inline constexpr auto ampMaster  = "amp_master";
+    inline constexpr auto ampBlend   = "amp_blend";
 
     inline constexpr auto chorusOn    = "chorus_on";
     inline constexpr auto chorusRate  = "chorus_rate";

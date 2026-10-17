@@ -15,6 +15,7 @@
 #include "dsp/PeakMeter.h"
 #include "dsp/ReverbEffect.h"
 #include "dsp/Tuner.h"
+#include "presets/PresetManager.h"
 
 class BassAmpProcessor : public juce::AudioProcessor
 {
@@ -36,10 +37,10 @@ public:
     bool producesMidi() const override { return false; }
     double getTailLengthSeconds() const override { return 10.0; }
 
-    int getNumPrograms() override { return 1; }
-    int getCurrentProgram() override { return 0; }
-    void setCurrentProgram (int) override {}
-    const juce::String getProgramName (int) override { return {}; }
+    int getNumPrograms() override { return presets.getNumFactoryPresets(); }
+    int getCurrentProgram() override { return juce::jmax (0, presets.getCurrentFactoryIndex()); }
+    void setCurrentProgram (int index) override { presets.loadFactoryPreset (index); }
+    const juce::String getProgramName (int index) override { return presets.getFactoryPresetName (index); }
     void changeProgramName (int, const juce::String&) override {}
 
     void getStateInformation (juce::MemoryBlock& destData) override;
@@ -51,6 +52,7 @@ public:
     juce::String audioDeviceInfo;
 
     juce::AudioProcessorValueTreeState parameters;
+    PresetManager presets { parameters };
     Tuner tuner;
     PeakMeter inputMeter, outputMeter;
     std::atomic<bool> muteOutput { false };

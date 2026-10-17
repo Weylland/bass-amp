@@ -1,4 +1,5 @@
 #include "Parameters.h"
+#include "dsp/AmpModels.h"
 
 namespace
 {
@@ -78,11 +79,23 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
     addFloat (ParamIds::distTone,  1, "Tone", skewed (400.0f, 8000.0f, 1.0f, 2000.0f), 2500.0f, withUnit ("Hz", 0));
     addFloat (ParamIds::distBlend, 1, "Blend", unitRange, 0.5f, asPercent());
 
-    addFloat (ParamIds::ampGain,   1, "Gain",   { 0.0f, 10.0f, 0.01f }, 3.0f, withUnit ("", 1));
-    addFloat (ParamIds::ampBass,   1, "Bass",   { -12.0f, 12.0f, 0.1f }, 0.0f, withUnit ("dB", 1));
-    addFloat (ParamIds::ampMid,    1, "Mid",    { -12.0f, 12.0f, 0.1f }, 0.0f, withUnit ("dB", 1));
-    addFloat (ParamIds::ampTreble, 1, "Treble", { -12.0f, 12.0f, 0.1f }, 0.0f, withUnit ("dB", 1));
-    addFloat (ParamIds::ampMaster, 1, "Master", { -48.0f, 6.0f, 0.1f }, -6.0f, withUnit ("dB", 1));
+    juce::StringArray modelNames, cabNames;
+
+    for (const auto& model : ampModels)
+        modelNames.add (model.name);
+
+    for (const auto& cab : cabModels)
+        cabNames.add (cab.name);
+
+    layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { ParamIds::ampModel, 3 }, "Amp Model", modelNames, 1));
+    layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { ParamIds::ampCab, 3 }, "Cabinet", cabNames, 1));
+    addFloat (ParamIds::ampGain,    1, "Gain",     { 0.0f, 10.0f, 0.01f }, 4.0f, withUnit ("", 1));
+    addFloat (ParamIds::ampBass,    1, "Bass",     { -12.0f, 12.0f, 0.1f }, 0.0f, withUnit ("dB", 1));
+    addFloat (ParamIds::ampMid,     1, "Mid",      { -12.0f, 12.0f, 0.1f }, 0.0f, withUnit ("dB", 1));
+    addFloat (ParamIds::ampMidFreq, 3, "Mid Freq", skewed (200.0f, 3000.0f, 1.0f, 700.0f), 500.0f, withUnit ("Hz", 0));
+    addFloat (ParamIds::ampTreble,  1, "Treble",   { -12.0f, 12.0f, 0.1f }, 0.0f, withUnit ("dB", 1));
+    addFloat (ParamIds::ampMaster,  1, "Master",   { -48.0f, 6.0f, 0.1f }, -6.0f, withUnit ("dB", 1));
+    addFloat (ParamIds::ampBlend,   3, "DI Blend", unitRange, 0.3f, asPercent());
 
     addToggle (ParamIds::chorusOn, 1, "Chorus On");
     addFloat (ParamIds::chorusRate,  1, "Rate", skewed (0.1f, 5.0f, 0.01f, 1.0f), 0.8f, withUnit ("Hz", 2));
