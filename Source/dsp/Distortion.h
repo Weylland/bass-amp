@@ -2,13 +2,24 @@
 
 #include <juce_dsp/juce_dsp.h>
 
+#include "../Parameters.h"
+
 // Asymmetric tanh clipper, 2x oversampled, with a dry/wet blend to keep the low end intact.
 class Distortion
 {
 public:
+    void bind (juce::AudioProcessorValueTreeState& state)
+    {
+        enabled = rawParam (state, ParamIds::distOn);
+        drive   = rawParam (state, ParamIds::distDrive);
+        tone    = rawParam (state, ParamIds::distTone);
+        blend   = rawParam (state, ParamIds::distBlend);
+    }
+
     void prepare (double sampleRate, int maxBlockSize)
     {
         oversampling.initProcessing ((size_t) maxBlockSize);
+        oversampling.reset();
 
         const auto factor = oversampling.getOversamplingFactor();
         const auto oversampledRate = sampleRate * (double) factor;
@@ -17,21 +28,20 @@ public:
         toneFilter.prepare ({ oversampledRate, (juce::uint32) ((size_t) maxBlockSize * factor), 1 });
 
         driveGain.reset (oversampledRate, 0.05);
-        blend.reset (oversampledRate, 0.05);
-        blend.setCurrentAndTargetValue (0.0f);
-
-        oversampling.reset();
-    }
-
-    void setParameters (bool enabled, float drive, float toneHz, float blendAmount)
-    {
-        driveGain.setTargetValue (juce::Decibels::decibelsToGain (drive * 40.0f));
-        blend.setTargetValue (enabled ? blendAmount : 0.0f);
-        toneFilter.setCutoffFrequency (toneHz);
+        wet.reset (oversampledRate, 0.05);
+        wet.setCurrentAndTargetValue (0.0f);
     }
 
     void process (juce::dsp::AudioBlock<float>& monoBlock)
     {
+        const auto on = isOn (enabled);
+        driveGain.setTargetValue (juce::Decibels::decibelsToGain (drive->load() * 40.0f));
+        wet.setTargetValue (on ? blend->load() : 0.0f);
+        toneFilter.setCutoffFrequency (tone->load());
+
+        if (! on && ! wet.isSmoothing())
+            return;
+
         auto upsampled = oversampling.processSamplesUp (monoBlock);
         auto* data = upsampled.getChannelPointer (0);
         const auto biasOffset = std::tanh (bias);
@@ -39,11 +49,11 @@ public:
         for (size_t i = 0; i < upsampled.getNumSamples(); ++i)
         {
             const auto dry = data[i];
-            auto wet = std::tanh (driveGain.getNextValue() * dry + bias) - biasOffset;
-            wet = toneFilter.processSample (0, wet) * wetLevel;
+            auto distorted = std::tanh (driveGain.getNextValue() * dry + bias) - biasOffset;
+            distorted = toneFilter.processSample (0, distorted) * wetLevel;
 
-            const auto amount = blend.getNextValue();
-            data[i] = dry * (1.0f - amount) + wet * amount;
+            const auto amount = wet.getNextValue();
+            data[i] = dry * (1.0f - amount) + distorted * amount;
         }
 
         oversampling.processSamplesDown (monoBlock);
@@ -53,8 +63,13 @@ private:
     static constexpr float bias = 0.2f;
     static constexpr float wetLevel = 0.6f;
 
+    std::atomic<float>* enabled = nullptr;
+    std::atomic<float>* drive = nullptr;
+    std::atomic<float>* tone = nullptr;
+    std::atomic<float>* blend = nullptr;
+
     juce::dsp::Oversampling<float> oversampling { 1, 1, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true };
     juce::dsp::StateVariableTPTFilter<float> toneFilter;
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Multiplicative> driveGain { 1.0f };
-    juce::SmoothedValue<float> blend;
+    juce::SmoothedValue<float> wet;
 };

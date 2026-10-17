@@ -17,7 +17,7 @@ Section::Section (juce::AudioProcessorValueTreeState& state, const juce::String&
     for (const auto& spec : knobs)
     {
         auto* slider = sliders.add (new juce::Slider (juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow));
-        slider->setTextBoxStyle (juce::Slider::TextBoxBelow, false, 72, 18);
+        slider->setTextBoxStyle (juce::Slider::TextBoxBelow, false, 64, 16);
         slider->setColour (juce::Slider::rotarySliderFillColourId, accent);
         addAndMakeVisible (slider);
 
@@ -28,7 +28,7 @@ Section::Section (juce::AudioProcessorValueTreeState& state, const juce::String&
 
         auto* label = labels.add (new juce::Label ({}, spec.label));
         label->setJustificationType (juce::Justification::centred);
-        label->setFont (juce::FontOptions (13.0f));
+        label->setFont (juce::FontOptions (12.0f));
         addAndMakeVisible (label);
     }
 

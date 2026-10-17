@@ -4,7 +4,17 @@
 #include <juce_dsp/juce_dsp.h>
 
 #include "dsp/AmpStage.h"
+#include "dsp/ChorusEffect.h"
+#include "dsp/Compressor.h"
+#include "dsp/Delay.h"
 #include "dsp/Distortion.h"
+#include "dsp/EnvelopeFilter.h"
+#include "dsp/Fuzz.h"
+#include "dsp/NoiseGate.h"
+#include "dsp/Octaver.h"
+#include "dsp/PeakMeter.h"
+#include "dsp/ReverbEffect.h"
+#include "dsp/Tuner.h"
 
 class BassAmpProcessor : public juce::AudioProcessor
 {
@@ -24,7 +34,7 @@ public:
     const juce::String getName() const override { return JucePlugin_Name; }
     bool acceptsMidi() const override { return false; }
     bool producesMidi() const override { return false; }
-    double getTailLengthSeconds() const override { return 3.0; }
+    double getTailLengthSeconds() const override { return 10.0; }
 
     int getNumPrograms() override { return 1; }
     int getCurrentProgram() override { return 0; }
@@ -35,39 +45,27 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    float getCompressorGainReductionDb() const { return compressor.getGainReductionDb(); }
+
+    // Set by the standalone app; read and written on the message thread only.
+    juce::String audioDeviceInfo;
+
     juce::AudioProcessorValueTreeState parameters;
+    Tuner tuner;
+    PeakMeter inputMeter, outputMeter;
+    std::atomic<bool> muteOutput { false };
 
 private:
-    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-    void updateDsp();
-
-    struct RawValues
-    {
-        std::atomic<float>* ampGain;
-        std::atomic<float>* ampBass;
-        std::atomic<float>* ampMid;
-        std::atomic<float>* ampTreble;
-        std::atomic<float>* ampMaster;
-        std::atomic<float>* distOn;
-        std::atomic<float>* distDrive;
-        std::atomic<float>* distTone;
-        std::atomic<float>* distBlend;
-        std::atomic<float>* chorusOn;
-        std::atomic<float>* chorusRate;
-        std::atomic<float>* chorusDepth;
-        std::atomic<float>* chorusMix;
-        std::atomic<float>* reverbOn;
-        std::atomic<float>* reverbSize;
-        std::atomic<float>* reverbDamping;
-        std::atomic<float>* reverbMix;
-    };
-
-    RawValues raw;
-
+    NoiseGate gate;
+    Compressor compressor;
+    Octaver octaver;
+    EnvelopeFilter envelopeFilter;
+    Fuzz fuzz;
     Distortion distortion;
     AmpStage amp;
-    juce::dsp::Chorus<float> chorus;
-    juce::dsp::Reverb reverb;
+    ChorusEffect chorus;
+    Delay delay;
+    ReverbEffect reverb;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BassAmpProcessor)
 };

@@ -10,9 +10,15 @@ namespace Palette
     inline const juce::Colour text       { 0xffe8e6e3 };
     inline const juce::Colour textDim    { 0xff8a8d94 };
 
-    inline const juce::Colour amp        { 0xffe0a84f };
+    inline const juce::Colour gate       { 0xff8fbf6f };
+    inline const juce::Colour compressor { 0xff6fa8e0 };
+    inline const juce::Colour octaver    { 0xffc06fe0 };
+    inline const juce::Colour envFilter  { 0xff5fd6b0 };
+    inline const juce::Colour fuzz       { 0xffe07a3f };
     inline const juce::Colour distortion { 0xffe0564f };
+    inline const juce::Colour amp        { 0xffe0a84f };
     inline const juce::Colour chorus     { 0xff4fc3e0 };
+    inline const juce::Colour delay      { 0xff5f86e0 };
     inline const juce::Colour reverb     { 0xff9b7be0 };
 }
 

@@ -2,9 +2,11 @@
 
 #include "PluginProcessor.h"
 #include "ui/AmpLookAndFeel.h"
+#include "ui/LevelMeters.h"
 #include "ui/Section.h"
+#include "ui/TunerDisplay.h"
 
-class BassAmpEditor : public juce::AudioProcessorEditor
+class BassAmpEditor : public juce::AudioProcessorEditor, private juce::Timer
 {
 public:
     explicit BassAmpEditor (BassAmpProcessor&);
@@ -14,11 +16,25 @@ public:
     void resized() override;
 
 private:
-    AmpLookAndFeel lookAndFeel;
+    void timerCallback() override;
+    static void layoutRow (juce::Rectangle<int> area, std::initializer_list<Section*> sections);
 
-    Section ampSection;
+    BassAmpProcessor& bassAmp;
+    AmpLookAndFeel lookAndFeel;
+    juce::String shownDeviceInfo;
+
+    TunerDisplay tuner;
+    LevelMeters meters;
+
+    Section gateSection;
+    Section compressorSection;
+    Section octaverSection;
+    Section envFilterSection;
+    Section fuzzSection;
     Section distortionSection;
+    Section ampSection;
     Section chorusSection;
+    Section delaySection;
     Section reverbSection;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BassAmpEditor)

@@ -15,6 +15,8 @@ public:
     Section (juce::AudioProcessorValueTreeState& state, const juce::String& title, juce::Colour accent,
              const std::vector<KnobSpec>& knobs, const char* toggleParamId = nullptr);
 
+    int getNumKnobs() const { return sliders.size(); }
+
     void paint (juce::Graphics&) override;
     void resized() override;
 
