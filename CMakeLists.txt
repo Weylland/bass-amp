@@ -22,12 +22,14 @@ target_sources(BassAmp PRIVATE
     Source/Parameters.cpp
     Source/PluginProcessor.cpp
     Source/PluginEditor.cpp
+    Source/dsp/Recorder.cpp
     Source/dsp/Tuner.cpp
     Source/presets/FactoryPresets.cpp
     Source/presets/PresetManager.cpp
     Source/ui/AmpLookAndFeel.cpp
     Source/ui/LevelMeters.cpp
     Source/ui/PresetBar.cpp
+    Source/ui/RecorderBar.cpp
     Source/ui/Section.cpp
     Source/ui/TunerDisplay.cpp)
 
@@ -66,12 +68,14 @@ target_sources(BassAmpTests PRIVATE
     Source/Parameters.cpp
     Source/PluginProcessor.cpp
     Source/PluginEditor.cpp
+    Source/dsp/Recorder.cpp
     Source/dsp/Tuner.cpp
     Source/presets/FactoryPresets.cpp
     Source/presets/PresetManager.cpp
     Source/ui/AmpLookAndFeel.cpp
     Source/ui/LevelMeters.cpp
     Source/ui/PresetBar.cpp
+    Source/ui/RecorderBar.cpp
     Source/ui/Section.cpp
     Source/ui/TunerDisplay.cpp)
 

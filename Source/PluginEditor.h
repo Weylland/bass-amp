@@ -4,6 +4,7 @@
 #include "ui/AmpLookAndFeel.h"
 #include "ui/LevelMeters.h"
 #include "ui/PresetBar.h"
+#include "ui/RecorderBar.h"
 #include "ui/Section.h"
 #include "ui/TunerDisplay.h"
 
@@ -25,6 +26,7 @@ private:
     juce::String shownDeviceInfo;
 
     PresetBar presetBar;
+    RecorderBar recorderBar;
     TunerDisplay tuner;
     LevelMeters meters;
 

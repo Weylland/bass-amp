@@ -14,6 +14,7 @@ BassAmpEditor::BassAmpEditor (BassAmpProcessor& audioProcessor)
     : AudioProcessorEditor (audioProcessor),
       bassAmp (audioProcessor),
       presetBar (audioProcessor.presets),
+      recorderBar (audioProcessor.recorder),
       tuner (audioProcessor),
       meters (audioProcessor),
       gateSection (audioProcessor.parameters, "GATE", Palette::gate,
@@ -53,6 +54,7 @@ BassAmpEditor::BassAmpEditor (BassAmpProcessor& audioProcessor)
                      ParamIds::reverbOn)
 {
     addAndMakeVisible (presetBar);
+    addAndMakeVisible (recorderBar);
     addAndMakeVisible (tuner);
     addAndMakeVisible (meters);
 
@@ -98,7 +100,7 @@ void BassAmpEditor::paint (juce::Graphics& g)
 
     g.setColour (Palette::textDim);
     g.setFont (juce::FontOptions (12.0f));
-    g.drawText (shownDeviceInfo, header, juce::Justification::centredRight);
+    g.drawFittedText (shownDeviceInfo, header.withLeft (recorderBar.getRight() + margin), juce::Justification::centredRight, 1, 0.8f);
 }
 
 void BassAmpEditor::layoutRow (juce::Rectangle<int> area, std::initializer_list<Section*> sections)
@@ -125,7 +127,9 @@ void BassAmpEditor::layoutRow (juce::Rectangle<int> area, std::initializer_list<
 
 void BassAmpEditor::resized()
 {
-    presetBar.setBounds (getLocalBounds().removeFromTop (headerHeight).reduced (margin, 10).withX (170).withWidth (430));
+    const auto headerBar = getLocalBounds().removeFromTop (headerHeight).reduced (margin, 10);
+    presetBar.setBounds (headerBar.withX (170).withWidth (430));
+    recorderBar.setBounds (headerBar.withX (presetBar.getRight() + 24).withWidth (190));
 
     auto area = getLocalBounds().reduced (margin);
     area.removeFromTop (headerHeight - margin);

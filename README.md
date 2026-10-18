@@ -4,7 +4,7 @@ Ampli de basse en logiciel (JUCE 8, C++17) : application autonome Windows + plug
 
 Chaîne : **Gate → Compresseur → Octaver → Filtre d'enveloppe → Fuzz → Disto → Ampli → Baffle + DI → Chorus → Delay → Reverb**.
 
-En plus : accordeur (31 à 500 Hz, détection YIN), vumètres d'entrée et de sortie avec témoins CLIP, et réduction de gain du compresseur.
+En plus : accordeur (31 à 500 Hz, détection YIN), vumètres d'entrée et de sortie avec témoins CLIP, réduction de gain du compresseur, et enregistrement en WAV.
 
 ## Ampli
 
@@ -55,6 +55,7 @@ Tests DSP (accordeur, gate, compresseur, octaver, modèles d'ampli, baffles, pre
 - **IN CLIP** : l'entrée de la carte son sature, baisse le gain de l'interface. **OUT CLIP** : la sortie sature, baisse le Master.
 - Clic sur le bloc LEVELS : efface les témoins CLIP.
 - **MUTE** dans l'accordeur coupe la sortie pendant l'accordage.
+- **REC** enregistre le son de sortie (effets compris) en WAV stéréo 24 bits dans `Documents\Bass Amp\Recordings`. **STOP** termine le fichier, **Files** ouvre le dossier sur le dernier enregistrement. L'écriture sur disque se fait sur un thread séparé, donc elle n'ajoute ni latence ni craquement.
 
 ## Licence
 

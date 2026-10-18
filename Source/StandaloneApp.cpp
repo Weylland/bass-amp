@@ -125,8 +125,8 @@ namespace
         if (latencySamples <= 0)
             latencySamples = 2 * bufferSize;
 
-        return device.getTypeName() + "  |  " + device.getName()
-             + "  |  " + juce::String (bufferSize) + " samples @ " + juce::String (sampleRate / 1000.0, 1) + " kHz"
+        return device.getTypeName()
+             + "  |  " + juce::String (bufferSize) + " smp @ " + juce::String (sampleRate / 1000.0, 1) + " kHz"
              + "  |  latence ~" + juce::String (1000.0 * latencySamples / sampleRate, 1) + " ms";
     }
 }

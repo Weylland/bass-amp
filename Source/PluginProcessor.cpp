@@ -39,6 +39,7 @@ void BassAmpProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     const juce::dsp::ProcessSpec outputSpec { sampleRate, maxBlockSize, (juce::uint32) juce::jmax (1, getTotalNumOutputChannels()) };
 
     tuner.prepare (sampleRate);
+    recorder.prepare (sampleRate, getTotalNumOutputChannels());
     gate.prepare (sampleRate);
     compressor.prepare (sampleRate);
     octaver.prepare (monoSpec);
@@ -90,6 +91,8 @@ void BassAmpProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mid
 
     for (int channel = 0; channel < numOutputs; ++channel)
         outputMeter.push (buffer.getReadPointer (channel), numSamples);
+
+    recorder.push (buffer, numOutputs, numSamples);
 
     if (muteOutput.load())
         outputBlock.clear();

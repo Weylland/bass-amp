@@ -13,6 +13,7 @@
 #include "dsp/NoiseGate.h"
 #include "dsp/Octaver.h"
 #include "dsp/PeakMeter.h"
+#include "dsp/Recorder.h"
 #include "dsp/ReverbEffect.h"
 #include "dsp/Tuner.h"
 #include "presets/PresetManager.h"
@@ -55,6 +56,7 @@ public:
     PresetManager presets { parameters };
     Tuner tuner;
     PeakMeter inputMeter, outputMeter;
+    Recorder recorder;
     std::atomic<bool> muteOutput { false };
 
 private:

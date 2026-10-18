@@ -367,6 +367,39 @@ namespace
         directory.deleteRecursively();
     }
 
+    void testRecorder()
+    {
+        auto processor = makeProcessor();
+        const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("BassAmpRecorderTest.wav");
+
+        const auto started = processor->recorder.start (file);
+        render (*processor, bassTone (55.0f, 0.3f), 1.0);
+        const auto seconds = processor->recorder.getRecordedSeconds();
+        processor->recorder.stop();
+
+        juce::AudioFormatManager formats;
+        formats.registerBasicFormats();
+        std::unique_ptr<juce::AudioFormatReader> reader (formats.createReaderFor (file));
+
+        auto peak = 0.0f;
+
+        if (reader != nullptr)
+        {
+            juce::AudioBuffer<float> recorded ((int) reader->numChannels, (int) reader->lengthInSamples);
+            reader->read (&recorded, 0, (int) reader->lengthInSamples, 0, true, true);
+            peak = recorded.getMagnitude (0, recorded.getNumSamples());
+        }
+
+        const auto length = reader != nullptr ? (double) reader->lengthInSamples / reader->sampleRate : 0.0;
+        check (started && reader != nullptr && reader->numChannels == 2 && reader->bitsPerSample == 24
+                   && std::abs (length - 1.0) < 0.01 && peak > 0.05f && processor->recorder.getDroppedSamples() == 0,
+               "recorder writes a 24-bit stereo WAV",
+               juce::String (length, 3) + " s in file, " + juce::String (seconds, 3) + " s counted, peak " + juce::String (peak, 3));
+
+        reader.reset();
+        file.deleteFile();
+    }
+
     void testMeters()
     {
         auto processor = makeProcessor();
@@ -385,7 +418,7 @@ int saveEditorSnapshot (const juce::File& target)
     setParam (*processor, ParamIds::compOn, 1.0f);
     setParam (*processor, ParamIds::fuzzOn, 1.0f);
     setParam (*processor, ParamIds::reverbOn, 1.0f);
-    processor->audioDeviceInfo = "ASIO  |  Focusrite USB ASIO  |  64 samples @ 48.0 kHz  |  latence ~4.2 ms";
+    processor->audioDeviceInfo = "ASIO  |  64 smp @ 48.0 kHz  |  latence ~4.2 ms";
 
     std::unique_ptr<juce::AudioProcessorEditor> editor (processor->createEditor());
     const auto image = editor->createComponentSnapshot (editor->getLocalBounds(), true, 1.0f);
@@ -413,6 +446,7 @@ int main (int argc, char* argv[])
     testCabinetsAndBlend();
     testFactoryPresets();
     testUserPresetRoundTrip();
+    testRecorder();
     testMeters();
 
     std::cout << std::endl << (failures == 0 ? "All tests passed" : juce::String (failures) + " test(s) failed") << std::endl;
