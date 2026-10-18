@@ -20,6 +20,7 @@ namespace
         return sizes.isEmpty() ? device.getDefaultBufferSize() : sizes.getLast();
     }
 
+   #if JUCE_WINDOWS
     juce::AudioIODeviceType* findType (juce::AudioDeviceManager& deviceManager, const juce::String& typeName)
     {
         for (auto* type : deviceManager.getAvailableDeviceTypes())
@@ -115,6 +116,18 @@ namespace
         deviceManager.setCurrentAudioDeviceType (previousType, true);
         deviceManager.setAudioDeviceSetup (previous, true);
     }
+   #else
+    // Core Audio already has low latency: keep the default device and ask for a small buffer.
+    void selectLowLatencyDevice (juce::AudioDeviceManager& deviceManager)
+    {
+        if (auto* device = deviceManager.getCurrentAudioDevice())
+        {
+            auto setup = deviceManager.getAudioDeviceSetup();
+            setup.bufferSize = closestBufferSize (*device);
+            deviceManager.setAudioDeviceSetup (setup, true);
+        }
+    }
+   #endif
 
     juce::String describe (juce::AudioIODevice& device)
     {
@@ -153,9 +166,13 @@ public:
         auto* settings = appProperties.getUserSettings();
         const auto needsLowLatencySetup = ! settings->getBoolValue (lowLatencySetupKey, false);
 
-        // The bass goes in through a DI, not a microphone: no feedback risk, so the input starts open.
+       #if JUCE_WINDOWS
+        // The first launch picks the audio interface's ASIO driver, so the input is the bass, not a
+        // microphone: no feedback risk, the input starts open. On a Mac the default input is often
+        // the built-in microphone, so JUCE's muted-input default is kept there.
         if (! settings->containsKey ("shouldMuteInput"))
             settings->setValue ("shouldMuteInput", false);
+       #endif
 
         juce::AudioDeviceManager::AudioDeviceSetup preferredSetup;
         preferredSetup.bufferSize = preferredBufferSize;
