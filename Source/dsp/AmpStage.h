@@ -172,23 +172,24 @@ private:
     {
         using Coeffs = juce::dsp::IIR::ArrayCoefficients<float>;
         using juce::Decibels;
+        using juce::exactlyEqual;
 
         const auto bassDb = bass->load(), midDb = mid->load(), frequency = midFreq->load(), trebleDb = treble->load();
 
-        if (bassDb != lastBass)
+        if (! exactlyEqual (bassDb, lastBass))
         {
             *bassFilter.coefficients = Coeffs::makeLowShelf (oversampledRate, 80.0f, 0.7f, Decibels::decibelsToGain (bassDb));
             lastBass = bassDb;
         }
 
-        if (midDb != lastMid || frequency != lastMidFreq)
+        if (! exactlyEqual (midDb, lastMid) || ! exactlyEqual (frequency, lastMidFreq))
         {
             *midFilter.coefficients = Coeffs::makePeakFilter (oversampledRate, frequency, 0.8f, Decibels::decibelsToGain (midDb));
             lastMid = midDb;
             lastMidFreq = frequency;
         }
 
-        if (trebleDb != lastTreble)
+        if (! exactlyEqual (trebleDb, lastTreble))
         {
             *trebleFilter.coefficients = Coeffs::makeHighShelf (oversampledRate, 3000.0f, 0.7f, Decibels::decibelsToGain (trebleDb));
             lastTreble = trebleDb;

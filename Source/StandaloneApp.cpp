@@ -232,6 +232,9 @@ private:
     std::unique_ptr<juce::StandaloneFilterWindow> mainWindow;
 };
 
+// Declared by JUCE's standalone wrapper when JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP is set.
+juce::JUCEApplicationBase* juce_CreateApplication();
+
 juce::JUCEApplicationBase* juce_CreateApplication()
 {
     return new BassAmpStandaloneApp();

@@ -412,7 +412,7 @@ namespace
 }
 
 // Renders the editor to a PNG so the layout can be checked without opening the app.
-int saveEditorSnapshot (const juce::File& target)
+static int saveEditorSnapshot (const juce::File& target)
 {
     auto processor = makeProcessor();
     setParam (*processor, ParamIds::compOn, 1.0f);
