@@ -3,7 +3,8 @@
 #include <juce_dsp/juce_dsp.h>
 
 // Click track for practice: a short sine blip on every beat, higher on the first beat of the
-// bar. It is mixed in after the recorder so it never ends up in recordings.
+// bar. It is mixed in after the recorder so it never ends up in recordings. In a DAW it takes
+// the song's tempo, and its beats while the song plays.
 class Metronome
 {
 public:
@@ -11,6 +12,7 @@ public:
     std::atomic<float> bpm { 100.0f };
     std::atomic<float> volume { 0.5f };
     std::atomic<int> beatsPerBar { 4 };
+    std::atomic<bool> followsHost { false };   // the tempo comes from the DAW, not the knob
 
     void prepare (double newSampleRate)
     {
@@ -30,6 +32,28 @@ public:
     }
 
     double getBarLength() const { return getBeatLength() * juce::jmax (1, beatsPerBar.load()); }
+
+    // Audio thread, before process(): lines the beats up with the DAW's song position, in
+    // quarter notes, while it plays.
+    void syncTo (double ppqPosition, double ppqOfBarStart, int numerator)
+    {
+        beatsPerBar = juce::jmax (1, numerator);
+        const auto beatsIntoBar = juce::jmax (0.0, ppqPosition - ppqOfBarStart);
+        const auto whole = std::floor (beatsIntoBar);
+        const auto fraction = beatsIntoBar - whole;
+        const auto beatsInBar = beatsPerBar.load();
+
+        if (fraction < 1.0e-9)
+        {
+            samplesToNextBeat = 0.0;
+            beat = ((int) whole - 1 + beatsInBar) % beatsInBar;
+        }
+        else
+        {
+            samplesToNextBeat = (1.0 - fraction) * getBeatLength();
+            beat = (int) whole % beatsInBar;
+        }
+    }
 
     void process (juce::dsp::AudioBlock<float>& block)
     {

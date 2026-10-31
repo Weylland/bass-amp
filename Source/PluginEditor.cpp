@@ -2,7 +2,7 @@
 
 namespace
 {
-    constexpr double minScale = 0.6;
+    constexpr double minScale = 0.7;
     constexpr double maxScale = 1.6;
 
     // The largest scale, up to 1, at which the window fits on the main screen.
@@ -24,6 +24,7 @@ BassAmpEditor::BassAmpEditor (BassAmpProcessor& audioProcessor)
       standalone (audioProcessor.wrapperType == juce::AudioProcessor::wrapperType_Standalone)
 {
     setLookAndFeel (&lookAndFeel);
+    setWantsKeyboardFocus (true);
     createPanel();
 
     setResizable (true, true);
@@ -83,9 +84,23 @@ void BassAmpEditor::parentHierarchyChanged()
     window->addKeyListener (this);
 }
 
+bool BassAmpEditor::keyPressed (const juce::KeyPress& key)
+{
+    return keyPressed (key, this);
+}
+
 bool BassAmpEditor::keyPressed (const juce::KeyPress& key, juce::Component*)
 {
-    if (key == juce::KeyPress::F11Key)
+    auto& undoManager = static_cast<BassAmpProcessor&> (processor).undoManager;
+    const auto command = key.getModifiers().isCommandDown();
+    const auto shift = key.getModifiers().isShiftDown();
+    const auto letter = juce::CharacterFunctions::toUpperCase ((juce::juce_wchar) key.getKeyCode());
+
+    if (command && letter == 'Z' && ! shift)
+        undoManager.undo();
+    else if (command && ((letter == 'Z' && shift) || letter == 'Y'))
+        undoManager.redo();
+    else if (key == juce::KeyPress::F11Key)
         setFullScreen (! isFullScreen());
     else if (key == juce::KeyPress::escapeKey && isFullScreen())
         setFullScreen (false);

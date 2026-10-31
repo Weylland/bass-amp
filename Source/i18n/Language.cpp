@@ -44,6 +44,7 @@ void Language::setCurrent (const juce::String& code)
         return;
 
     chosen() = code;
+    applyToJuce();
 
     if (settingsFile().getParentDirectory().createDirectory())
         settingsFile().replaceWithText (code);
@@ -52,6 +53,17 @@ void Language::setCurrent (const juce::String& code)
 const Translations& Language::current()
 {
     return find (chosen())->translations();
+}
+
+void Language::applyToJuce()
+{
+    const auto quoted = [] (const juce::String& text) { return "\"" + text.replace ("\"", "\\\"") + "\""; };
+    juce::String mappings;
+
+    for (const auto& [english, translated] : current().messages)
+        mappings << quoted (english) << " = " << quoted (juce::String::fromUTF8 (translated)) << "\n";
+
+    juce::LocalisedStrings::setCurrentMappings (mappings.isEmpty() ? nullptr : new juce::LocalisedStrings (mappings, false));
 }
 
 juce::String Language::tr (const char* english)

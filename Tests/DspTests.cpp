@@ -1,5 +1,7 @@
 #include "../Source/PluginProcessor.h"
 #include "../Source/ParameterIds.h"
+#include "../Source/PedalChain.h"
+#include "../Source/dsp/QuickCuts.h"
 #include "../Source/i18n/Language.h"
 #include "../Source/presets/ModulePresets.h"
 #include "../Source/ui/Logo.h"
@@ -260,6 +262,58 @@ namespace
                "flat " + juce::String (low - mid, 1) + " / " + juce::String (high - mid, 1) + " dB, kills " + juce::String (lowKilled, 0) + " / "
                    + juce::String (midKilled, 0) + " / " + juce::String (highKilled, 0) + " dB, cuts " + juce::String (middle - lowCut, 0)
                    + " / " + juce::String (middle - highCut, 0) + " dB");
+    }
+
+    void testQuickCutsCurve()
+    {
+        auto processor = makeProcessor();
+        auto& state = processor->parameters;
+        constexpr double sampleRate = 48000.0;
+        auto worst = 0.0f;
+        juce::String worstAt;
+
+        const auto measure = [&] (float frequency)
+        {
+            QuickCuts cuts;
+            cuts.bind (state);
+            cuts.prepare (sampleRate);
+            juce::AudioBuffer<float> buffer (1, (int) sampleRate);
+
+            for (int i = 0; i < buffer.getNumSamples(); ++i)
+                buffer.setSample (0, i, 0.5f * std::sin (juce::MathConstants<float>::twoPi * frequency * (float) i / (float) sampleRate));
+
+            juce::dsp::AudioBlock<float> block (buffer);
+            cuts.process (block);
+            const auto half = buffer.getNumSamples() / 2;
+            return juce::Decibels::gainToDecibels (buffer.getRMSLevel (0, half, half) / (0.5f / std::sqrt (2.0f)));
+        };
+
+        const std::vector<std::vector<const char*>> combinations {
+            {}, { ParamIds::cutLow }, { ParamIds::cutHigh }, { ParamIds::killLow }, { ParamIds::killMid },
+            { ParamIds::killHigh }, { ParamIds::cutLow, ParamIds::killHigh },
+        };
+
+        for (const auto& switches : combinations)
+        {
+            for (const auto* paramId : { ParamIds::cutLow, ParamIds::cutHigh, ParamIds::killLow, ParamIds::killMid, ParamIds::killHigh })
+                setParam (*processor, paramId, std::find (switches.begin(), switches.end(), paramId) != switches.end() ? 1.0f : 0.0f);
+
+            for (const auto frequency : { 30.0f, 80.0f, 150.0f, 250.0f, 800.0f, 2500.0f, 5000.0f, 12000.0f })
+            {
+                const auto drawn = QuickCuts::magnitudeDb (state, frequency, sampleRate);
+
+                if (drawn < -30.0f)
+                    continue;
+
+                if (const auto error = std::abs (drawn - measure (frequency)); error > worst)
+                {
+                    worst = error;
+                    worstAt = juce::String (frequency, 0) + " Hz";
+                }
+            }
+        }
+
+        check (worst < 1.0f, "EQ screen draws the quick cuts as they sound", "worst " + juce::String (worst, 2) + " dB at " + worstAt);
     }
 
     void testWah()
@@ -595,13 +649,13 @@ namespace
                    && missing.finite && juce::exactlyEqual (missingRate, 0.0) && missing.rmsDb() > -40.0f,
                "NAM captures load and play, a missing file passes the signal",
                "A2 WaveNet " + juce::String (captured.rmsDb(), 1) + " dB at " + juce::String (rate / 1000.0, 1) + " kHz, LSTM "
-                   + juce::String (lstm.rmsDb(), 1) + " dB, Tube 300 " + juce::String (tube.rmsDb(), 1) + " dB, no file "
+                   + juce::String (lstm.rmsDb(), 1) + " dB, Super Valve " + juce::String (tube.rmsDb(), 1) + " dB, no file "
                    + juce::String (missing.rmsDb(), 1) + " dB");
     }
 
     void testAmpModelCharacter()
     {
-        enum { hiFi, tube300, crossover, tweed, flipTop, solidPunch, tubeDi };
+        enum { hiFi, superValve, nordicDrive, tweed, flipTop, westCoast, stompDi };
         std::array<float, 7> thd {};
         juce::String detail;
 
@@ -611,10 +665,10 @@ namespace
             detail << ampModels[(size_t) model].name << " " << juce::String (thd[(size_t) model], 1) << " %  ";
         }
 
-        // Crossover keeps the fundamental clean under its crossover, so it only has to beat Hi-Fi.
-        check (thd[hiFi] < 3.0f && thd[solidPunch] < 6.0f && thd[tube300] > 3.0f && thd[tube300] < 15.0f
-                   && thd[crossover] > thd[hiFi] && thd[tweed] > thd[tube300] && thd[flipTop] > thd[hiFi]
-                   && thd[tubeDi] > thd[hiFi],
+        // Nordic Drive keeps the fundamental clean under its crossover, so it only has to beat Italian Hi-Fi.
+        check (thd[hiFi] < 3.0f && thd[westCoast] < 6.0f && thd[superValve] > 3.0f && thd[superValve] < 15.0f
+                   && thd[nordicDrive] > thd[hiFi] && thd[tweed] > thd[superValve] && thd[flipTop] > thd[hiFi]
+                   && thd[stompDi] > thd[hiFi],
                "amp models: clean heads stay clean, tube heads break up", detail.trim());
     }
 
@@ -871,6 +925,52 @@ namespace
                problems.isEmpty() ? "amp spread " + juce::String (loudest - quietest, 1) + " dB (" + levels.joinIntoString (", ") + ")" : problems.joinIntoString (", "));
     }
 
+    void testMetronomeFollowsHost()
+    {
+        Metronome metronome;
+        metronome.prepare (48000.0);
+        metronome.bpm = 120.0f;
+        metronome.enabled = true;
+
+        // Halfway through the second beat of the bar: the next click is the third beat, 12000 samples on.
+        metronome.syncTo (1.5, 0.0, 3);
+        juce::AudioBuffer<float> buffer (1, 12000);
+        buffer.clear();
+        juce::dsp::AudioBlock<float> before (buffer);
+        metronome.process (before);
+        const auto silentBefore = buffer.getMagnitude (0, 0, 11990) < 1.0e-6f;
+
+        buffer.clear();
+        juce::dsp::AudioBlock<float> after (buffer);
+        metronome.process (after);
+        const auto clicked = buffer.getMagnitude (0, 0, 100) > 0.1f;
+
+        check (silentBefore && clicked && metronome.getBeat() == 2 && metronome.beatsPerBar.load() == 3,
+               "metronome lines up with the DAW", "beat " + juce::String (metronome.getBeat()));
+    }
+
+    void testUndo()
+    {
+        auto processor = makeProcessor();
+        auto& state = processor->parameters;
+        auto& undo = processor->undoManager;
+
+        setParam (*processor, ParamIds::ampGain, 3.0f);
+        state.copyState();
+        undo.beginNewTransaction();
+        setParam (*processor, ParamIds::ampGain, 8.0f);
+        state.copyState();
+        undo.beginNewTransaction();
+
+        undo.undo();
+        const auto undone = state.getRawParameterValue (ParamIds::ampGain)->load();
+        undo.redo();
+        const auto redone = state.getRawParameterValue (ParamIds::ampGain)->load();
+
+        check (std::abs (undone - 3.0f) < 0.01f && std::abs (redone - 8.0f) < 0.01f, "undo and redo a change",
+               "gain " + juce::String (undone, 2) + " then " + juce::String (redone, 2));
+    }
+
     void testTranslations()
     {
         const auto& english = englishTranslations();
@@ -920,6 +1020,19 @@ namespace
         check (loaded && std::abs (gainValue - 7.3f) < 0.01f && reverbValue > 0.5f
                    && presets.getUserPresets().size() == 1 && presets.getCurrentPresetName() == "My Sound",
                "user preset save and load", file.getFileName() + ", gain " + juce::String (gainValue, 2));
+
+        presets.isModified();
+        const auto cleanAfterLoad = ! presets.isModified();
+        setParam (*processor, ParamIds::ampGain, 4.0f);
+        const auto modifiedByKnob = presets.isModified();
+        presets.loadFactoryPreset (1);
+        presets.isModified();
+        const auto cleanAfterFactory = ! presets.isModified();
+        processor->parameters.state.setProperty (PedalChain::property, "moved", nullptr);
+        const auto modifiedByOrder = presets.isModified();
+        check (cleanAfterLoad && modifiedByKnob && cleanAfterFactory && modifiedByOrder, "preset marked modified",
+               juce::String ("clean after load, knob, factory, order: ") + juce::String ((int) cleanAfterLoad) + juce::String ((int) modifiedByKnob)
+                   + juce::String ((int) cleanAfterFactory) + juce::String ((int) modifiedByOrder));
 
         directory.deleteRecursively();
     }
@@ -1225,8 +1338,13 @@ static int saveEditorSnapshot (const juce::File& target, int preset, const juce:
     std::unique_ptr<juce::AudioProcessorEditor> editor (processor->createEditor());
     editor->setSize (MainPanel::designWidth, MainPanel::designHeight);
 
-    if (auto* button = findButton (*editor, click); button != nullptr && button->onClick != nullptr)
-        button->onClick();
+    if (auto* button = findButton (*editor, click))
+    {
+        if (button->getClickingTogglesState())
+            button->setToggleState (! button->getToggleState(), juce::sendNotificationSync);
+        else if (button->onClick != nullptr)
+            button->onClick();
+    }
 
     const auto image = editor->createComponentSnapshot (editor->getLocalBounds(), true, 1.0f);
 
@@ -1268,6 +1386,7 @@ int main (int argc, char* argv[])
     testEnvelopeSweepsDown();
     testAmpCuts();
     testQuickCuts();
+    testQuickCutsCurve();
     testWah();
     testPitchShifterAndSynth();
     testModulationEffects();
@@ -1292,6 +1411,8 @@ int main (int argc, char* argv[])
     testLooper();
     testLooperPlayback();
     testMetronome();
+    testMetronomeFollowsHost();
+    testUndo();
     testBackingTrack();
     testMeters();
 

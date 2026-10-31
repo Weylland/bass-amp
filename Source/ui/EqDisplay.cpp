@@ -1,6 +1,7 @@
 #include "EqDisplay.h"
 #include "AmpLookAndFeel.h"
 #include "Help.h"
+#include "../dsp/QuickCuts.h"
 
 namespace
 {
@@ -247,16 +248,17 @@ void EqDisplay::paintSpectrum (juce::Graphics& g, juce::Rectangle<float> plot)
 
 void EqDisplay::paintCurve (juce::Graphics& g, juce::Rectangle<float> plot)
 {
-    const auto colour = active ? Palette::gold : Palette::textDim;
+    const auto colour = active || QuickCuts::anyOn (state) ? Palette::gold : Palette::textDim;
     const auto zeroY = yForDb (0.0f);
     const auto coefficients = currentCoefficients();
     const auto sampleRate = tap.getSampleRate();
     const auto yAt = [&] (float x)
     {
-        auto db = 0.0f;
+        const auto frequency = frequencyForX (x);
+        auto db = QuickCuts::magnitudeDb (state, frequency, sampleRate);
 
         for (const auto& c : coefficients)
-            db += active ? magnitudeDb (c, frequencyForX (x), sampleRate) : 0.0f;
+            db += active ? magnitudeDb (c, frequency, sampleRate) : 0.0f;
 
         return juce::jlimit (plot.getY(), plot.getBottom(), yForDb (db));
     };

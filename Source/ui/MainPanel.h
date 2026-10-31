@@ -18,8 +18,8 @@
 // The whole rig at its design size: header, pre-amp pedalboard, tuner, amp head and
 // meters, the EQ and the post-amp pedalboard, then the practice row (player, looper,
 // metronome). The full looper opens over the pedalboards. The editor scales it to the window.
-// Right-clicking a control opens its MIDI learn menu. Hovering a control for a second
-// explains it.
+// Right-clicking a control opens its MIDI learn menu; a gold dot marks the controls a MIDI
+// control drives. Hovering a control for a second explains it.
 class MainPanel : public juce::Component, private juce::Timer
 {
 public:
@@ -57,6 +57,7 @@ private:
     BassAmpProcessor& processor;
     juce::String shownDeviceInfo;
     juce::String shownLearning;
+    juce::StringArray shownMapped;
 
     PresetBar presetBar;
     RecorderBar recorderBar;

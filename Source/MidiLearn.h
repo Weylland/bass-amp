@@ -34,6 +34,7 @@ public:
     juce::String getLearningParameter() const;
     void forget (const juce::String& paramId);
     juce::String describe (const juce::String& paramId) const;
+    juce::StringArray getMappedIds() const;
 
 private:
     enum class Kind { continuous, toggle, choice, action };

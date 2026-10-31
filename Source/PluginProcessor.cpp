@@ -12,7 +12,7 @@ BassAmpProcessor::BassAmpProcessor()
     : AudioProcessor (BusesProperties()
                           .withInput ("Input", juce::AudioChannelSet::mono(), true)
                           .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
-      parameters (*this, nullptr, "PARAMETERS", createParameterLayout())
+      parameters (*this, &undoManager, "PARAMETERS", createParameterLayout())
 {
     gate.bind (parameters);
     compressor.bind (parameters);
@@ -161,10 +161,29 @@ void BassAmpProcessor::processPedal (PedalId pedal, juce::dsp::AudioBlock<float>
     }
 }
 
+void BassAmpProcessor::followHostTempo()
+{
+    auto* host = wrapperType != wrapperType_Standalone ? getPlayHead() : nullptr;
+    const auto position = host != nullptr ? host->getPosition() : juce::Optional<juce::AudioPlayHead::PositionInfo>();
+    const auto hostBpm = position.hasValue() ? position->getBpm() : juce::Optional<double>();
+
+    metronome.followsHost = hostBpm.hasValue();
+
+    if (! hostBpm.hasValue())
+        return;
+
+    metronome.bpm = (float) *hostBpm;
+
+    if (const auto ppq = position->getPpqPosition(); ppq.hasValue() && position->getIsPlaying())
+        metronome.syncTo (*ppq, position->getPpqPositionOfLastBarStart().orFallback (0.0),
+                          position->getTimeSignature().hasValue() ? position->getTimeSignature()->numerator : 4);
+}
+
 void BassAmpProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ScopedNoDenormals noDenormals;
     midiLearn.process (midi);
+    followHostTempo();
 
     const auto numInputs = getTotalNumInputChannels();
     const auto numOutputs = getTotalNumOutputChannels();
@@ -236,7 +255,10 @@ void BassAmpProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
         if (xml->hasTagName (parameters.state.getType()))
+        {
             parameters.replaceState (juce::ValueTree::fromXml (*xml));
+            presets.markUnmodified();
+        }
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

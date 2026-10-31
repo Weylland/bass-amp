@@ -54,6 +54,7 @@ void PresetManager::loadFactoryPreset (int index)
 
     currentFactoryIndex = index;
     setCurrentPresetName (preset.name);
+    markUnmodified();
 }
 
 bool PresetManager::loadUserPreset (const juce::File& file)
@@ -66,6 +67,7 @@ bool PresetManager::loadUserPreset (const juce::File& file)
     state.replaceState (juce::ValueTree::fromXml (*xml));
     currentFactoryIndex = -1;
     setCurrentPresetName (file.getFileNameWithoutExtension());
+    markUnmodified();
     return true;
 }
 
@@ -83,7 +85,40 @@ juce::File PresetManager::saveUserPreset (const juce::String& name)
         return {};
 
     currentFactoryIndex = -1;
+    markUnmodified();
     return file;
+}
+
+bool PresetManager::isModified()
+{
+    const auto values = currentValues();
+    const auto chain = state.state.getProperty (PedalChain::property).toString();
+
+    if (referencePending.exchange (false))
+    {
+        reference = values;
+        referenceChain = chain;
+        return false;
+    }
+
+    if (chain != referenceChain || values.size() != reference.size())
+        return true;
+
+    for (size_t i = 0; i < values.size(); ++i)
+        if (std::abs (values[i] - reference[i]) > 1.0e-4f)
+            return true;
+
+    return false;
+}
+
+std::vector<float> PresetManager::currentValues() const
+{
+    std::vector<float> values;
+
+    for (auto* parameter : state.processor.getParameters())
+        values.push_back (parameter->getValue());
+
+    return values;
 }
 
 juce::String PresetManager::getCurrentPresetName() const

@@ -7,7 +7,7 @@
 // Hosts the rig drawn at its design size and scales it to the window, keeping the aspect ratio.
 // In the standalone app the window can go full screen, from the header button or F11; Escape
 // leaves it. The rig is then centred on the screen. Changing the language rebuilds the rig,
-// so every text is read again.
+// so every text is read again. Ctrl+Z undoes the last change, Ctrl+Shift+Z or Ctrl+Y redoes it.
 class BassAmpEditor : public juce::AudioProcessorEditor, private juce::KeyListener
 {
 public:
@@ -17,7 +17,7 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
     void parentHierarchyChanged() override;
-    using juce::AudioProcessorEditor::keyPressed;
+    bool keyPressed (const juce::KeyPress&) override;
 
 private:
     bool keyPressed (const juce::KeyPress&, juce::Component*) override;

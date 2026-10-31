@@ -6,6 +6,13 @@ namespace
 {
     constexpr int padding = 12;
     constexpr float inTuneCents = 3.0f;
+    constexpr float defaultReference = 440.0f;
+
+    juce::File referenceFile()
+    {
+        return juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
+            .getChildFile ("Bass Amp").getChildFile ("TunerReference.txt");
+    }
 
     juce::String noteName (int midiNote)
     {
@@ -26,6 +33,9 @@ TunerDisplay::TunerDisplay (BassAmpProcessor& processorToUse)
     setTooltip (Help::get ("ui.tuner"));
     addAndMakeVisible (muteButton);
 
+    if (const auto saved = referenceFile().loadFileAsString().getFloatValue(); saved >= 430.0f && saved <= 450.0f)
+        reference = saved;
+
     startTimerHz (20);
 }
 
@@ -34,11 +44,32 @@ TunerDisplay::~TunerDisplay()
     stopTimer();
 }
 
+void TunerDisplay::setReference (float hertz)
+{
+    reference = juce::jlimit (430.0f, 450.0f, hertz);
+
+    if (referenceFile().getParentDirectory().createDirectory())
+        referenceFile().replaceWithText (juce::String (juce::roundToInt (reference)));
+
+    repaint();
+}
+
+void TunerDisplay::mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails& wheel)
+{
+    if (wheel.deltaY != 0.0f)
+        setReference (reference + (wheel.deltaY > 0.0f ? 1.0f : -1.0f));
+}
+
+void TunerDisplay::mouseDoubleClick (const juce::MouseEvent&)
+{
+    setReference (defaultReference);
+}
+
 void TunerDisplay::timerCallback()
 {
     if (const auto frequency = processor.tuner.detectFrequency())
     {
-        const auto midi = 69.0f + 12.0f * std::log2 (*frequency / 440.0f);
+        const auto midi = 69.0f + 12.0f * std::log2 (*frequency / reference);
 
         if (! hasPitch || std::abs (midi - smoothedMidi) > 0.5f)
             smoothedMidi = midi;
@@ -90,10 +121,10 @@ void TunerDisplay::paint (juce::Graphics& g)
     g.setColour (Palette::textDim);
 
     if (! hasPitch)
-        g.drawText ("A = 440 Hz", infoRow, juce::Justification::centred);
+        g.drawText ("A = " + juce::String (juce::roundToInt (reference)) + " Hz", infoRow, juce::Justification::centred);
     else
     {
-        const auto frequency = 440.0f * std::pow (2.0f, (smoothedMidi - 69.0f) / 12.0f);
+        const auto frequency = reference * std::pow (2.0f, (smoothedMidi - 69.0f) / 12.0f);
         const auto centsText = (cents >= 0.0f ? "+" : "") + juce::String (juce::roundToInt (cents)) + " ct";
         g.drawText (juce::String (frequency, 1) + " Hz", infoRow.removeFromLeft (infoRow.getWidth() / 2), juce::Justification::centredLeft);
         g.drawText (centsText, infoRow, juce::Justification::centredRight);

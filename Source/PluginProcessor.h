@@ -78,6 +78,8 @@ public:
     // Set by the standalone app; read and written on the message thread only.
     juce::String audioDeviceInfo;
 
+    // Every parameter change, grouped by gesture: Ctrl+Z / Ctrl+Shift+Z in the editor.
+    juce::UndoManager undoManager;
     juce::AudioProcessorValueTreeState parameters;
     PresetManager presets { parameters };
     PedalChain pedalChain { parameters };
@@ -96,6 +98,7 @@ private:
     void valueTreeRedirected (juce::ValueTree&) override;
     void reloadImpulseResponse();
     void processPedal (PedalId, juce::dsp::AudioBlock<float>& mono, const juce::dsp::ProcessContextReplacing<float>& output);
+    void followHostTempo();
 
     NoiseGate gate;
     Compressor compressor;

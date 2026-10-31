@@ -144,6 +144,12 @@ void MainPanel::timerCallback()
         repaint (headerArea);
     }
 
+    if (const auto mapped = processor.midiLearn.getMappedIds(); mapped != shownMapped)
+    {
+        shownMapped = mapped;
+        repaint();
+    }
+
     const auto learning = processor.midiLearn.getLearningParameter();
 
     if (learning.isNotEmpty() || learning != shownLearning)
@@ -165,7 +171,10 @@ juce::Rectangle<int> MainPanel::learningArea() const
 void MainPanel::mouseDown (const juce::MouseEvent& event)
 {
     if (! event.mods.isPopupMenu())
+    {
+        processor.undoManager.beginNewTransaction();
         return;
+    }
 
     for (auto* component = event.eventComponent; component != nullptr && component != this; component = component->getParentComponent())
     {
@@ -198,6 +207,19 @@ void MainPanel::showMidiMenu (const juce::String& paramId)
 
 void MainPanel::paintOverChildren (juce::Graphics& g)
 {
+    for (const auto& id : shownMapped)
+    {
+        if (auto* control = findShowingChild (*this, id))
+        {
+            const auto area = getLocalArea (control, control->getLocalBounds()).toFloat();
+            const auto dot = juce::Rectangle<float> (7.0f, 7.0f).withCentre (area.getTopRight().translated (-4.0f, 4.0f));
+            g.setColour (juce::Colours::black.withAlpha (0.6f));
+            g.fillEllipse (dot.expanded (1.5f));
+            g.setColour (Palette::gold);
+            g.fillEllipse (dot);
+        }
+    }
+
     if (shownLearning.isEmpty())
         return;
 
@@ -232,6 +254,12 @@ void MainPanel::paint (juce::Graphics& g)
     g.setGradientFill (juce::ColourGradient (juce::Colour (0xfff7dc9c), 0.0f, logo.getY() + 10.0f, juce::Colour (0xffb7832f), 0.0f, logo.getBottom() - 10.0f, false));
     g.setFont (Fonts::display (34.0f).withKerningFactor (0.1f));
     g.drawText ("BASS AMP", logo, juce::Justification::centredLeft);
+
+    g.setColour (Palette::textDim);
+    g.setFont (Fonts::display (10.0f, false));
+    const auto logoWidth = juce::GlyphArrangement::getStringWidth (Fonts::display (34.0f).withKerningFactor (0.1f), "BASS AMP");
+    g.drawText (juce::String ("v") + JucePlugin_VersionString, logo.withTrimmedLeft (logoWidth + 4.0f).withTrimmedTop (31.0f).withHeight (12.0f),
+                juce::Justification::centredLeft);
 
     g.setColour (Palette::textDim);
     g.setFont (Fonts::display (12.0f, false));

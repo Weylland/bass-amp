@@ -1,137 +1,190 @@
 # Bass Amp
 
-Ampli de basse en logiciel (JUCE 8, C++17) : application autonome et plugins pour Windows (VST3) et macOS (VST3, AU).
+**English** | [Français](README.fr.md)
 
-Chaîne par défaut : **Gate → Compresseur → Octaver → Filtre d'enveloppe → Fuzz → Disto → Ampli → Baffle + DI → EQ → Phaser → Chorus → Delay → Reverb → Limiteur**. Synthé, Pitch, Filtre, Wah, Flanger et Trémolo s'ajoutent au pedalboard, et l'ordre des pédales se change à la souris.
+Free bass amp software (JUCE 8, C++17): a standalone app and plugins for Windows (VST3) and macOS (VST3, AU).
 
-En plus : accordeur (31 à 500 Hz, détection YIN), vumètres d'entrée et de sortie avec témoins CLIP, réduction de gain du compresseur, analyseur de spectre, enregistrement en WAV, lecteur audio, looper, métronome et contrôle MIDI.
+![Bass Amp](docs/screenshot.png)
 
-## Ampli
+Default chain: **Gate → Compressor → Octaver → Envelope filter → Fuzz → Drive → Amp → Cabinet + DI → EQ → Phaser → Chorus → Delay → Reverb → Limiter**. Synth, Pitch, Filter, Wah, Flanger and Tremolo can be added to the pedalboard, and the pedal order changes with the mouse.
 
-Préampli (lampes ou transistors selon le modèle), voicing du modèle, section de tonalité, puis ampli de puissance avec sag. Tout l'ampli tourne en suréchantillonnage 2x.
+Also included: tuner (31 to 500 Hz, YIN detection), input and output meters with CLIP lights, compressor gain reduction, spectrum analyser, WAV recording, audio player, looper, metronome and MIDI control.
 
-| Modèle | Inspiré de | Caractère |
-|---|---|---|
-| Hi-Fi | Markbass Little Mark | Transistor neutre et moderne, idéal pour le slap |
-| Tube 300 | Ampeg SVT-CL | Tout-lampes, bas-médiums chauds, aigus arrondis, sag |
-| Crossover | Darkglass B7K / Microtubes | Graves propres, haut du spectre saturé, grain dans les médiums |
-| Tweed | Fender Bassman 5F6-A | Tone stack passif modélisé d'après le circuit (Yeh, Guitarix), rond et vintage |
-| Flip Top | Ampeg B-15 | Lampes à faible puissance, le son Motown |
-| Solid Punch | Gallien-Krueger 800RB | Transistor punchy, aigus à 4 kHz, attaque nette |
-| Tube DI | Tech 21 SansAmp Bass Driver | Préampli DI de studio, du propre au grain |
-| NAM Capture | Ta propre capture (Neural Amp Modeler) | Le son d'un vrai ampli, capturé par réseau de neurones |
+Found a bug or have an idea? [Open an issue](https://github.com/Weylland/bass-amp/issues).
 
-Les potards de l'ampli :
+## Quick start
 
-- **Gain**, **Bass**, **Middle** avec fréquence réglable (**Freq**), **Treble** et **Master**. Freq est inactif sur Tweed, dont le tone stack passif a ses fréquences fixes.
-- **Contour** creuse les médiums vers 380 Hz et ouvre graves et aigus, comme le VPF des Markbass.
-- **Deep** ajoute du bas et retire du 500 Hz. **Bright** ajoute de l'aigu.
-- **DI Blend** mélange le signal direct (avant l'ampli) avec l'ampli et le baffle, comme en studio.
-- **Lo Cut** (20 à 250 Hz) et **Hi Cut** (1,5 à 20 kHz), en haut de la tête : coupe-bas et coupe-haut en sortie d'ampli, pour resserrer les graves ou adoucir les aigus.
+1. Download the latest version from the [releases page](https://github.com/Weylland/bass-amp/releases/latest) and install it (see [Windows](#install-windows) or [macOS](#install-macos)).
+2. Turn your speakers or headphones down before the first launch.
+3. Plug your bass into your audio interface and open Bass Amp.
+4. If you hear nothing, choose your interface in **Options → Audio/MIDI Settings** (top left of the window).
+5. Pick a sound in the preset list at the top, then hover any control for a second: a bubble explains what it does.
 
-Baffles : 8x10, 4x10, 1x15, 2x12, 2x10 Hi-Fi, Off (DI seul), ou **IR File**. **LOAD IR** charge une réponse impulsionnelle de baffle (WAV, AIFF, FLAC) et passe le baffle sur IR File. Le chemin du fichier est sauvegardé avec les presets utilisateur et la session du DAW. Sans IR chargée, IR File laisse passer le signal tel quel.
+## Install (Windows)
 
-Les modèles sont calibrés au même volume perçu à gain égal (écart < 1 dB).
+Download from the [latest release](https://github.com/Weylland/bass-amp/releases/latest):
 
-**NAM Capture** joue une capture `.nam` du [Neural Amp Modeler](https://www.neuralampmodeler.com/) : on en trouve des milliers, gratuites, sur [TONE3000](https://www.tone3000.com/). **LOAD NAM** charge le fichier ; la capture remplace le préampli et l'ampli de puissance, et les potards de tonalité, Contour, Deep, Bright, le baffle et le DI Blend restent actifs après elle. **Gain** règle le niveau d'entrée de la capture (±12 dB). Le volume est normalisé d'après la mesure stockée dans le fichier, comme dans le plugin NAM d'origine. Une capture est faite pour une fréquence d'échantillonnage (souvent 48 kHz) : si la carte son tourne à une autre fréquence, l'écran l'indique. Le chemin du fichier est sauvegardé avec les presets utilisateur et la session du DAW ; sans capture chargée, le signal passe tel quel.
+- **`BassAmp-x.y.z-Windows-x64-Setup.exe`** (recommended): installs the app, the VST3 plugin in `C:\Program Files\Common Files\VST3`, a Start menu shortcut and an uninstaller.
+- Or the zips: `Standalone` holds `Bass Amp.exe`, which runs without installing; `VST3` holds `Bass Amp.vst3`, to copy into `C:\Program Files\Common Files\VST3`.
 
-## Égaliseur
+The app isn't signed with a paid certificate, so Windows SmartScreen may show **"Windows protected your PC"** the first time. Click **More info**, then **Run anyway**. The `SHA256SUMS.txt` file of each release lets you check the download.
 
-Deux modes, avec un bouton ON pour le bypass :
+## Install (macOS)
 
-- **Basic** : graphique 9 bandes par octave (33 Hz à 8 kHz), ±12 dB, avec des faders.
-- **Advanced** : paramétrique 6 points (coupe-bas, shelf grave, deux bandes de médiums, shelf aigu, coupe-haut), ±18 dB. On glisse les points sur la courbe ; la molette règle le Q des médiums et le double-clic remet un point à zéro.
+Download the macOS zips from the [latest release](https://github.com/Weylland/bass-amp/releases/latest). It's a universal binary (Apple Silicon and Intel), for macOS 10.15 or later.
 
-Le passage d'un mode à l'autre se fait en fondu, sans clic. L'écran affiche la courbe de l'EQ par-dessus le spectre du son de sortie. L'EQ s'allume tout seul dès qu'on touche un fader ou un point. Les points de coupe-bas et coupe-haut se déplacent seulement à l'horizontale : ils n'ont pas de gain.
+- **Standalone**: drag `Bass Amp.app` into `Applications`.
+- **Plugins**: copy `Bass Amp.vst3` into `~/Library/Audio/Plug-Ins/VST3` and `Bass Amp.component` into `~/Library/Audio/Plug-Ins/Components` (for Logic and GarageBand).
 
-Coupes rapides, à droite de l'EQ, actives dans les deux modes :
-
-- **LOW CUT** coupe tout sous 80 Hz, **HIGH CUT** tout au-dessus de 5 kHz (filtres Linkwitz-Riley 24 dB/oct).
-- **KILL LOW**, **KILL MID** et **KILL HIGH** suppriment une bande entière (coupures à 250 Hz et 2,5 kHz), comme les kills d'une table de mixage DJ.
-
-## Effets
-
-- **Compresseur** avec **Mix** pour la compression parallèle.
-- **Octaver** : octave basse (**Sub**), octave haute (**Up**) et signal direct (**Dry**).
-- **Synth** : synthé de basse piloté par la note jouée, onde carrée ou dent de scie (**Wave**), filtre passe-bas résonant (**Cutoff**, **Reso**) ouvert par l'attaque (**Env**).
-- **Pitch** : transposition de -12 à +12 demi-tons (**Shift**), désaccord fin (**Detune**) et mélange (**Mix**), pour l'octave haute ou une quinte.
-- **Filter** : filtre passe-bas, passe-bande ou passe-haut en 12 ou 24 dB/oct (**Type**), fréquence (**Cutoff**), résonance (**Reso**) et LFO (**Rate**, **Depth**) pour les balayages.
-- **Envelope** (auto-wah) : filtre passe-bas, passe-bande ou passe-haut (**Type**), qui s'ouvre ou se ferme à l'attaque (**Sweep** Up/Down).
-- **Wah** : wah de basse, réglée au potard **Pedal** ou à la pédale d'expression MIDI, avec résonance et part de signal direct (**Clean**).
-- **Phaser** : 4 étages, vitesse, profondeur et réinjection (**Regen**).
-- **Flanger** stéréo : vitesse, profondeur, réinjection et mélange.
-- **Chorus** de basse : le chorus ne s'applique qu'au-dessus de 200 Hz, les graves restent centrés et fermes.
-- **Tremolo** : vitesse, profondeur et forme (**Shape**, de la sinusoïde au créneau).
-- **Delay** et **Reverb** : coupe-bas sur le signal d'effet pour ne pas brouiller les graves. **TAP** sur le delay règle le temps en tapant le tempo.
-- **LIMIT** (bloc LEVELS, actif par défaut) : limiteur de sortie à -1 dBFS, transparent tant que le son ne dépasse pas ce niveau.
-
-## Pedalboard
-
-- **+ ADD** ajoute une pédale (et l'allume), la croix en haut à droite d'une pédale la retire (et l'éteint).
-- On glisse une pédale pour changer sa place sur son pedalboard : le son suit l'ordre affiché.
-- L'ordre est sauvegardé avec les presets utilisateur et la session du DAW. Un preset d'usine remet l'ordre par défaut.
-
-## Pratique
-
-La rangée du bas :
-
-- **Player** : **LOAD** ouvre un fichier (WAV, AIFF, FLAC, OGG, MP3) pour jouer par-dessus, avec lecture, pause, stop, barre de position, boucle et volume. **RE-AMP** envoie le fichier dans l'entrée de la chaîne à la place de la basse, pour repasser une piste DI dans les pédales et l'ampli.
-- **Looper** : 4 pistes de 30 s pour construire un morceau en live. Sur un pad, le 1er clic enregistre, le 2e lance la boucle, puis chaque clic superpose une couche (**DUB**) ou revient à la lecture. **OPEN** ouvre le looper complet :
-  - **SYNC** : avec le métronome en marche, les boucles démarrent et finissent sur une mesure (l'enregistrement attend la mesure suivante). Sinon la première boucle donne la longueur que suivent les autres.
-  - **UNDO** / **REDO** sur la dernière prise ou la dernière couche.
-  - Par piste : **STOP**, **CLEAR**, **REV** (à l'envers), **HALF** (demi-vitesse, une octave plus bas) et **LEVEL**.
-  - **STOP ALL**, **CLEAR ALL**, et **EXPORT WAV** qui enregistre le mix des pistes dans `Documents/Bass Amp/Recordings`.
-  - Clic droit sur un pad ou un bouton du looper : **MIDI learn**, pour le piloter depuis un contrôleur (pad, note ou footswitch CC).
-- **Metronome** : tempo de 40 à 240 BPM au potard ou avec **TAP**, volume, et un voyant par temps. Le clic n'est jamais enregistré par **REC**.
-
-## MIDI
-
-- Clic droit sur un potard, un fader ou un interrupteur, puis **MIDI learn**, puis bouge un contrôle de ton contrôleur : le contrôle clignote en doré tant qu'il attend. Le même menu permet d'oublier l'assignation.
-- Un CC pilote n'importe quel réglage. Un pad (note) allume ou éteint un interrupteur, ou passe au choix suivant.
-- Les pads et les boutons du looper (pistes 1 à 4, undo, redo, stop all, clear all) se déclenchent par une note ou un CC qui passe au-dessus de 64.
-- Par défaut, le CC 11 (pédale d'expression) pilote la wah.
-- Les changements de programme chargent les presets d'usine.
-- Les assignations sont communes à tous les presets, dans `Bass Amp/MidiMap.xml` (dossier des données d'application). L'appli autonome ouvre toutes les entrées MIDI au lancement.
-
-## Presets
-
-24 presets d'usine, pensés autour des sons de référence : Tube 300 Rock, Tube 300 Ultra, Motown Flip Top, Fifties Tweed, Rock Punch 4x10, Slap Hi-Fi, Jazz Warm, Tube DI Studio, Tube DI Grit, Crossover Metal, Crossover Djent, Punk Pick, Fuzz Lead, Funk Envelope, Synth Octave, Dub Deep, Fretless Phase, Ambient Chorus, Wah Funk, Analog Synth, Filter Sweep, Octave Up Lead, Jet Flanger, Surf Tremolo. Ils sont équilibrés au même volume, à moins de 1 dB près.
-
-**Save** enregistre le son en cours dans `Documents/Bass Amp/Presets/<nom>.bassamp`. Les flèches passent d'un preset à l'autre. En VST3, les presets d'usine apparaissent aussi comme programmes dans le DAW.
-
-Chaque module a aussi ses presets, qui ne touchent que lui :
-
-- **AMP PRESETS** sous la tête : 11 réglages d'ampli et de baffle, équilibrés au même volume.
-- **PRESETS** dans l'EQ : Flat, Vocals, Electric Guitar, Acoustic Guitar, Round Bass, Slap Smile, Rock Growl, Fingerstyle Warm, Anti-Mud, Old Radio.
-- Le bouton à trois traits en haut à gauche de chaque pédale : 3 à 5 réglages pour cette pédale.
-
-## Installation (macOS)
-
-Télécharge les zips macOS de la [dernière release](https://github.com/Weylland/bass-amp/releases/latest). C'est un binaire universel (Apple Silicon et Intel), pour macOS 10.15 ou plus récent.
-
-- **Standalone** : glisse `Bass Amp.app` dans `Applications`.
-- **Plugins** : copie `Bass Amp.vst3` dans `~/Library/Audio/Plug-Ins/VST3` et `Bass Amp.component` dans `~/Library/Audio/Plug-Ins/Components` (pour Logic et GarageBand).
-
-L'appli n'est pas notarisée par Apple. Au premier lancement, macOS refuse de l'ouvrir : va dans **Réglages Système → Confidentialité et sécurité** et clique sur **Ouvrir quand même**. Pour les plugins, la commande suivante retire la quarantaine :
+The app isn't notarized by Apple. On first launch, macOS refuses to open it: go to **System Settings → Privacy & Security** and click **Open Anyway**. For the plugins, this command removes the quarantine:
 
 ```bash
 xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/VST3/"Bass Amp.vst3" ~/Library/Audio/Plug-Ins/Components/"Bass Amp.component"
 ```
 
-Sur Mac, l'entrée est coupée au premier lancement, car l'entrée par défaut est souvent le micro intégré. Choisis ta carte son dans **Options → Audio/MIDI Settings**, puis décoche **Mute audio input**. macOS demande aussi l'autorisation d'accès au micro : accepte-la, sinon la basse reste muette.
+On a Mac, the input is muted on first launch, because the default input is often the built-in microphone. Choose your interface in **Options → Audio/MIDI Settings**, then untick **Mute audio input**. macOS also asks for microphone access: allow it, or the bass stays silent.
+
+## Amp
+
+Preamp (tubes or transistors depending on the model), model voicing, tone section, then a power amp with sag. The whole amp runs 2x oversampled.
+
+| Model | Inspired by | Character |
+|---|---|---|
+| Italian Hi-Fi | Markbass Little Mark | Neutral, modern solid state, great for slap |
+| Super Valve | Ampeg SVT-CL | All-tube, warm low mids, rounded highs, sag |
+| Nordic Drive | Darkglass B7K / Microtubes | Clean lows, driven top end, gritty mids |
+| Tweed '59 | Fender Bassman 5F6-A | Passive tone stack modelled from the circuit (Yeh, Guitarix), round and vintage |
+| Flip Top '60s | Ampeg B-15 | Low-power tubes, the Motown sound |
+| West Coast 800 | Gallien-Krueger 800RB | Punchy solid state, 4 kHz highs, sharp attack |
+| Stomp DI | Tech 21 SansAmp Bass Driver | Studio DI preamp, from clean to grit |
+| NAM Capture | Your own capture (Neural Amp Modeler) | The sound of a real amp, captured by a neural network |
+
+The brands and models named belong to their owners. They only describe the targeted sound: Bass Amp isn't affiliated with any of these manufacturers and uses none of their samples.
+
+Amp controls:
+
+- **Gain**, **Bass**, **Middle** with adjustable frequency (**Freq**), **Treble** and **Master**. Freq has no effect on Tweed '59, whose passive tone stack has fixed frequencies: it's greyed out.
+- **Contour** scoops the mids around 380 Hz and opens the lows and highs, like the Markbass VPF.
+- **Deep** adds lows and removes 500 Hz. **Bright** adds highs.
+- **DI Blend** mixes the direct signal (before the amp) with the amp and cabinet, as in a studio.
+- **Lo Cut** (20 to 250 Hz) and **Hi Cut** (1.5 to 20 kHz), at the top of the head: high-pass and low-pass filters on the amp output, to tighten the lows or soften the highs.
+
+Cabinets: 8x10, 4x10, 1x15, 2x12, 2x10 Hi-Fi, Off (DI only), or **IR File**. **LOAD IR** loads a cabinet impulse response (WAV, AIFF, FLAC) and switches the cabinet to IR File. The file path is saved with user presets and the DAW session. With no IR loaded, IR File lets the signal through unchanged.
+
+The models are matched to the same perceived loudness at equal gain (less than 1 dB apart).
+
+**NAM Capture** plays a `.nam` capture from [Neural Amp Modeler](https://www.neuralampmodeler.com/): thousands of free ones are on [TONE3000](https://www.tone3000.com/). **LOAD NAM** loads the file; the capture replaces the preamp and power amp, and the tone controls, Contour, Deep, Bright, the cabinet and DI Blend stay active after it. **Gain** sets the capture's input level (±12 dB). The loudness is normalised from the measurement stored in the file, as in the original NAM plugin. A capture is made for one sample rate (often 48 kHz): if the interface runs at another rate, the screen says so. The file path is saved with user presets and the DAW session; with no capture loaded, the signal goes through unchanged.
+
+## Equalizer
+
+Two modes, with an ON button for bypass:
+
+- **Basic**: 9-band octave graphic EQ (33 Hz to 8 kHz), ±12 dB, with faders.
+- **Advanced**: 6-point parametric EQ (low cut, low shelf, two mid bands, high shelf, high cut), ±18 dB. Drag the points on the curve; the mouse wheel sets the mids' Q and a double-click resets a point.
+
+Switching modes crossfades, without clicks. The screen shows the EQ curve over the output spectrum. The EQ turns itself on when you touch a fader or a point. The low and high cut points only move sideways: they have no gain.
+
+Quick cuts, right of the EQ, active in both modes and shown on the curve:
+
+- **CUT 80 HZ** removes everything below 80 Hz, **CUT 5 KHZ** everything above 5 kHz (Linkwitz-Riley 24 dB/oct filters).
+- **KILL LOW**, **KILL MID** and **KILL HIGH** remove a whole band (split at 250 Hz and 2.5 kHz), like the kills of a DJ mixer.
+
+## Effects
+
+- **Compressor** with **Mix** for parallel compression.
+- **Octaver**: low octave (**Sub**), high octave (**Up**) and direct signal (**Dry**).
+- **Synth**: bass synth driven by the played note, square or saw wave (**Wave**), resonant low-pass filter (**Cutoff**, **Reso**) opened by the attack (**Env**).
+- **Pitch**: shift from -12 to +12 semitones (**Shift**), fine detune (**Detune**) and mix (**Mix**), for an octave up or a fifth.
+- **Filter**: low-pass, band-pass or high-pass filter at 12 or 24 dB/oct (**Type**), frequency (**Cutoff**), resonance (**Reso**) and an LFO (**Rate**, **Depth**) for sweeps.
+- **Envelope** (auto-wah): low-pass, band-pass or high-pass filter (**Type**) that opens or closes on the attack (**Sweep** Up/Down).
+- **Wah**: bass wah, set with the **Pedal** knob or a MIDI expression pedal, with resonance and some direct signal (**Clean**).
+- **Phaser**: 4 stages, rate, depth and feedback (**Regen**).
+- Stereo **Flanger**: rate, depth, feedback and mix.
+- Bass **Chorus**: the chorus only applies above 200 Hz, the lows stay centred and tight.
+- **Tremolo**: rate, depth and shape (**Shape**, from sine to square).
+- **Delay** and **Reverb**: low cut on the effect signal to keep the lows clear. **TAP** on the delay sets the time by tapping the tempo.
+- **LIMIT** (LEVELS block, on by default): output limiter at -1 dBFS, transparent while the sound stays below that level.
+
+A knob that has no effect in the current setting is greyed out: for example, the LFO **Rate** while **Depth** is at zero.
+
+## Pedalboard
+
+- **+ ADD** adds a pedal (and turns it on), the cross at the top right of a pedal removes it (and turns it off).
+- Drag a pedal to move it on its pedalboard: the sound follows the order shown.
+- The order is saved with user presets and the DAW session. A factory preset restores the default order.
+
+## Practice
+
+The bottom row:
+
+- **Player**: **LOAD** opens a file (WAV, AIFF, FLAC, OGG, MP3) to play along, with play, pause, stop, position bar, loop and volume. **RE-AMP** feeds the file into the chain input instead of the bass, to run a DI track through the pedals and the amp again.
+- **Looper**: 4 tracks of 30 s to build a song live. On a pad, the 1st click records, the 2nd plays the loop, then each click adds a layer (**DUB**) or goes back to playback. **OPEN** opens the full looper:
+  - **SYNC**: with the metronome running, loops start and end on a bar (recording waits for the next bar). Otherwise the first loop sets the length the others follow.
+  - **UNDO** / **REDO** on the last take or the last layer.
+  - Per track: **STOP**, **CLEAR**, **REV** (reverse), **HALF** (half speed, one octave down) and **LEVEL**.
+  - **STOP ALL**, **CLEAR ALL**, and **EXPORT WAV**, which saves the track mix in `Documents/Bass Amp/Recordings`.
+  - Right-click a pad or a looper button: **MIDI learn**, to drive it from a controller (pad, note or CC footswitch).
+- **Metronome**: tempo from 40 to 240 BPM with the knob or **TAP**, volume, and one light per beat. The click is never recorded by **REC**. In a DAW, the metronome and the looper follow the project tempo and bars.
+
+## MIDI
+
+- Right-click a knob, fader or switch, then **MIDI learn**, then move a control on your controller: the control blinks gold while it waits. The same menu forgets the mapping.
+- A small gold dot marks every control driven by MIDI.
+- A CC drives any setting. A pad (note) turns a switch on or off, or steps to the next choice.
+- The pads and the looper buttons (tracks 1 to 4, undo, redo, stop all, clear all) fire on a note or a CC going above 64.
+- By default, CC 11 (expression pedal) drives the wah.
+- Program changes load the factory presets.
+- Mappings are shared by all presets, in `Bass Amp/MidiMap.xml` (application data folder). The standalone app opens every MIDI input at launch.
+
+## Presets
+
+24 factory presets, built around reference sounds: Super Valve Rock, Super Valve Ultra, Soul Flip Top, Fifties Tweed, Rock Punch 4x10, Slap Hi-Fi, Jazz Warm, Stomp DI Studio, Stomp DI Grit, Crossover Metal, Crossover Djent, Punk Pick, Fuzz Lead, Funk Envelope, Synth Octave, Dub Deep, Fretless Phase, Ambient Chorus, Wah Funk, Analog Synth, Filter Sweep, Octave Up Lead, Jet Flanger, Surf Tremolo. They're matched in loudness, within 1 dB.
+
+**SAVE** saves the current sound in `Documents/Bass Amp/Presets/<name>.bassamp`. The arrows step through the presets. In VST3, the factory presets also show up as programs in the DAW.
+
+A gold **\*** before the preset name means the sound was changed since it was loaded. Loading another preset then asks for confirmation, so changes aren't lost by accident.
+
+Each module also has its own presets, which only touch it:
+
+- **PRESETS** under the head: 11 amp and cabinet settings, matched in loudness.
+- **PRESETS** in the EQ: Flat, Vocals, Electric Guitar, Acoustic Guitar, Round Bass, Slap Smile, Rock Growl, Fingerstyle Warm, Anti-Mud, Old Radio.
+- The three-line button at the top left of each pedal: 3 to 5 settings for that pedal.
+
+## Usage
+
+- Hover an element (pedal, knob, button, screen) for a second: a bubble explains what it's for and how to use it.
+- Double-click a knob: back to its default value. Hover or drag: the value shows.
+- **Ctrl+Z** (**Cmd+Z** on Mac) undoes the last change, **Ctrl+Shift+Z** or **Ctrl+Y** redoes it.
+- The window resizes (bottom right corner) from 70 % to 160 %, and opens at the size of the screen.
+- Full screen (standalone app): the button at the top right or **F11**, **Esc** to go back to a window.
+- Language: the button left of full screen (English, Français, Español, Deutsch, Italiano, Português). Help bubbles, messages and menus are translated; control names stay in English, as on real gear. By default, the system language.
+- **IN CLIP**: the interface input clips, lower the interface gain. **OUT CLIP**: the output clips, lower the Master.
+- Click the LEVELS block: clears the CLIP lights.
+- **MUTE** in the tuner silences the output while tuning. The mouse wheel on the tuner changes the reference pitch (A = 430 to 450 Hz), a double-click goes back to 440 Hz.
+- **REC** records the output sound (effects included) as a 24-bit stereo WAV in `Documents/Bass Amp/Recordings`. **STOP** finishes the file, **FILES** opens the folder on the last recording. Writing to disk happens on a separate thread, so it adds no latency or crackles.
+- The version number is shown next to the logo.
+
+## Latency
+
+- Steinberg's ASIO SDK (GPLv3) is in `libs/asiosdk`: ASIO support is built in automatically.
+- On first launch, the app picks the ASIO driver of the interface already in use (generic drivers such as ASIO4ALL or Realtek come last), with a 64-sample buffer. Without ASIO, it uses exclusive WASAPI.
+- With ASIO, input and output are on the same interface: plug your headphones or speakers into the interface.
+- The ASIO buffer size is set in the driver panel (**Options → Audio/MIDI Settings → Control Panel**).
+- The line at the top right shows the driver, the buffer and the estimated round-trip latency.
+- No effect adds latency: no look-ahead, minimum-phase IIR oversampling, and the tuner analyses the signal off the audio thread.
 
 ## Build
 
-Windows : Visual Studio 2019 Build Tools (C++), CMake + Ninja (`pip install --user cmake ninja`).
+Windows: Visual Studio 2019 Build Tools (C++), CMake + Ninja (`pip install --user cmake ninja`).
 
 ```bat
 git submodule update --init --recursive
 build.bat
 ```
 
-Sorties dans `build\BassAmp_artefacts\Release\` (`Standalone\Bass Amp.exe` et `VST3\Bass Amp.vst3`).
+Output in `build\BassAmp_artefacts\Release\` (`Standalone\Bass Amp.exe` and `VST3\Bass Amp.vst3`). The installer is built with [Inno Setup](https://jrsoftware.org/isinfo.php) from `installer\BassAmp.iss`.
 
-macOS : Xcode (outils en ligne de commande) et CMake.
+macOS: Xcode (command line tools) and CMake.
 
 ```bash
 git submodule update --init --recursive
@@ -139,33 +192,12 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;
 cmake --build build --parallel
 ```
 
-La CI GitHub Actions compile et teste les deux plateformes à chaque push. Un tag `v*` publie automatiquement les zips dans une release.
+GitHub Actions CI builds and tests both platforms on every push. A `v*` tag publishes the zips and the Windows installer in a release.
 
-Tests DSP (accordeur, effets, modèles d'ampli, tone stack, baffles et IR, égaliseur, limiteur, ordre des pédales, MIDI, looper, métronome, lecteur, captures NAM, presets, stabilité de la chaîne) : `test.bat`.
-`test.bat --snapshot ui.png [preset]` exporte une capture de l'interface, avec le preset d'usine choisi.
-`test.bat --artwork dossier` exporte l'icône (1024 px) et l'écran de démarrage. L'icône des builds est `Resources/icon.png`.
+DSP tests (tuner, effects, amp models, tone stack, cabinets and IRs, equalizer, limiter, pedal order, MIDI, looper, metronome, player, NAM captures, presets, undo, translations, chain stability): `test.bat`.
+`test.bat --snapshot ui.png [preset]` exports a picture of the interface, with the chosen factory preset.
+`test.bat --artwork folder` exports the icon (1024 px) and the splash screen. The build icon is `Resources/icon.png`.
 
-## Latence
+## License
 
-- Le SDK ASIO de Steinberg (GPLv3) est dans `libs/asiosdk` : le support ASIO est compilé automatiquement.
-- Au premier lancement, l'appli choisit le pilote ASIO de l'interface déjà utilisée (les pilotes génériques comme ASIO4ALL ou Realtek passent en dernier), avec un buffer de 64 samples. Sans ASIO, elle passe en WASAPI exclusif.
-- En ASIO, l'entrée et la sortie sont sur la même interface : branche ton casque ou tes enceintes sur la carte son.
-- La taille du buffer ASIO se règle dans le panneau du pilote (**Options → Audio/MIDI Settings → Control Panel**).
-- La ligne en haut à droite affiche le pilote, le buffer et la latence aller-retour estimée.
-- Aucun effet n'ajoute de latence : pas de look-ahead, oversampling en IIR à phase minimale, et l'accordeur analyse le signal hors du thread audio.
-
-## Utilisation
-
-- Survole un élément (pédale, potard, bouton, écran) pendant une seconde : une bulle explique à quoi il sert et comment l'utiliser.
-- Double-clic sur un potard : retour à sa valeur par défaut. Survol ou glisser : la valeur s'affiche.
-- La fenêtre se redimensionne (coin en bas à droite) de 60 % à 160 %, et s'ouvre à la taille de l'écran.
-- Plein écran (appli autonome) : le bouton en haut à droite ou **F11**, **Échap** pour revenir en fenêtre.
-- Langue : le bouton à gauche du plein écran (English, Français, Español, Deutsch, Italiano, Português). Les bulles d'aide, les messages et les menus sont traduits ; les noms des réglages restent en anglais, comme sur le vrai matériel. Par défaut, la langue du système.
-- **IN CLIP** : l'entrée de la carte son sature, baisse le gain de l'interface. **OUT CLIP** : la sortie sature, baisse le Master.
-- Clic sur le bloc LEVELS : efface les témoins CLIP.
-- **MUTE** dans l'accordeur coupe la sortie pendant l'accordage.
-- **REC** enregistre le son de sortie (effets compris) en WAV stéréo 24 bits dans `Documents/Bass Amp/Recordings`. **STOP** termine le fichier, **Files** ouvre le dossier sur le dernier enregistrement. L'écriture sur disque se fait sur un thread séparé, donc elle n'ajoute ni latence ni craquement.
-
-## Licence
-
-AGPLv3 (voir `LICENSE`), comme l'impose l'usage gratuit de JUCE. Le SDK ASIO dans `libs/asiosdk` est utilisé sous sa licence GPLv3. [NeuralAmpModelerCore](https://github.com/sdatkinson/NeuralAmpModelerCore) (MIT) et [Eigen](https://eigen.tuxfamily.org/) (MPL 2.0) sont dans `libs/NeuralAmpModelerCore`.
+AGPLv3 (see `LICENSE`), as required by JUCE's free licence. The ASIO SDK in `libs/asiosdk` is used under its GPLv3 licence. [NeuralAmpModelerCore](https://github.com/sdatkinson/NeuralAmpModelerCore) (MIT) and [Eigen](https://eigen.tuxfamily.org/) (MPL 2.0) are in `libs/NeuralAmpModelerCore`.

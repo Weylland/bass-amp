@@ -55,6 +55,18 @@ juce::String MidiLearn::idOf (int index) const
                                            : juce::String (actions[(size_t) index - parameters.size()].first);
 }
 
+juce::StringArray MidiLearn::getMappedIds() const
+{
+    juce::StringArray ids;
+
+    for (const auto* table : { &controllers, &notes })
+        for (const auto& index : *table)
+            if (const auto mapped = index.load(); mapped >= 0)
+                ids.addIfNotAlreadyThere (idOf (mapped));
+
+    return ids;
+}
+
 juce::String MidiLearn::getName (const juce::String& id) const
 {
     const auto index = indexOf (id);

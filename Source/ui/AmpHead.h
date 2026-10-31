@@ -3,12 +3,13 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "../PluginProcessor.h"
+#include "PresetsButton.h"
 #include "ToggleSwitch.h"
 
 // The amp head: model badge and selector, glowing valves (or a grille on solid-state
 // models, or the capture screen of the NAM model), cabinet and impulse response choice, and
 // the control panel. Its look follows the selected model.
-class AmpHead : public juce::Component, private juce::Timer
+class AmpHead : public juce::Component, public juce::TooltipClient, private juce::Timer
 {
 public:
     explicit AmpHead (BassAmpProcessor&);
@@ -16,6 +17,9 @@ public:
 
     void paint (juce::Graphics&) override;
     void resized() override;
+
+    // Explains the pilot lamp, which is painted rather than a component.
+    juce::String getTooltip() override;
 
 private:
     struct Knob
@@ -59,7 +63,7 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> modelAttachment, cabAttachment;
     juce::TextButton irButton { "LOAD IR" };
     juce::TextButton captureButton { "LOAD NAM" };
-    juce::TextButton presetsButton { "AMP PRESETS" };
+    PresetsButton presetsButton;
     std::unique_ptr<juce::FileChooser> fileChooser;
 
     juce::Rectangle<int> frameArea, topArea, badgeArea, ventArea, cabArea, panelArea, pilotArea, switchArea;

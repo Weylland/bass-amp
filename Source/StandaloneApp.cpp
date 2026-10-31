@@ -170,6 +170,7 @@ public:
         if (auto* peer = splash->getPeer())
             peer->performAnyPendingRepaintsNow();
 
+        Language::applyToJuce();
         auto* settings = appProperties.getUserSettings();
         const auto needsLowLatencySetup = ! settings->getBoolValue (lowLatencySetupKey, false);
 
@@ -235,6 +236,17 @@ private:
 
         if (processor == nullptr)
             return;
+
+        // JUCE draws the title bar's Options button without translating it.
+        const auto options = Language::tr ("Options");
+
+        for (auto* child : mainWindow->getChildren())
+            if (auto* button = dynamic_cast<juce::TextButton*> (child); button != nullptr && button->getButtonText() != options)
+                for (const auto& info : Language::available)
+                    if (button->getButtonText() == (info.translations().messages.count ("Options") > 0
+                                                        ? juce::String::fromUTF8 (info.translations().messages.at ("Options"))
+                                                        : juce::String ("Options")))
+                        button->setButtonText (options);
 
         auto* device = mainWindow->getDeviceManager().getCurrentAudioDevice();
         processor->audioDeviceInfo = device != nullptr ? describe (*device) : Language::tr ("No audio device: Options > Audio/MIDI Settings");

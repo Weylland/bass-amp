@@ -14,25 +14,25 @@ const std::vector<FactoryPreset>& getFactoryPresets()
 {
     static const std::vector<FactoryPreset> presets {
         // Classic tube rock: big 8x10, low-mid push from the mid selector at 450 Hz.
-        { "Tube 300 Rock", {
+        { "Super Valve Rock", {
             { ampModel, tube300 }, { ampCab, cab810 }, { ampGain, 5.0f }, { ampBass, 3.0f }, { ampMid, 2.0f },
             { ampMidFreq, 450.0f }, { ampTreble, -1.0f }, { ampBlend, 0.3f }, { ampMaster, -3.5f },
             { compOn, on }, { compThreshold, -18.0f }, { compRatio, 3.0f }, { compAttack, 15.0f }, { compMakeup, 4.0f } } },
 
         // The same head with both voicing switches: deep lows, scooped low-mids, sparkling top.
-        { "Tube 300 Ultra", {
+        { "Super Valve Ultra", {
             { ampModel, tube300 }, { ampCab, cab810 }, { ampGain, 4.0f }, { ampBass, 2.0f }, { ampTreble, 2.0f },
             { ampDeep, on }, { ampBright, on }, { ampBlend, 0.3f }, { ampMaster, -4.0f },
             { compOn, on }, { compThreshold, -18.0f }, { compRatio, 3.0f }, { compAttack, 15.0f }, { compMakeup, 4.0f } } },
 
         // Small studio tube amp, flatwound thump: round lows, treble rolled off, slow compressor.
-        { "Motown Flip Top", {
+        { "Soul Flip Top", {
             { ampModel, flipTop }, { ampCab, cab115 }, { ampGain, 3.0f }, { ampBass, 3.0f }, { ampMid, 1.0f },
             { ampMidFreq, 300.0f }, { ampTreble, -6.0f }, { ampBlend, 0.15f }, { ampMaster, -4.0f },
             { compOn, on }, { compThreshold, -20.0f }, { compRatio, 3.0f }, { compAttack, 25.0f }, { compRelease, 300.0f },
             { compMakeup, 4.0f } } },
 
-        // Tweed amp pushed into break-up through a 2x12.
+        // Tweed '59 pushed into break-up through a 2x12.
         { "Fifties Tweed", {
             { ampModel, tweed }, { ampCab, cab212 }, { ampGain, 6.5f }, { ampBass, 6.0f }, { ampMid, 2.0f },
             { ampTreble, 2.0f }, { ampBlend, 0.25f }, { ampMaster, -2.2f } } },
@@ -60,18 +60,18 @@ const std::vector<FactoryPreset>& getFactoryPresets()
             { compOn, on }, { compThreshold, -20.0f }, { compRatio, 2.5f }, { compAttack, 20.0f }, { compMakeup, 3.0f } } },
 
         // Tube-emulation DI straight to the desk, as on countless records.
-        { "Tube DI Studio", {
+        { "Stomp DI Studio", {
             { ampModel, tubeDi }, { ampCab, cabOff }, { ampGain, 4.0f }, { ampBass, 2.0f }, { ampMid, 2.0f },
             { ampMidFreq, 1000.0f }, { ampTreble, 1.0f }, { ampMaster, -4.1f },
             { compOn, on }, { compThreshold, -18.0f }, { compRatio, 3.0f }, { compAttack, 10.0f }, { compMakeup, 4.0f } } },
 
         // The same DI driven hard for punk and garage rock.
-        { "Tube DI Grit", {
+        { "Stomp DI Grit", {
             { ampModel, tubeDi }, { ampCab, cab410 }, { ampGain, 7.0f }, { ampBass, 1.0f }, { ampMid, 3.0f },
             { ampMidFreq, 800.0f }, { ampTreble, 2.0f }, { ampBlend, 0.35f }, { ampMaster, 0.1f },
             { gateOn, on }, { gateThreshold, -62.0f } } },
 
-        // Crossover preamp: tight clean lows under a growling top, upper-mid attack from the EQ.
+        // Nordic Drive crossover preamp: tight clean lows under a growling top, upper-mid attack from the EQ.
         { "Crossover Metal", {
             { ampModel, crossover }, { ampCab, cab410 }, { ampGain, 7.0f }, { ampBass, 2.0f }, { ampMid, 3.0f },
             { ampMidFreq, 1000.0f }, { ampTreble, 3.0f }, { ampBlend, 0.35f }, { ampMaster, -2.2f },
@@ -171,7 +171,7 @@ const std::vector<FactoryPreset>& getFactoryPresets()
             { compOn, on }, { compThreshold, -20.0f }, { compRatio, 4.0f }, { compMakeup, 5.0f },
             { flangerOn, on }, { flangerRate, 0.2f }, { flangerDepth, 0.8f }, { flangerFeedback, 0.6f }, { flangerMix, 0.6f } } },
 
-        // Tweed amp with tremolo and spring-like room.
+        // Tweed '59 with tremolo and spring-like room.
         { "Surf Tremolo", {
             { ampModel, tweed }, { ampCab, cab212 }, { ampGain, 4.0f }, { ampBass, 5.0f }, { ampMid, 3.0f },
             { ampTreble, 4.0f }, { ampBlend, 0.25f }, { ampMaster, 1.2f },

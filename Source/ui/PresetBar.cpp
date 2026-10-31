@@ -1,4 +1,5 @@
 #include "PresetBar.h"
+#include "AmpLookAndFeel.h"
 #include "Help.h"
 #include "../i18n/Language.h"
 
@@ -6,7 +7,7 @@ PresetBar::PresetBar (PresetManager& presetManager)
     : presets (presetManager)
 {
     presetBox.setTextWhenNothingSelected ("Preset");
-    presetBox.onChange = [this] { loadItem (presetBox.getSelectedId()); };
+    presetBox.onChange = [this] { confirmAndLoad (presetBox.getSelectedId()); };
 
     previousButton.onClick = [this] { step (-1); };
     nextButton.onClick = [this] { step (1); };
@@ -57,6 +58,8 @@ void PresetBar::refreshList()
         if (userPresets[i].getFileNameWithoutExtension() == shownName)
             selectedId = numFactory + i + 1;
 
+    loadedItemId = selectedId;
+
     if (selectedId > 0)
         presetBox.setSelectedId (selectedId, juce::dontSendNotification);
     else
@@ -67,6 +70,43 @@ void PresetBar::timerCallback()
 {
     if (presets.getCurrentPresetName() != shownName)
         refreshList();
+
+    if (const auto nowModified = presets.isModified(); nowModified != modified)
+    {
+        modified = nowModified;
+        repaint();
+    }
+}
+
+void PresetBar::confirmAndLoad (int itemId)
+{
+    if (itemId == loadedItemId && ! modified)
+        return;
+
+    if (! modified)
+    {
+        loadItem (itemId);
+        return;
+    }
+
+    auto* window = new juce::AlertWindow (Language::tr ("Unsaved changes"),
+                                          Language::tr ("Your changes to this sound will be lost.") + "\n\n" + shownName,
+                                          juce::MessageBoxIconType::NoIcon, this);
+    window->addButton (Language::tr ("Load anyway"), 1, juce::KeyPress (juce::KeyPress::returnKey));
+    window->addButton (Language::tr ("Cancel"), 0, juce::KeyPress (juce::KeyPress::escapeKey));
+
+    window->enterModalState (true, juce::ModalCallbackFunction::create ([safeThis = SafePointer<PresetBar> (this), itemId] (int result)
+    {
+        if (safeThis == nullptr)
+            return;
+
+        if (result == 1)
+            safeThis->loadItem (itemId);
+        else if (safeThis->loadedItemId > 0)
+            safeThis->presetBox.setSelectedId (safeThis->loadedItemId, juce::dontSendNotification);
+        else
+            safeThis->presetBox.setText (safeThis->shownName, juce::dontSendNotification);
+    }), true);
 }
 
 void PresetBar::loadItem (int itemId)
@@ -79,6 +119,9 @@ void PresetBar::loadItem (int itemId)
         presets.loadUserPreset (userPresets[itemId - numFactory - 1]);
 
     shownName = presets.getCurrentPresetName();
+    loadedItemId = itemId;
+    modified = false;
+    repaint();
 }
 
 void PresetBar::step (int delta)
@@ -102,6 +145,16 @@ void PresetBar::askNameAndSave()
             && safeThis->presets.saveUserPreset (window->getTextEditorContents ("name")).existsAsFile())
             safeThis->refreshList();
     }), true);
+}
+
+void PresetBar::paintOverChildren (juce::Graphics& g)
+{
+    if (! modified)
+        return;
+
+    g.setColour (Palette::gold);
+    g.setFont (Fonts::display (20.0f));
+    g.drawText ("*", presetBox.getBounds().withTrimmedRight (22).removeFromRight (16), juce::Justification::centred);
 }
 
 void PresetBar::resized()

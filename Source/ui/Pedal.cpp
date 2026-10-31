@@ -37,6 +37,21 @@ Pedal::Pedal (juce::AudioProcessorValueTreeState& stateToUse, PedalId pedalId, c
         labels.add (spec.label.toUpperCase());
     }
 
+    for (size_t i = 0; i < knobs.size(); ++i)
+    {
+        if (knobs[i].activeWhen == nullptr)
+            continue;
+
+        for (size_t j = 0; j < knobs.size(); ++j)
+            if (juce::String (knobs[j].paramId) == knobs[i].activeWhen)
+            {
+                dependentKnobs.emplace_back (sliders[(int) i], sliders[(int) j]);
+                sliders[(int) j]->onValueChange = [this] { updateActiveKnobs(); };
+            }
+    }
+
+    updateActiveKnobs();
+
     footswitch.onStateChange = [this] { repaint(); };
     addAndMakeVisible (footswitch);
     footswitchAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (state, toggleParamId, footswitch);
@@ -66,12 +81,16 @@ void Pedal::addTapTempo (const char* timeParamId)
     resized();
 }
 
-juce::String Pedal::labelFor (int knob) const
+void Pedal::updateActiveKnobs()
 {
-    if (auto* choice = choices[(size_t) knob])
-        return choice->getCurrentChoiceName().toUpperCase();
+    for (auto [knob, needed] : dependentKnobs)
+    {
+        const auto active = needed->getValue() > needed->getMinimum();
+        knob->setEnabled (active);
+        knob->setAlpha (active ? 1.0f : 0.35f);
+    }
 
-    return labels[knob];
+    repaint();
 }
 
 juce::Rectangle<float> Pedal::enclosure() const
@@ -121,18 +140,40 @@ void Pedal::paint (juce::Graphics& g)
 
     for (int i = 0; i < labels.size(); ++i)
     {
-        g.setColour (ink.withAlpha (choices[(size_t) i] != nullptr ? 1.0f : 0.85f));
-        g.drawFittedText (labelFor (i), labelAreas[i].reduced (2, 0), juce::Justification::centred, 1, 0.55f);
+        g.setColour (ink.withAlpha (0.85f * sliders[i]->getAlpha()));
+        g.drawFittedText (labels[i], labelAreas[i].reduced (2, 0), juce::Justification::centred, 1, 0.55f);
     }
 
     g.setColour (ink);
     g.setFont (Fonts::display (24.0f).withKerningFactor (0.04f));
     g.drawFittedText (name, nameArea.withHeight (26), juce::Justification::centred, 1, 0.8f);
     g.setColour (ink.withAlpha (0.6f));
-    g.setFont (Fonts::label (10.0f));
+    g.setFont (Fonts::label (11.0f));
     g.drawFittedText (subtitle.toUpperCase(), nameArea.withTrimmedTop (26), juce::Justification::centredTop, 1, 0.8f);
 
     Draw::led (g, ledCentre, 4.5f, Palette::ledRed, footswitch.getToggleState());
+}
+
+void Pedal::paintOverChildren (juce::Graphics& g)
+{
+    g.setFont (Fonts::label (9.5f));
+
+    for (int i = 0; i < sliders.size(); ++i)
+    {
+        auto* choice = choices[(size_t) i];
+
+        if (choice == nullptr)
+            continue;
+
+        const auto knob = sliders[i]->getBounds().toFloat();
+        const auto text = choice->getCurrentChoiceName().toUpperCase();
+        const auto chip = juce::Rectangle<float> (juce::jmin (knob.getWidth() + 6.0f, juce::GlyphArrangement::getStringWidth (g.getCurrentFont(), text) + 10.0f), 13.0f)
+                              .withCentre ({ knob.getCentreX(), knob.getBottom() - 1.0f });
+        g.setColour (juce::Colours::black.withAlpha (0.72f));
+        g.fillRoundedRectangle (chip, 3.0f);
+        g.setColour (Palette::gold);
+        g.drawFittedText (text, chip.toNearestInt().reduced (2, 0), juce::Justification::centred, 1, 0.7f);
+    }
 }
 
 void Pedal::resized()
@@ -205,14 +246,8 @@ void Pedal::PresetsButton::paintButton (juce::Graphics& g, bool shouldDrawButton
     g.setColour (juce::Colours::black.withAlpha (shouldDrawButtonAsHighlighted ? 0.55f : 0.25f));
     g.fillEllipse (bounds);
 
-    const auto lines = bounds.reduced (bounds.getWidth() * 0.3f);
     g.setColour (juce::Colours::white.withAlpha (shouldDrawButtonAsHighlighted ? 0.95f : 0.55f));
-
-    for (auto row = 0; row < 3; ++row)
-    {
-        const auto y = lines.getY() + lines.getHeight() * (float) row / 2.0f;
-        g.drawLine (lines.getX(), y, lines.getRight(), y, 1.4f);
-    }
+    ::PresetsButton::drawIcon (g, bounds.reduced (bounds.getWidth() * 0.3f));
 }
 
 void Pedal::RemoveButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool)

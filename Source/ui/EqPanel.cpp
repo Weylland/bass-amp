@@ -33,9 +33,9 @@ EqPanel::EqPanel (BassAmpProcessor& processorToUse)
 
     using Cut = std::pair<const char*, const char*>;
 
-    for (const auto& [paramId, label] : { Cut { ParamIds::cutLow, "LOW CUT" }, Cut { ParamIds::killLow, "KILL LOW" },
+    for (const auto& [paramId, label] : { Cut { ParamIds::cutLow, "CUT 80 HZ" }, Cut { ParamIds::killLow, "KILL LOW" },
                                           Cut { ParamIds::killMid, "KILL MID" }, Cut { ParamIds::killHigh, "KILL HIGH" },
-                                          Cut { ParamIds::cutHigh, "HIGH CUT" } })
+                                          Cut { ParamIds::cutHigh, "CUT 5 KHZ" } })
     {
         auto* toggle = cutSwitches.add (new ToggleSwitch (label));
         toggle->setComponentID (paramId);
@@ -89,7 +89,7 @@ void EqPanel::resized()
     header.removeFromRight (4);
     basicButton.setBounds (header.removeFromRight (70).withSizeKeepingCentre (70, 24));
     header.removeFromRight (12);
-    presetsButton.setBounds (header.removeFromRight (78).withSizeKeepingCentre (78, 24));
+    presetsButton.setBounds (header.removeFromRight (100).withSizeKeepingCentre (100, 24));
     titleArea = header;
 
     area.removeFromTop (8);

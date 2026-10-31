@@ -9,6 +9,7 @@
 // EQ screen: the output spectrum behind the EQ response curve. Basic mode shows one fader
 // per graphic band; advanced mode has draggable nodes (drag for frequency and gain,
 // mouse wheel for width, double-click to reset). Touching a fader or a node switches the EQ on.
+// The curve includes the quick cuts, which work even with the EQ off.
 // Its tooltip explains the node under the mouse.
 class EqDisplay : public juce::Component, public juce::TooltipClient
 {

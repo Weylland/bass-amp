@@ -95,6 +95,14 @@ jobs:
                           archive.write(path, os.path.relpath(path, folder).replace(os.sep, "/"))
           EOF
 
+      - name: Installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          & $iscc /DVersion=$env:VERSION /DArtefacts="$env:GITHUB_WORKSPACE\build\BassAmp_artefacts\Release" installer\BassAmp.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - uses: actions/upload-artifact@v4
         with:
           name: windows
@@ -115,7 +123,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cd dist
-          sha256sum *.zip > SHA256SUMS.txt
+          sha256sum *.zip *.exe > SHA256SUMS.txt
           if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" ./* --clobber --repo "$GITHUB_REPOSITORY"
           else

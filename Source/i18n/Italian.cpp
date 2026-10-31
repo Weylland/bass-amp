@@ -107,7 +107,7 @@ const Translations& italianTranslations()
             { "amp_bass", "BASS\nBasse: rotondità e peso." },
             { "amp_mid", "MIDDLE\nMedi: ciò che fa uscire il basso nel mix. Abbassarli dà un suono scavato, alzarli un suono che taglia." },
             { "amp_mid_freq", "FREQ\nFrequenza su cui agisce Middle: grave (200 Hz) per il corpo, alta (1-3 kHz) per l'attacco. "
-                              "Inattivo sul Tweed, il cui circuito fissa le frequenze." },
+                              "Inattivo sul Tweed '59, il cui circuito fissa le frequenze." },
             { "amp_treble", "TREBLE\nAcuti: chiarezza e rumori delle corde." },
             { "amp_master", "MASTER\nVolume generale dell'amplificatore. Se la spia OUT CLIP si accende, abbassalo." },
             { "amp_blend", "DI BLEND\nMescola il suono diretto del basso (prima dell'ampli) con ampli e cassa, come in studio: "
@@ -120,13 +120,13 @@ const Translations& italianTranslations()
             { "amp_high_cut", "HI CUT\nTaglia gli acuti all'uscita dell'ampli, per addolcire un suono troppo brillante o una distorsione che graffia." },
 
             // Amp models
-            { "model.Hi-Fi", "HI-FI\nAmpli a transistor neutro e moderno, ispirato al Markbass Little Mark. Veloce e preciso, ideale per slap e funk." },
-            { "model.Tube 300", "TUBE 300\nTutto valvolare da 300 W, ispirato all'Ampeg SVT: medio-bassi caldi, acuti rotondi, il suono rock." },
-            { "model.Crossover", "CROSSOVER\nIspirato al Darkglass B7K: le basse restano pulite, solo la parte alta satura. Il suono metal moderno." },
-            { "model.Tweed", "TWEED\nIspirato al Fender Bassman del 1959, con i controlli di tono passivi modellati: rotondo, vintage, satura presto." },
-            { "model.Flip Top", "FLIP TOP\nPiccolo ampli valvolare da studio, ispirato all'Ampeg B-15: scuro e rotondo, il suono Motown." },
-            { "model.Solid Punch", "SOLID PUNCH\nAmpli a transistor rock, ispirato al Gallien-Krueger 800RB: medi scavati, mordente a 4 kHz." },
-            { "model.Tube DI", "TUBE DI\nPreamplificatore DI, ispirato al SansAmp Bass Driver: diretto e incisivo, da pulito a crunch." },
+            { "model.Italian Hi-Fi", "ITALIAN HI-FI\nAmpli a transistor neutro e moderno, ispirato al Markbass Little Mark. Veloce e preciso, ideale per slap e funk." },
+            { "model.Super Valve", "SUPER VALVE\nTutto valvolare da 300 W, ispirato all'Ampeg SVT: medio-bassi caldi, acuti rotondi, il suono rock." },
+            { "model.Nordic Drive", "NORDIC DRIVE\nIspirato al Darkglass B7K: le basse restano pulite, solo la parte alta satura. Il suono metal moderno." },
+            { "model.Tweed '59", "TWEED '59\nIspirato al Fender Bassman del 1959, con i controlli di tono passivi modellati: rotondo, vintage, satura presto." },
+            { "model.Flip Top '60s", "FLIP TOP '60S\nPiccolo ampli valvolare da studio, ispirato all'Ampeg B-15: scuro e rotondo, il suono Motown." },
+            { "model.West Coast 800", "WEST COAST 800\nAmpli a transistor rock, ispirato al Gallien-Krueger 800RB: medi scavati, mordente a 4 kHz." },
+            { "model.Stomp DI", "STOMP DI\nPreamplificatore DI, ispirato al SansAmp Bass Driver: diretto e incisivo, da pulito a crunch." },
             { "model.NAM Capture", "NAM CAPTURE\nSuona una cattura di un vero amplificatore (un file .nam di Neural Amp Modeler), "
                                    "gratuite su TONE3000. Caricala con LOAD NAM." },
 
@@ -141,11 +141,11 @@ const Translations& italianTranslations()
 
             // EQ
             { "eq_on", "ON\nAccende o spegne l'equalizzatore. Si accende da solo appena tocchi un fader o un punto." },
-            { "cut_low", "LOW CUT\nTaglia tutto sotto 80 Hz in un colpo: il suono si asciuga e lascia spazio alla cassa." },
+            { "cut_low", "CUT 80 HZ\nTaglia tutto sotto 80 Hz in un colpo: il suono si asciuga e lascia spazio alla cassa." },
             { "kill_low", "KILL LOW\nElimina le basse (sotto 250 Hz). Per un drop dal vivo o per isolare l'attacco." },
             { "kill_mid", "KILL MID\nElimina i medi (da 250 Hz a 2,5 kHz): restano solo le basse e lo schiocco." },
             { "kill_high", "KILL HIGH\nElimina gli acuti (sopra 2,5 kHz): suono scuro e rotondo, come un basso con corde flatwound." },
-            { "cut_high", "HIGH CUT\nTaglia tutto sopra 5 kHz in un colpo: addolcisce il suono ed elimina il fruscio." },
+            { "cut_high", "CUT 5 KHZ\nTaglia tutto sopra 5 kHz in un colpo: addolcisce il suono ed elimina il fruscio." },
             { "geq_33", "33 Hz\nSub-basse: il rombo che si sente più che si ascolta. Da alzare con cautela." },
             { "geq_63", "63 Hz\nPeso e fondamenta del suono." },
             { "geq_125", "125 Hz\nRotondità. Troppo: il suono rimbomba." },
@@ -191,22 +191,25 @@ const Translations& italianTranslations()
                             "Trasparente finché resti sotto quel livello." },
 
             // Interface
-            { "ui.footswitch", "INTERRUTTORE A PEDALE\nAccende o spegne il pedale: il LED è acceso quando è attivo. "
-                               "Clic destro: MIDI learn, per comandarlo con un pad del tuo controller." },
+            { "ui.footswitch", "INTERRUTTORE A PEDALE\nAccende o spegne il pedale: il LED è acceso quando è attivo. Clic "
+                               "destro: MIDI learn, per comandarlo con un pad del tuo controller. Un punto dorato su un "
+                               "controllo indica che un controllo MIDI lo comanda." },
             { "ui.tap", "TAP\nBatti almeno due volte a tempo: il tempo del delay si adatta al tuo tempo." },
             { "ui.pedalPresets", "PRESET DEL PEDALE\nRegolazioni pronte per questo pedale. Il resto del tuo suono non cambia." },
             { "ui.removePedal", "RIMUOVI\nSpegne il pedale e lo mette via. Riprendilo con + ADD." },
             { "ui.addPedal", "+ ADD\nAggiunge un pedale a questa pedaliera. Poi trascina un pedale per spostarlo: "
                              "il suono segue l'ordine mostrato, da sinistra a destra." },
-            { "ui.presetBox", "PRESET\nI suoni di fabbrica e i tuoi. Scegline uno per regolare tutto in un colpo." },
+            { "ui.presetBox", "PRESET\nI suoni di fabbrica e i tuoi. Scegline uno per regolare tutto in un colpo. Una stella "
+                              "dorata indica che hai modificato il suono dopo averlo caricato: salvalo con SAVE per tenerlo." },
             { "ui.previousPreset", "PRESET PRECEDENTE" },
             { "ui.nextPreset", "PRESET SUCCESSIVO" },
             { "ui.savePreset", "SAVE\nSalva il suono attuale come preset, in Documenti/Bass Amp/Presets." },
             { "ui.record", "REC\nRegistra ciò che esce dall'app (con gli effetti), in WAV, in Documenti/Bass Amp/Recordings. "
                            "Clicca di nuovo per fermare." },
             { "ui.recordings", "FILES\nApre la cartella delle registrazioni." },
-            { "ui.tuner", "ACCORDATORE\nSuona una corda a vuoto: la nota appare e l'ago è centrato quando è accordata. "
-                          "E A D G, e B grave per un cinque corde." },
+            { "ui.tuner", "ACCORDATORE\nSuona una corda a vuoto: la nota appare e l'ago è centrato quando è accordata. E A D "
+                          "G, e B grave per un cinque corde. Rotella sullo schermo: La di riferimento da 430 a 450 Hz; doppio "
+                          "clic: torna a 440 Hz." },
             { "ui.mute", "MUTE\nZittisce l'uscita mentre accordi." },
             { "ui.meters", "LIVELLI\nIN: ciò che entra (il tuo basso); OUT: ciò che esce; COMP: riduzione del compressore. "
                            "CLIP rosso: saturazione, abbassa il gain della scheda audio (IN) o il master (OUT). Clicca per spegnere le spie." },
@@ -216,6 +219,8 @@ const Translations& italianTranslations()
             { "ui.eqScreen", "SCHERMO EQ\nLa curva mostra la correzione, lo sfondo lo spettro dell'uscita. "
                              "Individua le gobbe di frequenza per correggerle." },
             { "ui.ampPresets", "PRESET AMPLI\nRegolazioni pronte di ampli e cassa. Pedali ed EQ non cambiano." },
+            { "ui.power", "POWER\nLa spia di accensione, come su un vero ampli: resta accesa finché l'app è in funzione. Qui "
+                          "non c'è niente da regolare." },
             { "ui.language", "LINGUA\nLa lingua dei fumetti d'aiuto e dei menu. I nomi dei controlli restano in inglese, "
                              "come sulla vera attrezzatura." },
             { "ui.fullScreen", "SCHERMO INTERO\nIngrandisce l'app su tutto lo schermo. F11 fa lo stesso, Esc torna alla finestra." },
@@ -253,7 +258,8 @@ const Translations& italianTranslations()
             { "ui.looperLevel", "LEVEL\nVolume della traccia." },
             { "ui.metronome", "METRONOMO\nUn clic per esercitarti a tempo. Non viene mai registrato da REC." },
             { "ui.metronomeOn", "ON\nAvvia o ferma il metronomo." },
-            { "ui.metronomeTempo", "TEMPO\nVelocità in battiti al minuto (BPM)." },
+            { "ui.metronomeTempo", "TEMPO\nVelocità in battiti al minuto (BPM). In una DAW, il metronomo e il looper seguono "
+                                   "il tempo del brano." },
             { "ui.metronomeTap", "TAP\nBatti il tempo per regolare il metronomo." },
             { "ui.metronomeVolume", "VOL\nVolume del clic." },
         },
@@ -281,9 +287,46 @@ const Translations& italianTranslations()
             { "copy", "copia" },
             { "Save", "Salva" },
             { "Cancel", "Annulla" },
-            { "No audio device: Options > Audio/MIDI Settings", "Nessun dispositivo audio: Options > Audio/MIDI Settings" },
+            { "No audio device: Options > Audio/MIDI Settings", "Nessun dispositivo audio: Opzioni > Impostazioni audio/MIDI" },
             { "latency", "latenza" },
             { "Language", "Lingua" },
+            { "Options", "Opzioni" },
+            { "Audio/MIDI Settings", "Impostazioni audio/MIDI" },
+            { "Audio/MIDI Settings...", "Impostazioni audio/MIDI..." },
+            { "Save current state", "Salva lo stato attuale" },
+            { "Save current state...", "Salva lo stato attuale..." },
+            { "Load a saved state", "Carica uno stato salvato" },
+            { "Load a saved state...", "Carica uno stato salvato..." },
+            { "Reset to default state", "Torna allo stato predefinito" },
+            { "Audio device type:", "Tipo di driver audio:" },
+            { "Device:", "Dispositivo:" },
+            { "Output:", "Uscita:" },
+            { "Input:", "Ingresso:" },
+            { "Active output channels:", "Canali di uscita attivi:" },
+            { "Active input channels:", "Canali di ingresso attivi:" },
+            { "Sample rate:", "Frequenza di campionamento:" },
+            { "Audio buffer size:", "Dimensione del buffer audio:" },
+            { "Active MIDI inputs:", "Ingressi MIDI attivi:" },
+            { "MIDI Output:", "Uscita MIDI:" },
+            { "Test", "Test" },
+            { "Plays a test tone", "Riproduce un tono di prova" },
+            { "Control Panel", "Pannello di controllo" },
+            { "Opens the device's own control panel", "Apre il pannello di impostazioni del dispositivo" },
+            { "Reset Device", "Reimposta" },
+            { "Show advanced settings...", "Mostra impostazioni avanzate..." },
+            { "No MIDI inputs available", "Nessun ingresso MIDI disponibile" },
+            { "(no audio input channels found)", "(nessun canale di ingresso audio trovato)" },
+            { "(no audio output channels found)", "(nessun canale di uscita audio trovato)" },
+            { "none", "nessuno" },
+            { "Error when trying to open audio device!", "Errore nell'apertura del dispositivo audio!" },
+            { "Error whilst loading", "Errore durante il caricamento" },
+            { "Error whilst saving", "Errore durante il salvataggio" },
+            { "Couldn't read from the specified file!", "Impossibile leggere il file!" },
+            { "Couldn't write to the specified file!", "Impossibile scrivere il file!" },
+            { "OK", "OK" },
+            { "Unsaved changes", "Modifiche non salvate" },
+            { "Your changes to this sound will be lost.", "Le modifiche a questo suono andranno perse." },
+            { "Load anyway", "Carica comunque" },
         },
     };
 

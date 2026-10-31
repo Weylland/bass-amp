@@ -398,7 +398,19 @@ juce::Font AmpLookAndFeel::getComboBoxFont (juce::ComboBox& box)
 void AmpLookAndFeel::positionComboBoxText (juce::ComboBox& box, juce::Label& label)
 {
     label.setBounds (8, 1, box.getWidth() - 26, box.getHeight() - 2);
-    label.setFont (getComboBoxFont (box));
+    auto font = getComboBoxFont (box);
+
+    // A badge keeps one size for every choice, small enough for the longest one.
+    if (isBadge (box))
+    {
+        const auto available = (float) (label.getWidth() - label.getBorderSize().getLeftAndRight());
+
+        for (int i = 0; i < box.getNumItems(); ++i)
+            if (const auto width = juce::GlyphArrangement::getStringWidth (font, box.getItemText (i)); width > available)
+                font = font.withHeight (font.getHeight() * available / width);
+    }
+
+    label.setFont (font);
     label.setJustificationType (isBadge (box) ? juce::Justification::centred : juce::Justification::centredLeft);
 }
 

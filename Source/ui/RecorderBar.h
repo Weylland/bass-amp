@@ -20,7 +20,7 @@ private:
     void showRecordings();
 
     Recorder& recorder;
-    juce::TextButton recordButton { "REC" }, filesButton { "Files" };
+    juce::TextButton recordButton { "REC" }, filesButton { "FILES" };
     juce::Rectangle<int> timeArea;
     juce::String timeText { "00:00" };
 };

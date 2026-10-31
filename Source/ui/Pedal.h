@@ -4,6 +4,7 @@
 
 #include "../PedalChain.h"
 #include "Help.h"
+#include "PresetsButton.h"
 #include "TapTempo.h"
 #include "ToggleSwitch.h"
 
@@ -11,11 +12,13 @@ struct KnobSpec
 {
     const char* paramId;
     juce::String label;
+    const char* activeWhen = nullptr;   // a knob of the same pedal that must be above zero for this one to act
 };
 
 // A stompbox: painted enclosure, a row of knobs, an LED and a footswitch bound to the
 // effect's on/off parameter. Knobs on choice parameters click between positions and show
-// the current choice as their label.
+// the current choice under the knob. A knob that has no effect while another is at zero
+// (a rate with no depth) is greyed out.
 class Pedal : public juce::Component, public juce::SettableTooltipClient
 {
 public:
@@ -31,6 +34,7 @@ public:
     std::function<void()> onRemove;
 
     void paint (juce::Graphics&) override;
+    void paintOverChildren (juce::Graphics&) override;
     void resized() override;
 
 private:
@@ -56,7 +60,7 @@ private:
 
     juce::Rectangle<float> enclosure() const;
     juce::Colour inkColour() const;
-    juce::String labelFor (int knob) const;
+    void updateActiveKnobs();
 
     juce::AudioProcessorValueTreeState& state;
     PedalId id;
@@ -66,6 +70,7 @@ private:
     juce::OwnedArray<juce::Slider> sliders;
     juce::StringArray labels;
     std::vector<juce::AudioParameterChoice*> choices;
+    std::vector<std::pair<juce::Slider*, juce::Slider*>> dependentKnobs;   // knob, the knob it needs
     juce::Array<juce::Rectangle<int>> labelAreas;
     juce::OwnedArray<juce::AudioProcessorValueTreeState::SliderAttachment> attachments;
 

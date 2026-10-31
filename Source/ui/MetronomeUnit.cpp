@@ -56,6 +56,20 @@ MetronomeUnit::~MetronomeUnit()
 
 void MetronomeUnit::timerCallback()
 {
+    const auto followsHost = metronome.followsHost.load();
+
+    if (followsHost != ! tempo.isEnabled())
+    {
+        for (auto* control : std::initializer_list<juce::Component*> { &tempo, &tapButton })
+        {
+            control->setEnabled (! followsHost);
+            control->setAlpha (followsHost ? 0.35f : 1.0f);
+        }
+    }
+
+    if (followsHost)
+        tempo.setValue (metronome.bpm.load(), juce::dontSendNotification);
+
     if (const auto beat = metronome.getBeat(); beat != shownBeat)
     {
         shownBeat = beat;

@@ -7,7 +7,7 @@ namespace
 {
     using namespace ParamIds;
 
-    constexpr float hiFi = 0.0f, tube300 = 1.0f, crossover = 2.0f, tweed = 3.0f, flipTop = 4.0f, solidPunch = 5.0f, tubeDi = 6.0f;
+    constexpr float hiFi = 0.0f, superValve = 1.0f, nordicDrive = 2.0f, tweed = 3.0f, flipTop = 4.0f, westCoast = 5.0f, stompDi = 6.0f;
     constexpr float cabOff = 0.0f, cab810 = 1.0f, cab410 = 2.0f, cab115 = 3.0f, cab212 = 4.0f, cab210 = 5.0f;
     constexpr float on = 1.0f, advanced = 1.0f;
     constexpr float lp12 = 0.0f, lp24 = 1.0f, bp24 = 3.0f, hp24 = 5.0f;
@@ -19,15 +19,15 @@ namespace
     const PresetList ampPresets {
         { "Clean Hi-Fi", { { ampModel, hiFi }, { ampCab, cab410 }, { ampGain, 3.0f }, { ampBass, 1.0f }, { ampTreble, 1.0f },
                            { ampBlend, 0.3f }, { ampMaster, -2.0f } } },
-        { "Tube Rock", { { ampModel, tube300 }, { ampCab, cab810 }, { ampGain, 5.0f }, { ampBass, 3.0f }, { ampMid, 2.0f },
+        { "Tube Rock", { { ampModel, superValve }, { ampCab, cab810 }, { ampGain, 5.0f }, { ampBass, 3.0f }, { ampMid, 2.0f },
                          { ampMidFreq, 450.0f }, { ampTreble, -1.0f }, { ampBlend, 0.3f }, { ampMaster, -3.0f } } },
-        { "Tube Ultra", { { ampModel, tube300 }, { ampCab, cab810 }, { ampGain, 4.0f }, { ampBass, 2.0f }, { ampTreble, 2.0f },
+        { "Tube Ultra", { { ampModel, superValve }, { ampCab, cab810 }, { ampGain, 4.0f }, { ampBass, 2.0f }, { ampTreble, 2.0f },
                           { ampDeep, on }, { ampBright, on }, { ampBlend, 0.3f }, { ampMaster, -2.1f } } },
         { "Motown", { { ampModel, flipTop }, { ampCab, cab115 }, { ampGain, 3.0f }, { ampBass, 3.0f }, { ampMid, 1.0f },
                       { ampMidFreq, 300.0f }, { ampTreble, -6.0f }, { ampBlend, 0.15f }, { ampMaster, -1.2f } } },
         { "Tweed Break-Up", { { ampModel, tweed }, { ampCab, cab212 }, { ampGain, 6.5f }, { ampBass, 6.0f }, { ampMid, 2.0f },
                               { ampTreble, 2.0f }, { ampBlend, 0.25f }, { ampMaster, -0.6f } } },
-        { "Rock Punch", { { ampModel, solidPunch }, { ampCab, cab410 }, { ampGain, 5.0f }, { ampBass, 3.0f }, { ampMid, -2.0f },
+        { "Rock Punch", { { ampModel, westCoast }, { ampCab, cab410 }, { ampGain, 5.0f }, { ampBass, 3.0f }, { ampMid, -2.0f },
                           { ampMidFreq, 500.0f }, { ampTreble, 4.0f }, { ampContour, 0.4f }, { ampBright, on }, { ampBlend, 0.3f },
                           { ampMaster, -1.2f } } },
         { "Slap Smile", { { ampModel, hiFi }, { ampCab, cab210 }, { ampGain, 3.0f }, { ampBass, 2.0f }, { ampTreble, 3.0f },
@@ -35,11 +35,11 @@ namespace
         { "Jazz Warm", { { ampModel, hiFi }, { ampCab, cab115 }, { ampGain, 2.5f }, { ampBass, 2.0f }, { ampMid, 1.5f },
                          { ampMidFreq, 300.0f }, { ampTreble, -3.0f }, { ampBlend, 0.3f }, { ampMaster, -2.8f },
                          { ampHighCut, 5000.0f } } },
-        { "Studio DI", { { ampModel, tubeDi }, { ampCab, cabOff }, { ampGain, 4.0f }, { ampBass, 2.0f }, { ampMid, 2.0f },
+        { "Studio DI", { { ampModel, stompDi }, { ampCab, cabOff }, { ampGain, 4.0f }, { ampBass, 2.0f }, { ampMid, 2.0f },
                          { ampMidFreq, 1000.0f }, { ampTreble, 1.0f }, { ampMaster, -6.6f } } },
-        { "DI Grit", { { ampModel, tubeDi }, { ampCab, cab410 }, { ampGain, 7.0f }, { ampBass, 1.0f }, { ampMid, 3.0f },
+        { "DI Grit", { { ampModel, stompDi }, { ampCab, cab410 }, { ampGain, 7.0f }, { ampBass, 1.0f }, { ampMid, 3.0f },
                        { ampMidFreq, 800.0f }, { ampTreble, 2.0f }, { ampBlend, 0.35f }, { ampMaster, -4.9f } } },
-        { "Metal Growl", { { ampModel, crossover }, { ampCab, cab410 }, { ampGain, 7.0f }, { ampBass, 2.0f }, { ampMid, 3.0f },
+        { "Metal Growl", { { ampModel, nordicDrive }, { ampCab, cab410 }, { ampGain, 7.0f }, { ampBass, 2.0f }, { ampMid, 3.0f },
                            { ampMidFreq, 1000.0f }, { ampTreble, 3.0f }, { ampBlend, 0.35f }, { ampMaster, -3.9f },
                            { ampLowCut, 35.0f } } },
     };

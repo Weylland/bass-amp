@@ -33,4 +33,7 @@ namespace Language
 
     // The interface text for this English text, in the current language.
     juce::String tr (const char* english);
+
+    // Hands the messages to JUCE, which then translates its own windows (the audio settings).
+    void applyToJuce();
 }

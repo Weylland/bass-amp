@@ -4,6 +4,8 @@
 
 #include "../Parameters.h"
 
+#include <complex>
+
 // One-touch switches after the EQ, on even when the EQ is off: a fixed low cut (80 Hz) and
 // high cut (5 kHz), and kills that remove the lows, mids or highs, split at 250 Hz and
 // 2.5 kHz like a DJ isolator. The bands are Linkwitz-Riley splits, so with nothing killed
@@ -74,6 +76,51 @@ public:
 
             data[i] = x;
         }
+    }
+
+    static bool anyOn (juce::AudioProcessorValueTreeState& state)
+    {
+        for (const auto* paramId : { ParamIds::cutLow, ParamIds::cutHigh, ParamIds::killLow, ParamIds::killMid, ParamIds::killHigh })
+            if (state.getRawParameterValue (paramId)->load() > 0.5f)
+                return true;
+
+        return false;
+    }
+
+    // The response of the switches as they are set, for the EQ screen.
+    static float magnitudeDb (juce::AudioProcessorValueTreeState& state, float frequency, double sampleRate)
+    {
+        using Complex = std::complex<double>;
+        const auto on = [&state] (const char* paramId) { return state.getRawParameterValue (paramId)->load() > 0.5f; };
+        const auto warped = [frequency, sampleRate] (float cutoff)
+        {
+            return Complex (0.0, std::tan (juce::MathConstants<double>::pi * juce::jmin ((double) frequency, 0.49 * sampleRate) / sampleRate)
+                                     / std::tan (juce::MathConstants<double>::pi * cutoff / sampleRate));
+        };
+        const auto denominator = [&] (float cutoff)
+        {
+            const auto s = warped (cutoff);
+            return s * s + std::sqrt (2.0) * s + 1.0;
+        };
+        const auto lowpass = [&] (float cutoff) { const auto d = denominator (cutoff); return 1.0 / (d * d); };
+        const auto highpass = [&] (float cutoff)
+        {
+            const auto s = warped (cutoff);
+            const auto d = denominator (cutoff);
+            return (s * s * s * s) / (d * d);
+        };
+
+        auto response = (on (ParamIds::killLow) ? 0.0 : 1.0) * lowpass (lowSplitHz) * (lowpass (highSplitHz) + highpass (highSplitHz))
+                       + (on (ParamIds::killMid) ? 0.0 : 1.0) * highpass (lowSplitHz) * lowpass (highSplitHz)
+                       + (on (ParamIds::killHigh) ? 0.0 : 1.0) * highpass (lowSplitHz) * highpass (highSplitHz);
+
+        if (on (ParamIds::cutLow))
+            response *= highpass (lowCutHz);
+
+        if (on (ParamIds::cutHigh))
+            response *= lowpass (highCutHz);
+
+        return juce::Decibels::gainToDecibels ((float) std::abs (response), -120.0f);
     }
 
 private:

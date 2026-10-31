@@ -4,6 +4,7 @@
 
 #include "../PluginProcessor.h"
 #include "EqDisplay.h"
+#include "PresetsButton.h"
 #include "ToggleSwitch.h"
 
 // The EQ unit: on/off, Basic (graphic) or Advanced (parametric) mode, the EQ screen, and a
@@ -28,7 +29,7 @@ private:
     ToggleSwitch onSwitch;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> onAttachment;
     juce::TextButton basicButton { "BASIC" }, advancedButton { "ADVANCED" };
-    juce::TextButton presetsButton { "PRESETS" };
+    PresetsButton presetsButton;
     EqDisplay display;
     juce::OwnedArray<ToggleSwitch> cutSwitches;
     juce::OwnedArray<juce::AudioProcessorValueTreeState::ButtonAttachment> cutAttachments;

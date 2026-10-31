@@ -106,7 +106,7 @@ const Translations& englishTranslations()
             { "amp_bass", "BASS\nLows: roundness and weight." },
             { "amp_mid", "MIDDLE\nMids: what makes the bass stand out in the mix. Cut them for a scooped sound, boost them to cut through." },
             { "amp_mid_freq", "FREQ\nFrequency Middle works on: low (200 Hz) for thickness, high (1 to 3 kHz) for attack. "
-                              "Inactive on Tweed, whose circuit fixes the frequencies." },
+                              "Inactive on Tweed '59, whose circuit fixes the frequencies." },
             { "amp_treble", "TREBLE\nHighs: clarity and string noise." },
             { "amp_master", "MASTER\nOverall amp volume. If the OUT CLIP light comes on, turn it down." },
             { "amp_blend", "DI BLEND\nBlends the dry bass (before the amp) with the amp and cabinet, as in a studio: "
@@ -119,13 +119,13 @@ const Translations& englishTranslations()
             { "amp_high_cut", "HI CUT\nCuts the highs at the amp output, to soften a sound that's too bright or a fizzy distortion." },
 
             // Amp models
-            { "model.Hi-Fi", "HI-FI\nNeutral, modern solid state, inspired by the Markbass Little Mark. Fast and precise, ideal for slap and funk." },
-            { "model.Tube 300", "TUBE 300\nAll-tube 300 W, inspired by the Ampeg SVT: warm low mids, rounded highs, the rock sound." },
-            { "model.Crossover", "CROSSOVER\nInspired by the Darkglass B7K: the lows stay clean, only the top of the spectrum distorts. The modern metal sound." },
-            { "model.Tweed", "TWEED\nInspired by the 1959 Fender Bassman, with its passive tone stack modelled: round, vintage, breaks up early." },
-            { "model.Flip Top", "FLIP TOP\nSmall studio tube amp, inspired by the Ampeg B-15: dark and round, the Motown sound." },
-            { "model.Solid Punch", "SOLID PUNCH\nRock solid state inspired by the Gallien-Krueger 800RB: scooped mids, bite at 4 kHz." },
-            { "model.Tube DI", "TUBE DI\nDI preamp inspired by the SansAmp Bass Driver: direct and punchy, from clean to gritty." },
+            { "model.Italian Hi-Fi", "ITALIAN HI-FI\nNeutral, modern solid state, inspired by the Markbass Little Mark. Fast and precise, ideal for slap and funk." },
+            { "model.Super Valve", "SUPER VALVE\nAll-tube 300 W, inspired by the Ampeg SVT: warm low mids, rounded highs, the rock sound." },
+            { "model.Nordic Drive", "NORDIC DRIVE\nInspired by the Darkglass B7K: the lows stay clean, only the top of the spectrum distorts. The modern metal sound." },
+            { "model.Tweed '59", "TWEED '59\nInspired by the 1959 Fender Bassman, with its passive tone stack modelled: round, vintage, breaks up early." },
+            { "model.Flip Top '60s", "FLIP TOP '60S\nSmall studio tube amp, inspired by the Ampeg B-15: dark and round, the Motown sound." },
+            { "model.West Coast 800", "WEST COAST 800\nRock solid state inspired by the Gallien-Krueger 800RB: scooped mids, bite at 4 kHz." },
+            { "model.Stomp DI", "STOMP DI\nDI preamp inspired by the SansAmp Bass Driver: direct and punchy, from clean to gritty." },
             { "model.NAM Capture", "NAM CAPTURE\nPlays a capture of a real amp (a Neural Amp Modeler .nam file), "
                                    "free to download from TONE3000. Load it with LOAD NAM." },
 
@@ -140,11 +140,11 @@ const Translations& englishTranslations()
 
             // EQ
             { "eq_on", "ON\nTurns the equalizer on or off. It turns on by itself as soon as you touch a fader or a point." },
-            { "cut_low", "LOW CUT\nCuts everything below 80 Hz at once: the sound tightens and leaves room for the kick drum." },
+            { "cut_low", "CUT 80 HZ\nCuts everything below 80 Hz at once: the sound tightens and leaves room for the kick drum." },
             { "kill_low", "KILL LOW\nRemoves the lows (below 250 Hz). For a live drop effect or to isolate the attack." },
             { "kill_mid", "KILL MID\nRemoves the mids (250 Hz to 2.5 kHz): only the low end and the snap remain." },
             { "kill_high", "KILL HIGH\nRemoves the highs (above 2.5 kHz): dark, round sound, like a flatwound bass." },
-            { "cut_high", "HIGH CUT\nCuts everything above 5 kHz at once: softens the sound and removes hiss." },
+            { "cut_high", "CUT 5 KHZ\nCuts everything above 5 kHz at once: softens the sound and removes hiss." },
             { "geq_33", "33 Hz\nSub-lows: the rumble you feel more than hear. Boost with care." },
             { "geq_63", "63 Hz\nThe weight and foundation of the sound." },
             { "geq_125", "125 Hz\nRoundness. Too much: the sound gets boomy." },
@@ -190,22 +190,25 @@ const Translations& englishTranslations()
                             "Transparent as long as you stay under that level." },
 
             // Interface
-            { "ui.footswitch", "FOOTSWITCH\nTurns the pedal on or off: the LED lights when it's active. "
-                               "Right-click: MIDI learn, to switch it from a pad on your controller." },
+            { "ui.footswitch", "FOOTSWITCH\nTurns the pedal on or off: the LED lights when it is on. Right-click: MIDI learn, "
+                               "to switch it from a pad of your controller. A gold dot on a control means a MIDI control "
+                               "drives it." },
             { "ui.tap", "TAP\nTap at least twice in rhythm: the delay time locks to your tempo." },
             { "ui.pedalPresets", "PEDAL PRESETS\nReady-made settings for this pedal. The rest of your sound doesn't change." },
             { "ui.removePedal", "REMOVE\nTurns the pedal off and puts it away. Bring it back with + ADD." },
             { "ui.addPedal", "+ ADD\nAdds a pedal to this pedalboard. Then drag a pedal to move it: "
                              "the sound follows the order shown, left to right." },
-            { "ui.presetBox", "PRESETS\nThe factory sounds and yours. Pick one to set everything at once." },
+            { "ui.presetBox", "PRESETS\nThe factory sounds and yours. Pick one to set everything at once. A gold star means "
+                              "you changed the sound since loading it: save it with SAVE to keep it." },
             { "ui.previousPreset", "PREVIOUS PRESET" },
             { "ui.nextPreset", "NEXT PRESET" },
             { "ui.savePreset", "SAVE\nSaves the current sound as a preset, in Documents/Bass Amp/Presets." },
             { "ui.record", "REC\nRecords what comes out of the app (effects included) to WAV, in Documents/Bass Amp/Recordings. "
                            "Click again to stop." },
             { "ui.recordings", "FILES\nOpens the recordings folder." },
-            { "ui.tuner", "TUNER\nPlay an open string: the note shows and the needle centres when the string is in tune. "
-                          "E A D G, and low B on a 5-string." },
+            { "ui.tuner", "TUNER\nPlay an open string: the note shows and the needle is centred when it is in tune. E A D G, "
+                          "and low B on a five-string. Mouse wheel on the screen: reference A from 430 to 450 Hz; "
+                          "double-click: back to 440 Hz." },
             { "ui.mute", "MUTE\nMutes the output while you tune." },
             { "ui.meters", "LEVELS\nIN: what comes in (your bass); OUT: what goes out; COMP: compressor reduction. "
                            "Red CLIP: overload, lower your interface gain (IN) or the Master (OUT). Click to clear the lights." },
@@ -215,6 +218,8 @@ const Translations& englishTranslations()
             { "ui.eqScreen", "EQ SCREEN\nThe curve shows the correction, the background the spectrum of the output. "
                              "Spot frequency bumps to fix them." },
             { "ui.ampPresets", "AMP PRESETS\nReady-made amp and cabinet settings. Pedals and EQ don't change." },
+            { "ui.power", "POWER\nThe pilot lamp, as on a real amp: it stays lit while the app runs. There is nothing to set "
+                          "here." },
             { "ui.language", "LANGUAGE\nThe language of the help bubbles and menus. Control names stay in English, "
                              "as on real gear." },
             { "ui.fullScreen", "FULL SCREEN\nFills the whole screen with the app. F11 does the same, Escape goes back to a window." },
@@ -251,7 +256,8 @@ const Translations& englishTranslations()
             { "ui.looperLevel", "LEVEL\nTrack volume." },
             { "ui.metronome", "METRONOME\nA click to practise in time. It's never recorded by REC." },
             { "ui.metronomeOn", "ON\nStarts or stops the metronome." },
-            { "ui.metronomeTempo", "TEMPO\nSpeed in beats per minute (BPM)." },
+            { "ui.metronomeTempo", "TEMPO\nSpeed in beats per minute (BPM). In a DAW, the metronome and the looper follow the "
+                                   "song's tempo." },
             { "ui.metronomeTap", "TAP\nTap the tempo to set the metronome." },
             { "ui.metronomeVolume", "VOL\nClick volume." },
         },

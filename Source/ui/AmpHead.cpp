@@ -539,6 +539,11 @@ void AmpHead::paintPanel (juce::Graphics& g)
     g.drawText ("POWER", pilot.withY (lamp.y - 36.0f).withHeight ((float) labelHeight), juce::Justification::centred);
 }
 
+juce::String AmpHead::getTooltip()
+{
+    return pilotArea.contains (getMouseXYRelative()) ? Help::get ("ui.power") : juce::String();
+}
+
 void AmpHead::paintVent (juce::Graphics& g)
 {
     const auto& skin = skinFor (currentModel);
