@@ -1,145 +1,126 @@
 #pragma once
 
+#include <juce_audio_formats/juce_audio_formats.h>
 #include <juce_dsp/juce_dsp.h>
 
-// One-button looper on the rig output: record, then play (that sets the loop length),
-// overdub on top, back to play. Stop keeps the loop, clear erases it. Up to 60 seconds.
-// The buttons post a command that the audio thread picks up at the next block.
+#include "Metronome.h"
+
+// Four-track looper on the rig output, made to be played live from a MIDI controller.
+// Each track's button records, plays and overdubs in turn. Tracks start and end on a grid:
+// the metronome's bars when SYNC is on and the metronome runs, otherwise the length of the
+// first loop. Every track stays in phase with the others, so a stopped track comes back in
+// time. The last recording or overdub can be undone and redone. A track can play reversed
+// or at half speed (an octave down). Up to 30 seconds per track.
+// Buttons and MIDI only post requests; the audio thread acts on them at the next block.
 class Looper
 {
 public:
-    enum class State { empty, recording, playing, overdubbing, stopped };
-    enum class Command { none, main, stop, clear };
+    static constexpr int numTracks = 4;
 
-    void prepare (double sampleRate, int numChannels)
+    enum class State { empty, armed, recording, finishing, playing, overdubbing, stopped };
+
+    // MIDI-learnable actions: one per track, then the global ones. { id, name }
+    static inline const std::array<std::pair<const char*, const char*>, numTracks + 4> midiActions {{
+        { "looper_track1", "Looper Track 1" }, { "looper_track2", "Looper Track 2" },
+        { "looper_track3", "Looper Track 3" }, { "looper_track4", "Looper Track 4" },
+        { "looper_undo", "Looper Undo" }, { "looper_redo", "Looper Redo" },
+        { "looper_stop_all", "Looper Stop / Play All" }, { "looper_clear_all", "Looper Clear All" },
+    }};
+
+    void prepare (double sampleRate, int numChannels);
+
+    // Any thread.
+    void pressTrack (int track)       { tracks[(size_t) track].presses.fetch_add (1); }
+    void stopTrack (int track)        { tracks[(size_t) track].stopRequest.store (true); }
+    void clearTrack (int track)       { tracks[(size_t) track].clearRequest.store (true); }
+    void undo()                       { undoRequest.store (true); }
+    void redo()                       { redoRequest.store (true); }
+    void stopOrPlayAll()              { stopAllRequest.store (true); }
+    void clearAll()                   { clearAllRequest.store (true); }
+    void trigger (int midiAction);
+
+    std::atomic<bool> sync { true };
+
+    struct TrackControls
     {
-        loop.setSize (juce::jlimit (1, 2, numChannels), (int) (sampleRate * maxSeconds));
-        loop.clear();
-        length = position = 0;
-        state.store (State::empty);
-        rate = sampleRate;
-    }
+        std::atomic<float> level { 1.0f };
+        std::atomic<bool> reverse { false }, halfSpeed { false };
+    };
+
+    TrackControls& controls (int track) { return tracks[(size_t) track].controls; }
 
     // Message thread.
-    void press (Command command)            { pending.store (command); }
-    State getState() const                  { return state.load(); }
-    float getProgress() const               { return progress.load(); }
-    double getLengthSeconds() const         { return (double) loopLength.load() / rate; }
+    State getState (int track) const         { return tracks[(size_t) track].shownState.load(); }
+    float getProgress (int track) const      { return tracks[(size_t) track].progress.load(); }
+    double getLengthSeconds (int track) const;
+    bool canUndo() const                     { return undoable.load(); }
+    bool canRedo() const                     { return redoable.load(); }
+    bool isSynced() const                    { return synced.load(); }
+    bool hasLoops() const;
 
-    std::atomic<float> level { 1.0f };
+    // Writes every playing track (or every recorded one when none plays) to a 24-bit WAV,
+    // over one turn of the longest loop.
+    bool exportMix (const juce::File&) const;
 
-    // Audio thread: records the block and adds the loop to it.
-    void process (juce::dsp::AudioBlock<float>& block)
-    {
-        apply (pending.exchange (Command::none));
-
-        auto current = state.load();
-        const auto numChannels = juce::jmin ((int) block.getNumChannels(), loop.getNumChannels());
-        const auto gain = level.load();
-
-        if (current == State::empty || current == State::stopped)
-            return;
-
-        for (size_t i = 0; i < block.getNumSamples(); ++i)
-        {
-            for (int channel = 0; channel < numChannels; ++channel)
-            {
-                auto& sample = block.getChannelPointer ((size_t) channel)[i];
-                auto* stored = loop.getWritePointer (channel, position);
-
-                if (current == State::recording)
-                {
-                    *stored = sample;
-                }
-                else
-                {
-                    const auto played = *stored;
-
-                    if (current == State::overdubbing)
-                        *stored = played + sample;
-
-                    sample += played * gain;
-                }
-            }
-
-            if (current == State::recording)
-            {
-                if (++position == loop.getNumSamples())
-                {
-                    apply (Command::main);
-                    current = state.load();
-                }
-            }
-            else
-            {
-                position = (position + 1) % length;
-            }
-        }
-
-        loopLength.store (current == State::recording ? position : length);
-        progress.store (length > 0 && current != State::recording ? (float) position / (float) length : 0.0f);
-    }
+    // Audio thread: records the block and adds the loops to it. The clock is read before it
+    // processes the same block.
+    void process (juce::dsp::AudioBlock<float>&, const Metronome& clock);
 
 private:
-    static constexpr double maxSeconds = 60.0;
+    static constexpr double maxSeconds = 30.0;
+    static constexpr int chunkBits = 9, chunkSize = 1 << chunkBits;
 
-    void apply (Command command)
+    struct Track
     {
-        const auto current = state.load();
+        // Two copies of the loop, chosen per chunk: the current take, and the take before the
+        // last overdub for undo. An overdub copies a chunk the first time it writes to it.
+        std::array<juce::AudioBuffer<float>, 2> takes;
+        std::vector<juce::uint8> current;
+        std::vector<int> touched;
+        int generation = 0;
 
-        if (command == Command::clear)
-        {
-            length = position = 0;
-            state.store (State::empty);
-            loopLength.store (0);
-        }
-        else if (command == Command::main)
-        {
-            if (current == State::empty)
-            {
-                position = 0;
-                state.store (State::recording);
-            }
-            else if (current == State::recording)
-            {
-                length = juce::jmax (1, position);
-                position = 0;
-                state.store (State::playing);
-            }
-            else if (current == State::playing)
-            {
-                state.store (State::overdubbing);
-            }
-            else if (current == State::overdubbing)
-            {
-                state.store (State::playing);
-            }
-            else if (current == State::stopped)
-            {
-                position = 0;
-                state.store (State::playing);
-            }
-        }
-        else if (command == Command::stop)
-        {
-            if (current == State::recording)
-            {
-                length = juce::jmax (1, position);
-                position = 0;
-                state.store (State::stopped);
-            }
-            else if (current == State::playing || current == State::overdubbing)
-            {
-                state.store (State::stopped);
-            }
-        }
-    }
+        State state = State::empty;
+        int recorded = 0, lastWritten = -1;
+        bool stopWhenFinished = false;
+        std::atomic<int> length { 0 };
+        std::atomic<juce::int64> origin { 0 };
 
-    juce::AudioBuffer<float> loop;
-    int length = 0, position = 0;
+        TrackControls controls;
+        std::atomic<int> presses { 0 };
+        std::atomic<bool> stopRequest { false }, clearRequest { false };
+        std::atomic<State> shownState { State::empty };
+        std::atomic<float> progress { 0.0f };
+        std::atomic<int> shownSamples { 0 };
+
+        float read (int channel, double position, int loopLength) const;
+        double playPosition (juce::int64 now, int loopLength) const;
+        void prepareChunkForWrite (int index);
+        void flipTouchedChunks();
+        bool hasLoop() const { return state == State::playing || state == State::overdubbing || state == State::stopped; }
+    };
+
+    enum class Undo { none, recording, overdub };
+
+    void applyRequests (bool hasGrid);
+    void press (int track, bool hasGrid);
+    void stop (int track, bool hasGrid);
+    void clear (int track);
+    void startRecording (Track&);
+    void finish (int track);
+    void applyUndo (bool redoing);
+    void updateMaster();
+
+    std::array<Track, numTracks> tracks;
+    int numChannels = 2, maxSamples = 0;
     double rate = 44100.0;
-    std::atomic<State> state { State::empty };
-    std::atomic<Command> pending { Command::none };
-    std::atomic<float> progress { 0.0f };
-    std::atomic<int> loopLength { 0 };
+    juce::int64 transport = 0;
+    int masterLength = 0;
+    juce::int64 masterOrigin = 0;
+
+    int undoTrack = -1;
+    Undo undoKind = Undo::none;
+    bool undone = false;
+
+    std::atomic<bool> undoRequest { false }, redoRequest { false }, stopAllRequest { false }, clearAllRequest { false };
+    std::atomic<bool> undoable { false }, redoable { false }, synced { false };
 };

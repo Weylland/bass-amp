@@ -59,6 +59,7 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> modelAttachment, cabAttachment;
     juce::TextButton irButton { "LOAD IR" };
     juce::TextButton captureButton { "LOAD NAM" };
+    juce::TextButton presetsButton { "AMP PRESETS" };
     std::unique_ptr<juce::FileChooser> fileChooser;
 
     juce::Rectangle<int> frameArea, topArea, badgeArea, ventArea, cabArea, panelArea, pilotArea, switchArea;

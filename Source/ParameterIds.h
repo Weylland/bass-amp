@@ -80,6 +80,12 @@ namespace ParamIds
     inline constexpr auto eqOn   = "eq_on";
     inline constexpr auto eqMode = "eq_mode";
 
+    inline constexpr auto cutLow   = "cut_low";
+    inline constexpr auto cutHigh  = "cut_high";
+    inline constexpr auto killLow  = "kill_low";
+    inline constexpr auto killMid  = "kill_mid";
+    inline constexpr auto killHigh = "kill_high";
+
     inline constexpr std::array<const char*, 9> graphicEq {
         "geq_33", "geq_63", "geq_125", "geq_250", "geq_500", "geq_1k", "geq_2k", "geq_4k", "geq_8k"
     };

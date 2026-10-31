@@ -26,6 +26,7 @@ BassAmpProcessor::BassAmpProcessor()
     distortion.bind (parameters);
     amp.bind (parameters);
     equalizer.bind (parameters);
+    quickCuts.bind (parameters);
     phaser.bind (parameters);
     flanger.bind (parameters);
     chorus.bind (parameters);
@@ -39,6 +40,7 @@ BassAmpProcessor::BassAmpProcessor()
         if (program < getNumPrograms())
             setCurrentProgram (program);
     };
+    midiLearn.onAction = [this] (int action) { looper.trigger (action); };
 
     presets.loadFactoryPreset (0);
     parameters.state.addListener (this);
@@ -125,6 +127,7 @@ void BassAmpProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     distortion.prepare (sampleRate, samplesPerBlock);
     amp.prepare (sampleRate, samplesPerBlock);
     equalizer.prepare (sampleRate);
+    quickCuts.prepare (sampleRate);
     phaser.prepare (outputSpec);
     flanger.prepare (outputSpec);
     chorus.prepare (outputSpec);
@@ -192,6 +195,7 @@ void BassAmpProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mid
     amp.process (mono);
     ampMeter.push (buffer.getReadPointer (0), numSamples);
     equalizer.process (mono);
+    quickCuts.process (mono);
 
     for (int channel = 1; channel < numOutputs; ++channel)
         buffer.copyFrom (channel, 0, buffer, 0, 0, numSamples);
@@ -203,7 +207,7 @@ void BassAmpProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mid
             for (int i = 0; i < numSamples; ++i)
                 buffer.addSample (channel, i, backingTrack.getSample (channel, i));
 
-    looper.process (outputBlock);
+    looper.process (outputBlock, metronome);
     limiter.process (outputBlock);
 
     for (int channel = 0; channel < numOutputs; ++channel)

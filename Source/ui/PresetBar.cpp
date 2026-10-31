@@ -1,5 +1,6 @@
 #include "PresetBar.h"
 #include "Help.h"
+#include "../i18n/Language.h"
 
 PresetBar::PresetBar (PresetManager& presetManager)
     : presets (presetManager)
@@ -34,7 +35,7 @@ void PresetBar::refreshList()
     presetBox.clear (juce::dontSendNotification);
 
     const auto numFactory = presets.getNumFactoryPresets();
-    presetBox.addSectionHeading ("Factory");
+    presetBox.addSectionHeading (Language::tr ("Factory"));
 
     for (int i = 0; i < numFactory; ++i)
         presetBox.addItem (presets.getFactoryPresetName (i), i + 1);
@@ -42,7 +43,7 @@ void PresetBar::refreshList()
     if (! userPresets.isEmpty())
     {
         presetBox.addSeparator();
-        presetBox.addSectionHeading ("User");
+        presetBox.addSectionHeading (Language::tr ("User"));
 
         for (int i = 0; i < userPresets.size(); ++i)
             presetBox.addItem (userPresets[i].getFileNameWithoutExtension(), numFactory + i + 1);
@@ -89,11 +90,11 @@ void PresetBar::step (int delta)
 
 void PresetBar::askNameAndSave()
 {
-    auto* window = new juce::AlertWindow ("Save preset", "Preset name:", juce::MessageBoxIconType::NoIcon, this);
-    window->addTextEditor ("name", presets.getCurrentFactoryIndex() >= 0 ? presets.getCurrentPresetName() + " (copy)"
+    auto* window = new juce::AlertWindow (Language::tr ("Save preset"), Language::tr ("Preset name:"), juce::MessageBoxIconType::NoIcon, this);
+    window->addTextEditor ("name", presets.getCurrentFactoryIndex() >= 0 ? presets.getCurrentPresetName() + " (" + Language::tr ("copy") + ")"
                                                                          : presets.getCurrentPresetName());
-    window->addButton ("Save", 1, juce::KeyPress (juce::KeyPress::returnKey));
-    window->addButton ("Cancel", 0, juce::KeyPress (juce::KeyPress::escapeKey));
+    window->addButton (Language::tr ("Save"), 1, juce::KeyPress (juce::KeyPress::returnKey));
+    window->addButton (Language::tr ("Cancel"), 0, juce::KeyPress (juce::KeyPress::escapeKey));
 
     window->enterModalState (true, juce::ModalCallbackFunction::create ([safeThis = SafePointer<PresetBar> (this), window] (int result)
     {

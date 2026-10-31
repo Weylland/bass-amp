@@ -139,6 +139,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
 
     addToggle (ParamIds::eqOn, 5, "EQ On");
     addChoice (ParamIds::eqMode, 5, "EQ Mode", { "Basic", "Advanced" }, 0);
+    addToggle (ParamIds::cutLow, 7, "Low Cut 80 Hz");
+    addToggle (ParamIds::cutHigh, 7, "High Cut 5 kHz");
+    addToggle (ParamIds::killLow, 7, "Kill Low");
+    addToggle (ParamIds::killMid, 7, "Kill Mid");
+    addToggle (ParamIds::killHigh, 7, "Kill High");
 
     const char* graphicNames[] { "EQ 33 Hz", "EQ 63 Hz", "EQ 125 Hz", "EQ 250 Hz", "EQ 500 Hz", "EQ 1 kHz", "EQ 2 kHz", "EQ 4 kHz", "EQ 8 kHz" };
 

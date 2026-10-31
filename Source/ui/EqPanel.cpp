@@ -1,11 +1,13 @@
 #include "EqPanel.h"
 #include "AmpLookAndFeel.h"
 #include "Help.h"
+#include "ModulePresetMenu.h"
 
 namespace
 {
     constexpr int padding = 12;
     constexpr int headerHeight = 28;
+    constexpr int cutsWidth = 88;
 }
 
 EqPanel::EqPanel (BassAmpProcessor& processorToUse)
@@ -23,9 +25,23 @@ EqPanel::EqPanel (BassAmpProcessor& processorToUse)
     advancedButton.onClick = [this] { setMode (Equalizer::advancedMode); };
     basicButton.setTooltip (Help::get ("ui.eqBasic"));
     advancedButton.setTooltip (Help::get ("ui.eqAdvanced"));
+    presetsButton.onClick = [this] { showModulePresetMenu (processor.parameters, "eq", presetsButton); };
+    presetsButton.setTooltip (Help::get ("ui.eqPresets"));
 
-    for (auto* component : std::initializer_list<juce::Component*> { &onSwitch, &basicButton, &advancedButton, &display })
+    for (auto* component : std::initializer_list<juce::Component*> { &onSwitch, &basicButton, &advancedButton, &presetsButton, &display })
         addAndMakeVisible (component);
+
+    using Cut = std::pair<const char*, const char*>;
+
+    for (const auto& [paramId, label] : { Cut { ParamIds::cutLow, "LOW CUT" }, Cut { ParamIds::killLow, "KILL LOW" },
+                                          Cut { ParamIds::killMid, "KILL MID" }, Cut { ParamIds::killHigh, "KILL HIGH" },
+                                          Cut { ParamIds::cutHigh, "HIGH CUT" } })
+    {
+        auto* toggle = cutSwitches.add (new ToggleSwitch (label));
+        toggle->setComponentID (paramId);
+        cutAttachments.add (new juce::AudioProcessorValueTreeState::ButtonAttachment (processor.parameters, paramId, *toggle));
+        addAndMakeVisible (toggle);
+    }
 
     timerCallback();
     startTimerHz (30);
@@ -72,8 +88,17 @@ void EqPanel::resized()
     advancedButton.setBounds (header.removeFromRight (96).withSizeKeepingCentre (96, 24));
     header.removeFromRight (4);
     basicButton.setBounds (header.removeFromRight (70).withSizeKeepingCentre (70, 24));
+    header.removeFromRight (12);
+    presetsButton.setBounds (header.removeFromRight (78).withSizeKeepingCentre (78, 24));
     titleArea = header;
 
     area.removeFromTop (8);
+    auto cuts = area.removeFromRight (cutsWidth);
+    area.removeFromRight (8);
     display.setBounds (area);
+
+    const auto cutHeight = cuts.getHeight() / cutSwitches.size();
+
+    for (auto* toggle : cutSwitches)
+        toggle->setBounds (cuts.removeFromTop (cutHeight).withSizeKeepingCentre (cutsWidth, juce::jmin (24, cutHeight - 4)));
 }

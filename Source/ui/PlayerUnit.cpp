@@ -1,6 +1,7 @@
 #include "PlayerUnit.h"
 #include "AmpLookAndFeel.h"
 #include "Help.h"
+#include "../i18n/Language.h"
 
 namespace
 {
@@ -59,7 +60,7 @@ PlayerUnit::~PlayerUnit()
 
 void PlayerUnit::chooseFile()
 {
-    fileChooser = std::make_unique<juce::FileChooser> ("Choose a backing track",
+    fileChooser = std::make_unique<juce::FileChooser> (Language::tr ("Choose a backing track"),
                                                        juce::File::getSpecialLocation (juce::File::userMusicDirectory),
                                                        "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3");
 
@@ -135,6 +136,6 @@ void PlayerUnit::paint (juce::Graphics& g)
     g.setFont (Fonts::display (12.0f, false));
     const auto file = track.getFile();
     g.setColour (file.existsAsFile() ? Palette::ledGreen : Palette::textDim);
-    g.drawFittedText (file.existsAsFile() ? file.getFileNameWithoutExtension() : juce::String ("No track loaded"),
+    g.drawFittedText (file.existsAsFile() ? file.getFileNameWithoutExtension() : Language::tr ("No track loaded"),
                       text, juce::Justification::centredLeft, 1, 0.8f);
 }

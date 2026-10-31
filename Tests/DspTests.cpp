@@ -1,5 +1,7 @@
 #include "../Source/PluginProcessor.h"
 #include "../Source/ParameterIds.h"
+#include "../Source/i18n/Language.h"
+#include "../Source/presets/ModulePresets.h"
 #include "../Source/ui/Logo.h"
 #include "../Source/ui/MainPanel.h"
 
@@ -230,6 +232,36 @@ namespace
                "flat " + juce::String (flat, 1) + " dB, cuts " + juce::String (mid - lowCut, 1) + " / " + juce::String (mid - highCut, 1) + " dB");
     }
 
+    void testQuickCuts()
+    {
+        auto processor = makeProcessor();
+        const auto low = sineLevelDb (*processor, 60.0f), mid = sineLevelDb (*processor, 800.0f), high = sineLevelDb (*processor, 7000.0f);
+
+        setParam (*processor, ParamIds::killLow, 1.0f);
+        const auto lowKilled = low - sineLevelDb (*processor, 60.0f);
+        const auto midKept = mid - sineLevelDb (*processor, 800.0f);
+        setParam (*processor, ParamIds::killLow, 0.0f);
+        setParam (*processor, ParamIds::killMid, 1.0f);
+        const auto midKilled = mid - sineLevelDb (*processor, 800.0f);
+        setParam (*processor, ParamIds::killMid, 0.0f);
+        setParam (*processor, ParamIds::killHigh, 1.0f);
+        const auto highKilled = high - sineLevelDb (*processor, 7000.0f);
+        setParam (*processor, ParamIds::killHigh, 0.0f);
+
+        setParam (*processor, ParamIds::cutLow, 1.0f);
+        setParam (*processor, ParamIds::cutHigh, 1.0f);
+        const auto lowCut = sineLevelDb (*processor, 30.0f);
+        const auto highCut = sineLevelDb (*processor, 12000.0f);
+        const auto middle = sineLevelDb (*processor, 800.0f);
+
+        check (std::abs (low - mid) < 1.5f && std::abs (high - mid) < 1.5f && lowKilled > 30.0f && midKilled > 20.0f
+                   && highKilled > 30.0f && std::abs (midKept) < 0.5f && middle - lowCut > 12.0f && middle - highCut > 12.0f,
+               "quick cuts and band kills",
+               "flat " + juce::String (low - mid, 1) + " / " + juce::String (high - mid, 1) + " dB, kills " + juce::String (lowKilled, 0) + " / "
+                   + juce::String (midKilled, 0) + " / " + juce::String (highKilled, 0) + " dB, cuts " + juce::String (middle - lowCut, 0)
+                   + " / " + juce::String (middle - highCut, 0) + " dB");
+    }
+
     void testWah()
     {
         auto processor = makeProcessor();
@@ -383,6 +415,18 @@ namespace
         check (reloaded.describe (ParamIds::filterCutoff) == "CC 20" && reloaded.describe (ParamIds::wahPedal).isEmpty()
                    && value (ParamIds::filterCutoff) < 41.0f,
                "MIDI map saved and reloaded", reloaded.describe (ParamIds::filterOn));
+        mapFile.deleteFile();
+
+        MidiLearn withAction (parameters, mapFile, { { "looper_track1", "Looper Track 1" } });
+        std::vector<int> fired;
+        withAction.onAction = [&fired] (int action) { fired.push_back (action); };
+        withAction.learn ("looper_track1");
+
+        for (const auto press : { 127, 0, 127, 127 })
+            send (withAction, juce::MidiMessage::controllerEvent (1, 64, press));
+
+        check (fired == std::vector<int> { 0 } && withAction.describe ("looper_track1") == "CC 64",
+               "MIDI action fires once per CC press", juce::String ((int) fired.size()) + " fired");
         mapFile.deleteFile();
     }
 
@@ -774,6 +818,88 @@ namespace
         check (loudest - quietest < 3.0f, "presets are level-matched", "spread " + juce::String (loudest - quietest, 1) + " dB");
     }
 
+    void testModulePresets()
+    {
+        auto processor = makeProcessor();
+        auto& state = processor->parameters;
+        juce::StringArray modules { "amp", "eq" };
+
+        for (const auto& info : pedalInfos)
+            modules.add (info.key);
+
+        juce::StringArray problems;
+
+        for (const auto& module : modules)
+        {
+            const auto& presets = getModulePresets (module);
+
+            if (presets.size() < 2)
+                problems.add (module + " has " + juce::String ((int) presets.size()) + " presets");
+
+            for (const auto& preset : presets)
+            {
+                for (const auto& [paramId, value] : preset.values)
+                {
+                    auto* parameter = state.getParameter (paramId);
+
+                    if (parameter == nullptr || std::abs (parameter->convertFrom0to1 (parameter->convertTo0to1 (value)) - value) > 0.01f)
+                        problems.add (module + " / " + preset.name + ": " + paramId);
+                }
+
+                setParam (*processor, ParamIds::limiterOn, 0.0f);
+                applyModulePreset (state, module, preset);
+
+                if (! isModulePresetActive (state, module, preset) || state.getRawParameterValue (ParamIds::limiterOn)->load() > 0.5f)
+                    problems.add (module + " / " + preset.name + " not applied alone");
+            }
+        }
+
+        auto quietest = 0.0f, loudest = -120.0f;
+        juce::StringArray levels;
+
+        for (const auto& preset : getModulePresets ("amp"))
+        {
+            applyModulePreset (state, "amp", preset);
+            render (*processor, bassTone (41.2f, 0.3f), 0.5);
+            const auto level = render (*processor, bassTone (41.2f, 0.3f), 1.5).rmsDb();
+            levels.add (juce::String (preset.name) + " " + juce::String (level, 1));
+            quietest = juce::jmin (quietest, level);
+            loudest = juce::jmax (loudest, level);
+        }
+
+        check (problems.isEmpty() && loudest - quietest < 3.0f, "module presets",
+               problems.isEmpty() ? "amp spread " + juce::String (loudest - quietest, 1) + " dB (" + levels.joinIntoString (", ") + ")" : problems.joinIntoString (", "));
+    }
+
+    void testTranslations()
+    {
+        const auto& english = englishTranslations();
+        const auto& french = frenchTranslations();
+        juce::StringArray problems;
+
+        for (const auto& info : Language::available)
+        {
+            const auto& translations = info.translations();
+
+            for (const auto& [key, text] : english.help)
+                if (translations.help.count (key) == 0)
+                    problems.add (juce::String (info.code) + " help " + key);
+
+            if (&translations != &english)
+                for (const auto& [key, text] : french.messages)
+                    if (translations.messages.count (key) == 0)
+                        problems.add (juce::String (info.code) + " message " + key);
+
+            if (translations.help.size() != english.help.size())
+                problems.add (juce::String (info.code) + " has " + juce::String ((int) translations.help.size()) + " help texts");
+        }
+
+        check (problems.isEmpty(), "every language has every text",
+               problems.isEmpty() ? juce::String ((int) Language::available.size()) + " languages, " + juce::String ((int) english.help.size())
+                                        + " help texts, " + juce::String ((int) french.messages.size()) + " messages"
+                                  : problems.joinIntoString (", "));
+    }
+
     void testUserPresetRoundTrip()
     {
         auto processor = makeProcessor();
@@ -831,46 +957,145 @@ namespace
         file.deleteFile();
     }
 
-    void testLooper()
+    // Runs a looper (and the metronome it follows) on blocks of 480 samples whose input is
+    // input (sample index since the start); returns the last output sample.
+    struct LooperRig
     {
         Looper looper;
-        looper.prepare (testSampleRate, 2);
-        juce::AudioBuffer<float> buffer (2, 480);
-        auto runBlocks = [&] (float input, int blocks)
+        Metronome metronome;
+        juce::AudioBuffer<float> buffer { 2, 480 }, clicks { 2, 480 };
+        int elapsed = 0;
+
+        LooperRig()
         {
-            auto peak = 0.0f;
+            looper.prepare (testSampleRate, 2);
+            metronome.prepare (testSampleRate);
+            metronome.volume.store (0.0f);
+        }
 
-            for (int b = 0; b < blocks; ++b)
+        template <typename Input>
+        float run (int blocks, Input&& input)
+        {
+            for (int block = 0; block < blocks; ++block)
             {
-                for (int channel = 0; channel < 2; ++channel)
-                    juce::FloatVectorOperations::fill (buffer.getWritePointer (channel), input, buffer.getNumSamples());
+                for (int i = 0; i < buffer.getNumSamples(); ++i)
+                    for (int channel = 0; channel < 2; ++channel)
+                        buffer.setSample (channel, i, input (elapsed + i));
 
-                juce::dsp::AudioBlock<float> block (buffer);
-                looper.process (block);
-                peak = buffer.getSample (0, buffer.getNumSamples() - 1);
+                juce::dsp::AudioBlock<float> audio (buffer), click (clicks);
+                looper.process (audio, metronome);
+                metronome.process (click);
+                elapsed += buffer.getNumSamples();
             }
 
-            return peak;
-        };
+            return buffer.getSample (0, buffer.getNumSamples() - 1);
+        }
 
-        looper.press (Looper::Command::main);
-        const auto whileRecording = runBlocks (0.5f, 10);
-        looper.press (Looper::Command::main);
-        const auto played = runBlocks (0.0f, 20);
-        const auto length = looper.getLengthSeconds();
-        looper.press (Looper::Command::main);
-        runBlocks (0.25f, 10);
-        looper.press (Looper::Command::main);
-        const auto layered = runBlocks (0.0f, 10);
-        looper.press (Looper::Command::stop);
-        const auto stopped = runBlocks (0.0f, 2);
-        looper.press (Looper::Command::clear);
-        runBlocks (0.0f, 1);
+        float run (int blocks, float input) { return run (blocks, [input] (int) { return input; }); }
+    };
 
-        check (std::abs (whileRecording - 0.5f) < 1.0e-6f && std::abs (played - 0.5f) < 1.0e-6f && std::abs (length - 0.1) < 1.0e-6
-                   && std::abs (layered - 0.75f) < 1.0e-6f && stopped == 0.0f && looper.getState() == Looper::State::empty,
-               "looper records, plays, overdubs, stops, clears",
-               "loop " + juce::String (length, 3) + " s, played " + juce::String (played, 2) + ", layered " + juce::String (layered, 2));
+    void testLooper()
+    {
+        LooperRig rig;
+        auto& looper = rig.looper;
+        auto near = [] (float a, float b) { return std::abs (a - b) < 1.0e-5f; };
+
+        looper.pressTrack (0);
+        const auto whileRecording = rig.run (10, 0.5f);
+        looper.pressTrack (0);
+        const auto played = rig.run (20, 0.0f);
+        const auto length = looper.getLengthSeconds (0);
+        looper.pressTrack (0);
+        rig.run (10, 0.25f);
+        looper.pressTrack (0);
+        const auto layered = rig.run (10, 0.0f);
+        looper.undo();
+        const auto undone = rig.run (10, 0.0f);
+        looper.redo();
+        const auto redone = rig.run (10, 0.0f);
+        looper.undo();
+        rig.run (10, 0.0f);
+
+        // Half a loop in, track 2 waits for the next turn of track 1, then records until the turn
+        // after the second press: its length is a whole number of loops.
+        rig.run (5, 0.0f);
+        looper.pressTrack (1);
+        rig.run (4, 0.1f);
+        const auto waited = looper.getState (1) == Looper::State::armed;
+        rig.run (3, 0.1f);
+        looper.pressTrack (1);
+        rig.run (2, 0.1f);
+        const auto finishing = looper.getState (1) == Looper::State::finishing;
+        rig.run (8, 0.1f);
+        const auto together = rig.run (10, 0.0f);
+        const auto secondLength = looper.getLengthSeconds (1);
+
+        const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("BassAmpLoopExport.wav");
+        const auto exported = looper.exportMix (file);
+        std::unique_ptr<juce::AudioFormatReader> reader (juce::WavAudioFormat().createReaderFor (file.createInputStream().release(), true));
+        const auto exportedLength = reader != nullptr ? reader->lengthInSamples : 0;
+        reader.reset();
+        file.deleteFile();
+
+        looper.stopOrPlayAll();
+        const auto stopped = rig.run (2, 0.0f);
+        looper.stopOrPlayAll();
+        const auto resumed = rig.run (2, 0.0f);
+        looper.clearAll();
+        rig.run (1, 0.0f);
+
+        check (near (whileRecording, 0.5f) && near (played, 0.5f) && std::abs (length - 0.1) < 1.0e-6 && near (layered, 0.75f)
+                   && near (undone, 0.5f) && near (redone, 0.75f) && waited && finishing && near (together, 0.6f)
+                   && std::abs (secondLength - 0.1) < 1.0e-6 && exported && exportedLength == 4800 && stopped == 0.0f
+                   && near (resumed, 0.6f) && ! looper.hasLoops(),
+               "looper tracks: record, overdub, undo, quantised start, export",
+               "played " + juce::String (played, 2) + ", layered " + juce::String (layered, 2) + ", undone " + juce::String (undone, 2)
+                   + ", together " + juce::String (together, 2) + ", track 2 " + juce::String (secondLength, 3) + " s, export "
+                   + juce::String (exportedLength));
+    }
+
+    void testLooperPlayback()
+    {
+        LooperRig rig;
+        auto& looper = rig.looper;
+        constexpr int length = 4800;
+        auto ramp = [length] (int sample) { return (float) sample / (float) length; };
+
+        looper.pressTrack (0);
+        rig.run (10, ramp);
+        looper.pressTrack (0);
+        const auto forward = rig.run (1, 0.0f);
+
+        looper.controls (0).reverse.store (true);
+        const auto reversed = rig.run (1, 0.0f);
+        looper.controls (0).reverse.store (false);
+        looper.controls (0).halfSpeed.store (true);
+        const auto halved = rig.run (1, 0.0f);
+
+        // The last sample of each block is 479, 959 and 1439 samples into the second turn: it
+        // plays sample 479 forward, 959 from the end reversed, and 3119.5 at half speed.
+        check (std::abs (forward - ramp (479)) < 1.0e-5f && std::abs (reversed - ramp (length - 1 - 959)) < 1.0e-5f
+                   && std::abs (halved - (ramp (3119) + ramp (3120)) / 2.0f) < 1.0e-5f,
+               "looper reverse and half speed",
+               juce::String (forward, 4) + " / " + juce::String (reversed, 4) + " / " + juce::String (halved, 4));
+
+        LooperRig synced;
+        synced.metronome.bpm.store (120.0f);
+        synced.metronome.enabled.store (true);
+        synced.run (50, 0.0f);
+        synced.looper.pressTrack (0);
+        synced.run (149, 0.2f);
+        const auto armedBeforeBar = synced.looper.getState (0) == Looper::State::armed;
+        synced.run (61, 0.2f);
+        synced.looper.pressTrack (0);
+        synced.run (140, 0.2f);
+        const auto stillRecording = synced.looper.getState (0) == Looper::State::finishing;
+        const auto played = synced.run (1, 0.0f);
+
+        check (synced.looper.isSynced() && armedBeforeBar && stillRecording && std::abs (synced.looper.getLengthSeconds (0) - 2.0) < 1.0e-6
+                   && std::abs (played - 0.2f) < 1.0e-5f,
+               "looper synced to metronome bars",
+               juce::String (synced.looper.getLengthSeconds (0), 3) + " s at 120 BPM in 4/4");
     }
 
     void testMetronome()
@@ -976,14 +1201,33 @@ namespace
 }
 
 // Renders the editor to a PNG so the layout can be checked without opening the app.
-static int saveEditorSnapshot (const juce::File& target, int preset)
+static juce::Button* findButton (juce::Component& parent, const juce::String& text)
+{
+    for (auto* child : parent.getChildren())
+    {
+        if (auto* button = dynamic_cast<juce::Button*> (child); button != nullptr && button->getButtonText() == text)
+            return button;
+
+        if (auto* found = findButton (*child, text))
+            return found;
+    }
+
+    return nullptr;
+}
+
+// The editor with a factory preset, optionally after clicking the button with the given text.
+static int saveEditorSnapshot (const juce::File& target, int preset, const juce::String& click)
 {
     auto processor = makeProcessor();
     processor->setCurrentProgram (preset);
-    processor->audioDeviceInfo = "ASIO  |  64 smp @ 48.0 kHz  |  latence ~4.2 ms";
+    processor->audioDeviceInfo = "ASIO  |  64 smp @ 48.0 kHz  |  latency ~4.2 ms";
 
     std::unique_ptr<juce::AudioProcessorEditor> editor (processor->createEditor());
     editor->setSize (MainPanel::designWidth, MainPanel::designHeight);
+
+    if (auto* button = findButton (*editor, click); button != nullptr && button->onClick != nullptr)
+        button->onClick();
+
     const auto image = editor->createComponentSnapshot (editor->getLocalBounds(), true, 1.0f);
 
     target.deleteFile();
@@ -1010,7 +1254,8 @@ int main (int argc, char* argv[])
     juce::ScopedJuceInitialiser_GUI juceInitialiser;
 
     if (argc >= 3 && juce::String (argv[1]) == "--snapshot")
-        return saveEditorSnapshot (juce::File::getCurrentWorkingDirectory().getChildFile (argv[2]), argc > 3 ? juce::String (argv[3]).getIntValue() : 0);
+        return saveEditorSnapshot (juce::File::getCurrentWorkingDirectory().getChildFile (argv[2]), argc > 3 ? juce::String (argv[3]).getIntValue() : 0,
+                                   argc > 4 ? juce::String (argv[4]) : juce::String());
 
     if (argc >= 3 && juce::String (argv[1]) == "--artwork")
         return saveArtwork (juce::File::getCurrentWorkingDirectory().getChildFile (argv[2]));
@@ -1022,6 +1267,7 @@ int main (int argc, char* argv[])
     testFilterPedal();
     testEnvelopeSweepsDown();
     testAmpCuts();
+    testQuickCuts();
     testWah();
     testPitchShifterAndSynth();
     testModulationEffects();
@@ -1039,9 +1285,12 @@ int main (int argc, char* argv[])
     testEqualizer();
     testCompressorMix();
     testFactoryPresets();
+    testModulePresets();
+    testTranslations();
     testUserPresetRoundTrip();
     testRecorder();
     testLooper();
+    testLooperPlayback();
     testMetronome();
     testBackingTrack();
     testMeters();

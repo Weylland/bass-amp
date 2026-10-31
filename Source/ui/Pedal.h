@@ -47,6 +47,13 @@ private:
         void paintButton (juce::Graphics&, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
     };
 
+    class PresetsButton : public juce::Button
+    {
+    public:
+        PresetsButton() : juce::Button ("Presets") { setTooltip (Help::get ("ui.pedalPresets")); }
+        void paintButton (juce::Graphics&, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+    };
+
     juce::Rectangle<float> enclosure() const;
     juce::Colour inkColour() const;
     juce::String labelFor (int knob) const;
@@ -65,6 +72,7 @@ private:
     Footswitch footswitch;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> footswitchAttachment;
     RemoveButton removeButton;
+    PresetsButton presetsButton;
 
     std::unique_ptr<juce::TextButton> tapButton;
     juce::RangedAudioParameter* tapParameter = nullptr;

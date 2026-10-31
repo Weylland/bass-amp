@@ -2,6 +2,7 @@
 #include "AmpLookAndFeel.h"
 #include "Help.h"
 #include "../ParameterIds.h"
+#include "../i18n/Language.h"
 
 namespace
 {
@@ -52,12 +53,24 @@ MainPanel::MainPanel (BassAmpProcessor& processorToUse)
       postBoard (processorToUse, Board::post),
       player (processorToUse),
       looperUnit (processorToUse),
+      looperPanel (processorToUse),
       metronomeUnit (processorToUse)
 {
     for (auto* component : std::initializer_list<juce::Component*> {
              &presetBar, &recorderBar, &preBoard, &tuner, &ampHead, &meters, &equalizer, &postBoard,
              &player, &looperUnit, &metronomeUnit })
         addAndMakeVisible (component);
+
+    addChildComponent (looperPanel);
+    addChildComponent (fullScreenButton);
+    fullScreenButton.setTooltip (Help::get ("ui.fullScreen"));
+    fullScreenButton.onClick = [this] { if (onToggleFullScreen != nullptr) onToggleFullScreen(); };
+    addAndMakeVisible (languageButton);
+    languageButton.setButtonText (Language::getCurrent().toUpperCase());
+    languageButton.setTooltip (Help::get ("ui.language"));
+    languageButton.onClick = [this] { showLanguageMenu(); };
+    looperUnit.onOpen = [this] { looperPanel.setVisible (! looperPanel.isVisible()); };
+    looperPanel.onClose = [this] { looperPanel.setVisible (false); };
 
     addParameterHelp (*this);
     addMouseListener (this, true);
@@ -69,6 +82,58 @@ MainPanel::MainPanel (BassAmpProcessor& processorToUse)
 MainPanel::~MainPanel()
 {
     stopTimer();
+}
+
+void MainPanel::setFullScreenAvailable (bool available)
+{
+    fullScreenButton.setVisible (available);
+    resized();
+    repaint (headerArea);
+}
+
+void MainPanel::showLanguageMenu()
+{
+    juce::PopupMenu menu;
+    menu.addSectionHeader (Language::tr ("Language"));
+
+    for (const auto& info : Language::available)
+    {
+        const juce::String code (info.code);
+        menu.addItem (juce::String::fromUTF8 (info.name), true, code == Language::getCurrent(), [this, code]
+        {
+            if (code == Language::getCurrent())
+                return;
+
+            Language::setCurrent (code);
+
+            if (onLanguageChanged != nullptr)
+                onLanguageChanged();
+        });
+    }
+
+    menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (languageButton));
+}
+
+void MainPanel::FullScreenButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
+{
+    const auto bounds = getLocalBounds().toFloat().reduced (1.0f).translated (0.0f, shouldDrawButtonAsDown ? 1.0f : 0.0f);
+    g.setColour (juce::Colours::white.withAlpha (shouldDrawButtonAsHighlighted ? 0.12f : 0.05f));
+    g.fillRoundedRectangle (bounds, 5.0f);
+
+    const auto icon = bounds.reduced (bounds.getWidth() * 0.27f);
+    const auto arm = icon.getWidth() * 0.38f;
+    juce::Path corners;
+
+    for (const auto& [corner, dx, dy] : { std::tuple { icon.getTopLeft(), 1.0f, 1.0f }, std::tuple { icon.getTopRight(), -1.0f, 1.0f },
+                                          std::tuple { icon.getBottomLeft(), 1.0f, -1.0f }, std::tuple { icon.getBottomRight(), -1.0f, -1.0f } })
+    {
+        corners.startNewSubPath (corner.translated (dx * arm, 0.0f));
+        corners.lineTo (corner);
+        corners.lineTo (corner.translated (0.0f, dy * arm));
+    }
+
+    g.setColour (shouldDrawButtonAsHighlighted ? Palette::gold : Palette::textDim);
+    g.strokePath (corners, juce::PathStrokeType (1.6f, juce::PathStrokeType::mitered, juce::PathStrokeType::square));
 }
 
 void MainPanel::timerCallback()
@@ -104,7 +169,7 @@ void MainPanel::mouseDown (const juce::MouseEvent& event)
 
     for (auto* component = event.eventComponent; component != nullptr && component != this; component = component->getParentComponent())
     {
-        if (processor.parameters.getParameter (component->getComponentID()) != nullptr)
+        if (processor.midiLearn.isLearnable (component->getComponentID()))
         {
             showMidiMenu (component->getComponentID());
             return;
@@ -118,15 +183,15 @@ void MainPanel::showMidiMenu (const juce::String& paramId)
     const auto mapping = midi.describe (paramId);
 
     juce::PopupMenu menu;
-    menu.addSectionHeader (processor.parameters.getParameter (paramId)->getName (64) + (mapping.isNotEmpty() ? "  (" + mapping + ")" : ""));
+    menu.addSectionHeader (midi.getName (paramId) + (mapping.isNotEmpty() ? "  (" + mapping + ")" : ""));
 
     if (midi.getLearningParameter() == paramId)
-        menu.addItem ("Cancel MIDI learn", [&midi] { midi.cancelLearning(); });
+        menu.addItem (Language::tr ("Cancel MIDI learn"), [&midi] { midi.cancelLearning(); });
     else
-        menu.addItem ("MIDI learn", [&midi, paramId] { midi.learn (paramId); });
+        menu.addItem (Language::tr ("MIDI learn"), [&midi, paramId] { midi.learn (paramId); });
 
     if (mapping.isNotEmpty())
-        menu.addItem ("Forget " + mapping, [&midi, paramId] { midi.forget (paramId); });
+        menu.addItem (Language::tr ("Forget") + " " + mapping, [&midi, paramId] { midi.forget (paramId); });
 
     menu.showMenuAsync (juce::PopupMenu::Options());
 }
@@ -151,7 +216,7 @@ void MainPanel::paintOverChildren (juce::Graphics& g)
 
     g.setColour (Palette::gold);
     g.setFont (Fonts::display (11.0f));
-    g.drawText ("MOVE A MIDI CONTROL", area.withY (area.getBottom() + 2.0f).withHeight (16.0f).expanded (40.0f, 0.0f),
+    g.drawText (Language::tr ("MOVE A MIDI CONTROL"), area.withY (area.getBottom() + 2.0f).withHeight (16.0f).expanded (40.0f, 0.0f),
                 juce::Justification::centredTop);
 }
 
@@ -170,7 +235,11 @@ void MainPanel::paint (juce::Graphics& g)
 
     g.setColour (Palette::textDim);
     g.setFont (Fonts::display (12.0f, false));
-    g.drawFittedText (shownDeviceInfo, header.withLeft (recorderBar.getRight() + margin), juce::Justification::centredRight, 1, 0.8f);
+    auto deviceInfo = header.withLeft (recorderBar.getRight() + margin);
+
+    deviceInfo.setRight (languageButton.getX() - margin);
+
+    g.drawFittedText (shownDeviceInfo, deviceInfo, juce::Justification::centredRight, 1, 0.8f);
 }
 
 void MainPanel::resized()
@@ -180,6 +249,9 @@ void MainPanel::resized()
 
     presetBar.setBounds (juce::Rectangle<int> (440, 32).withPosition (250, (headerHeight - 32) / 2 + 2));
     recorderBar.setBounds (juce::Rectangle<int> (200, 30).withPosition (presetBar.getRight() + 28, (headerHeight - 30) / 2 + 2));
+    fullScreenButton.setBounds (juce::Rectangle<int> (30, 30).withPosition (headerArea.getRight() - 8 - 30, (headerHeight - 30) / 2 + 2));
+    const auto languageRight = fullScreenButton.isVisible() ? fullScreenButton.getX() - 8 : fullScreenButton.getRight();
+    languageButton.setBounds (juce::Rectangle<int> (40, 30).withPosition (languageRight - 40, (headerHeight - 30) / 2 + 2));
 
     area.removeFromTop (6);
     preBoard.setBounds (area.removeFromTop (236));
@@ -194,7 +266,7 @@ void MainPanel::resized()
 
     area.removeFromTop (margin);
     auto practice = area.removeFromBottom (practiceHeight + margin).withTrimmedBottom (margin);
-    player.setBounds (practice.removeFromLeft (556));
+    player.setBounds (practice.removeFromLeft (520));
     practice.removeFromLeft (margin);
     metronomeUnit.setBounds (practice.removeFromRight (376));
     practice.removeFromRight (margin);
@@ -204,4 +276,6 @@ void MainPanel::resized()
     equalizer.setBounds (bottom.removeFromLeft (532));
     bottom.removeFromLeft (margin);
     postBoard.setBounds (bottom);
+
+    looperPanel.setBounds (preBoard.getBounds().getUnion (postBoard.getBounds()).getUnion (equalizer.getBounds()));
 }

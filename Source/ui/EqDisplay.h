@@ -8,7 +8,8 @@
 
 // EQ screen: the output spectrum behind the EQ response curve. Basic mode shows one fader
 // per graphic band; advanced mode has draggable nodes (drag for frequency and gain,
-// mouse wheel for width, double-click to reset). Its tooltip explains the node under the mouse.
+// mouse wheel for width, double-click to reset). Touching a fader or a node switches the EQ on.
+// Its tooltip explains the node under the mouse.
 class EqDisplay : public juce::Component, public juce::TooltipClient
 {
 public:
@@ -53,6 +54,7 @@ private:
     int nodeAt (juce::Point<float>) const;
     float value (const char* paramId) const;
     void setValue (const char* paramId, float newValue);
+    void switchOn();
 
     void paintGrid (juce::Graphics&, juce::Rectangle<float>);
     void paintSpectrum (juce::Graphics&, juce::Rectangle<float>);

@@ -42,7 +42,12 @@ Deux modes, avec un bouton ON pour le bypass :
 - **Basic** : graphique 9 bandes par octave (33 Hz à 8 kHz), ±12 dB, avec des faders.
 - **Advanced** : paramétrique 6 points (coupe-bas, shelf grave, deux bandes de médiums, shelf aigu, coupe-haut), ±18 dB. On glisse les points sur la courbe ; la molette règle le Q des médiums et le double-clic remet un point à zéro.
 
-Le passage d'un mode à l'autre se fait en fondu, sans clic. L'écran affiche la courbe de l'EQ par-dessus le spectre du son de sortie.
+Le passage d'un mode à l'autre se fait en fondu, sans clic. L'écran affiche la courbe de l'EQ par-dessus le spectre du son de sortie. L'EQ s'allume tout seul dès qu'on touche un fader ou un point. Les points de coupe-bas et coupe-haut se déplacent seulement à l'horizontale : ils n'ont pas de gain.
+
+Coupes rapides, à droite de l'EQ, actives dans les deux modes :
+
+- **LOW CUT** coupe tout sous 80 Hz, **HIGH CUT** tout au-dessus de 5 kHz (filtres Linkwitz-Riley 24 dB/oct).
+- **KILL LOW**, **KILL MID** et **KILL HIGH** suppriment une bande entière (coupures à 250 Hz et 2,5 kHz), comme les kills d'une table de mixage DJ.
 
 ## Effets
 
@@ -71,13 +76,19 @@ Le passage d'un mode à l'autre se fait en fondu, sans clic. L'écran affiche la
 La rangée du bas :
 
 - **Player** : **LOAD** ouvre un fichier (WAV, AIFF, FLAC, OGG, MP3) pour jouer par-dessus, avec lecture, pause, stop, barre de position, boucle et volume. **RE-AMP** envoie le fichier dans l'entrée de la chaîne à la place de la basse, pour repasser une piste DI dans les pédales et l'ampli.
-- **Looper** (60 s) : le bouton principal enregistre, puis lit (ce qui fixe la longueur de la boucle), puis superpose (**DUB**). **STOP** garde la boucle, **CLEAR** l'efface. **LEVEL** règle son volume.
+- **Looper** : 4 pistes de 30 s pour construire un morceau en live. Sur un pad, le 1er clic enregistre, le 2e lance la boucle, puis chaque clic superpose une couche (**DUB**) ou revient à la lecture. **OPEN** ouvre le looper complet :
+  - **SYNC** : avec le métronome en marche, les boucles démarrent et finissent sur une mesure (l'enregistrement attend la mesure suivante). Sinon la première boucle donne la longueur que suivent les autres.
+  - **UNDO** / **REDO** sur la dernière prise ou la dernière couche.
+  - Par piste : **STOP**, **CLEAR**, **REV** (à l'envers), **HALF** (demi-vitesse, une octave plus bas) et **LEVEL**.
+  - **STOP ALL**, **CLEAR ALL**, et **EXPORT WAV** qui enregistre le mix des pistes dans `Documents/Bass Amp/Recordings`.
+  - Clic droit sur un pad ou un bouton du looper : **MIDI learn**, pour le piloter depuis un contrôleur (pad, note ou footswitch CC).
 - **Metronome** : tempo de 40 à 240 BPM au potard ou avec **TAP**, volume, et un voyant par temps. Le clic n'est jamais enregistré par **REC**.
 
 ## MIDI
 
 - Clic droit sur un potard, un fader ou un interrupteur, puis **MIDI learn**, puis bouge un contrôle de ton contrôleur : le contrôle clignote en doré tant qu'il attend. Le même menu permet d'oublier l'assignation.
 - Un CC pilote n'importe quel réglage. Un pad (note) allume ou éteint un interrupteur, ou passe au choix suivant.
+- Les pads et les boutons du looper (pistes 1 à 4, undo, redo, stop all, clear all) se déclenchent par une note ou un CC qui passe au-dessus de 64.
 - Par défaut, le CC 11 (pédale d'expression) pilote la wah.
 - Les changements de programme chargent les presets d'usine.
 - Les assignations sont communes à tous les presets, dans `Bass Amp/MidiMap.xml` (dossier des données d'application). L'appli autonome ouvre toutes les entrées MIDI au lancement.
@@ -87,6 +98,12 @@ La rangée du bas :
 24 presets d'usine, pensés autour des sons de référence : Tube 300 Rock, Tube 300 Ultra, Motown Flip Top, Fifties Tweed, Rock Punch 4x10, Slap Hi-Fi, Jazz Warm, Tube DI Studio, Tube DI Grit, Crossover Metal, Crossover Djent, Punk Pick, Fuzz Lead, Funk Envelope, Synth Octave, Dub Deep, Fretless Phase, Ambient Chorus, Wah Funk, Analog Synth, Filter Sweep, Octave Up Lead, Jet Flanger, Surf Tremolo. Ils sont équilibrés au même volume, à moins de 1 dB près.
 
 **Save** enregistre le son en cours dans `Documents/Bass Amp/Presets/<nom>.bassamp`. Les flèches passent d'un preset à l'autre. En VST3, les presets d'usine apparaissent aussi comme programmes dans le DAW.
+
+Chaque module a aussi ses presets, qui ne touchent que lui :
+
+- **AMP PRESETS** sous la tête : 11 réglages d'ampli et de baffle, équilibrés au même volume.
+- **PRESETS** dans l'EQ : Flat, Vocals, Electric Guitar, Acoustic Guitar, Round Bass, Slap Smile, Rock Growl, Fingerstyle Warm, Anti-Mud, Old Radio.
+- Le bouton à trois traits en haut à gauche de chaque pédale : 3 à 5 réglages pour cette pédale.
 
 ## Installation (macOS)
 
@@ -142,6 +159,8 @@ Tests DSP (accordeur, effets, modèles d'ampli, tone stack, baffles et IR, égal
 - Survole un élément (pédale, potard, bouton, écran) pendant une seconde : une bulle explique à quoi il sert et comment l'utiliser.
 - Double-clic sur un potard : retour à sa valeur par défaut. Survol ou glisser : la valeur s'affiche.
 - La fenêtre se redimensionne (coin en bas à droite) de 60 % à 160 %, et s'ouvre à la taille de l'écran.
+- Plein écran (appli autonome) : le bouton en haut à droite ou **F11**, **Échap** pour revenir en fenêtre.
+- Langue : le bouton à gauche du plein écran (English, Français, Español, Deutsch, Italiano, Português). Les bulles d'aide, les messages et les menus sont traduits ; les noms des réglages restent en anglais, comme sur le vrai matériel. Par défaut, la langue du système.
 - **IN CLIP** : l'entrée de la carte son sature, baisse le gain de l'interface. **OUT CLIP** : la sortie sature, baisse le Master.
 - Clic sur le bloc LEVELS : efface les témoins CLIP.
 - **MUTE** dans l'accordeur coupe la sortie pendant l'accordage.

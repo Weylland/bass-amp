@@ -12,6 +12,7 @@
 #include "dsp/Distortion.h"
 #include "dsp/EnvelopeFilter.h"
 #include "dsp/Equalizer.h"
+#include "dsp/QuickCuts.h"
 #include "dsp/FilterEffect.h"
 #include "dsp/FlangerEffect.h"
 #include "dsp/Fuzz.h"
@@ -80,7 +81,7 @@ public:
     juce::AudioProcessorValueTreeState parameters;
     PresetManager presets { parameters };
     PedalChain pedalChain { parameters };
-    MidiLearn midiLearn { parameters, MidiLearn::getDefaultFile() };
+    MidiLearn midiLearn { parameters, MidiLearn::getDefaultFile(), { Looper::midiActions.begin(), Looper::midiActions.end() } };
     Tuner tuner;
     PeakMeter inputMeter, outputMeter, ampMeter;
     SpectrumTap spectrum;
@@ -108,6 +109,7 @@ private:
     Distortion distortion;
     AmpStage amp;
     Equalizer equalizer;
+    QuickCuts quickCuts;
     PhaserEffect phaser;
     FlangerEffect flanger;
     ChorusEffect chorus;

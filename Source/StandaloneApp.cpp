@@ -2,6 +2,7 @@
 #include <juce_audio_plugin_client/Standalone/juce_StandaloneFilterWindow.h>
 
 #include "PluginProcessor.h"
+#include "i18n/Language.h"
 #include "ui/AmpLookAndFeel.h"
 #include "ui/Logo.h"
 
@@ -141,7 +142,7 @@ namespace
 
         return device.getTypeName()
              + "  |  " + juce::String (bufferSize) + " smp @ " + juce::String (sampleRate / 1000.0, 1) + " kHz"
-             + "  |  latence ~" + juce::String (1000.0 * latencySamples / sampleRate, 1) + " ms";
+             + "  |  " + Language::tr ("latency") + " ~" + juce::String (1000.0 * latencySamples / sampleRate, 1) + " ms";
     }
 }
 
@@ -236,7 +237,7 @@ private:
             return;
 
         auto* device = mainWindow->getDeviceManager().getCurrentAudioDevice();
-        processor->audioDeviceInfo = device != nullptr ? describe (*device) : juce::String ("Aucun peripherique audio : Options > Audio/MIDI Settings");
+        processor->audioDeviceInfo = device != nullptr ? describe (*device) : Language::tr ("No audio device: Options > Audio/MIDI Settings");
     }
 
     juce::ApplicationProperties appProperties;

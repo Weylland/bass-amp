@@ -6,7 +6,8 @@
 #include "EqDisplay.h"
 #include "ToggleSwitch.h"
 
-// The EQ unit: on/off, Basic (graphic) or Advanced (parametric) mode, and the EQ screen.
+// The EQ unit: on/off, Basic (graphic) or Advanced (parametric) mode, the EQ screen, and a
+// column of one-touch cuts and band kills.
 class EqPanel : public juce::Component, private juce::Timer
 {
 public:
@@ -27,7 +28,10 @@ private:
     ToggleSwitch onSwitch;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> onAttachment;
     juce::TextButton basicButton { "BASIC" }, advancedButton { "ADVANCED" };
+    juce::TextButton presetsButton { "PRESETS" };
     EqDisplay display;
+    juce::OwnedArray<ToggleSwitch> cutSwitches;
+    juce::OwnedArray<juce::AudioProcessorValueTreeState::ButtonAttachment> cutAttachments;
     juce::Rectangle<int> titleArea;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EqPanel)

@@ -2,7 +2,9 @@
 #include "AmpLookAndFeel.h"
 #include "AmpSkins.h"
 #include "Help.h"
+#include "ModulePresetMenu.h"
 #include "../dsp/AmpModels.h"
+#include "../i18n/Language.h"
 
 static_assert (std::tuple_size_v<decltype (ampSkins)> == std::tuple_size_v<decltype (ampModels)>, "one skin per amp model");
 
@@ -83,6 +85,10 @@ AmpHead::AmpHead (BassAmpProcessor& processorToUse)
     irButton.setTooltip (Help::get ("ui.loadIr"));
     addAndMakeVisible (irButton);
 
+    presetsButton.onClick = [this] { showModulePresetMenu (processor.parameters, "amp", presetsButton); };
+    presetsButton.setTooltip (Help::get ("ui.ampPresets"));
+    addAndMakeVisible (presetsButton);
+
     captureButton.onClick = [this] { chooseCapture(); };
     captureButton.setTooltip (Help::get ("ui.loadNam"));
     addChildComponent (captureButton);
@@ -158,7 +164,7 @@ juce::String AmpHead::impulseResponseText() const
         return {};
 
     const auto file = processor.getCabinetImpulseResponse();
-    return file.existsAsFile() ? file.getFileNameWithoutExtension() : juce::String ("no file loaded");
+    return file.existsAsFile() ? file.getFileNameWithoutExtension() : Language::tr ("no file loaded");
 }
 
 bool AmpHead::showsCapture() const
@@ -174,17 +180,17 @@ juce::String AmpHead::captureText() const
     const auto file = processor.getCapture();
 
     if (! file.existsAsFile())
-        return "No capture loaded";
+        return Language::tr ("No capture loaded");
 
     const auto capturedRate = processor.getCaptureSampleRate();
 
     if (juce::exactlyEqual (capturedRate, 0.0))
-        return file.getFileNameWithoutExtension() + "\nCan't read this file";
+        return file.getFileNameWithoutExtension() + "\n" + Language::tr ("Can't read this file");
 
     const auto playingRate = processor.getSampleRate();
 
     if (capturedRate > 0.0 && playingRate > 0.0 && std::abs (capturedRate - playingRate) > 1.0)
-        return file.getFileNameWithoutExtension() + "\nSet audio to " + juce::String (capturedRate / 1000.0, 1) + " kHz";
+        return file.getFileNameWithoutExtension() + "\n" + Language::tr ("Set audio to") + " " + juce::String (capturedRate / 1000.0, 1) + " kHz";
 
     return file.getFileNameWithoutExtension();
 }
@@ -192,7 +198,7 @@ juce::String AmpHead::captureText() const
 void AmpHead::chooseCapture()
 {
     const auto current = processor.getCapture();
-    fileChooser = std::make_unique<juce::FileChooser> ("Load a Neural Amp Modeler capture",
+    fileChooser = std::make_unique<juce::FileChooser> (Language::tr ("Load a Neural Amp Modeler capture"),
                                                        current.existsAsFile() ? current.getParentDirectory() : juce::File(),
                                                        "*.nam");
 
@@ -207,7 +213,7 @@ void AmpHead::chooseCapture()
 void AmpHead::chooseImpulseResponse()
 {
     const auto current = processor.getCabinetImpulseResponse();
-    fileChooser = std::make_unique<juce::FileChooser> ("Load a cabinet impulse response",
+    fileChooser = std::make_unique<juce::FileChooser> (Language::tr ("Load a cabinet impulse response"),
                                                        current.existsAsFile() ? current.getParentDirectory() : juce::File(),
                                                        "*.wav;*.aif;*.aiff;*.flac");
 
@@ -258,6 +264,8 @@ void AmpHead::resized()
     irButton.setBounds (cabRow.removeFromRight (70));
     cabRow.removeFromRight (6);
     cabBox.setBounds (cabRow);
+    cab.removeFromTop (6);
+    presetsButton.setBounds (cab.removeFromTop (24));
 
     inner.removeFromTop (10);
     panelArea = inner;

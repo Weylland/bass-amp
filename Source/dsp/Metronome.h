@@ -22,6 +22,15 @@ public:
     // The beat last clicked, from 0, or -1 while stopped.
     int getBeat() const { return currentBeat.load(); }
 
+    // Audio thread, before process() in the same block: samples until the next bar starts
+    // (0 when it starts on the first sample), and the length of a bar.
+    double getSamplesToNextBar() const
+    {
+        return samplesToNextBeat + (beat < 0 ? 0.0 : (double) (juce::jmax (1, beatsPerBar.load()) - 1 - beat) * getBeatLength());
+    }
+
+    double getBarLength() const { return getBeatLength() * juce::jmax (1, beatsPerBar.load()); }
+
     void process (juce::dsp::AudioBlock<float>& block)
     {
         if (! enabled.load())
@@ -30,7 +39,7 @@ public:
             return;
         }
 
-        const auto beatLength = sampleRate * 60.0 / (double) juce::jlimit (30.0f, 300.0f, bpm.load());
+        const auto beatLength = getBeatLength();
         const auto gain = volume.load();
 
         for (size_t i = 0; i < block.getNumSamples(); ++i)
@@ -60,6 +69,8 @@ public:
     }
 
 private:
+    double getBeatLength() const { return sampleRate * 60.0 / (double) juce::jlimit (30.0f, 300.0f, bpm.load()); }
+
     void reset()
     {
         samplesToNextBeat = 0.0;

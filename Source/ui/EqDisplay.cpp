@@ -43,6 +43,7 @@ EqDisplay::EqDisplay (juce::AudioProcessorValueTreeState& stateToUse, SpectrumTa
         addAndMakeVisible (fader);
         faderAttachments.add (new juce::AudioProcessorValueTreeState::SliderAttachment (state, paramId, *fader));
         fader->setComponentID (paramId);
+        fader->onDragStart = [this] { switchOn(); };
     }
 }
 
@@ -101,6 +102,12 @@ void EqDisplay::setValue (const char* paramId, float newValue)
 {
     if (auto* parameter = state.getParameter (paramId))
         parameter->setValueNotifyingHost (parameter->convertTo0to1 (newValue));
+}
+
+void EqDisplay::switchOn()
+{
+    if (auto* parameter = state.getParameter (ParamIds::eqOn); parameter != nullptr && parameter->getValue() < 0.5f)
+        parameter->setValueNotifyingHost (1.0f);
 }
 
 std::vector<std::array<float, 6>> EqDisplay::currentCoefficients() const
@@ -380,6 +387,7 @@ void EqDisplay::mouseDown (const juce::MouseEvent& event)
     if (! advanced || (draggedNode = nodeAt (event.position)) < 0)
         return;
 
+    switchOn();
     const auto& node = nodes[(size_t) draggedNode];
 
     for (const auto* paramId : { node.frequencyId, node.gainId })
@@ -438,6 +446,7 @@ void EqDisplay::mouseWheelMove (const juce::MouseEvent& event, const juce::Mouse
     if (index < 0 || nodes[(size_t) index].qId == nullptr)
         return;
 
+    switchOn();
     const auto* qId = nodes[(size_t) index].qId;
     setValue (qId, value (qId) * std::pow (1.25f, wheel.deltaY * 4.0f));
     repaint();

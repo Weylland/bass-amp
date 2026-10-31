@@ -6,8 +6,8 @@ namespace
     constexpr int expressionController = 11;
 }
 
-MidiLearn::MidiLearn (juce::AudioProcessorValueTreeState& stateToUse, juce::File mapFile)
-    : state (stateToUse), file (std::move (mapFile))
+MidiLearn::MidiLearn (juce::AudioProcessorValueTreeState& stateToUse, juce::File mapFile, const std::vector<Action>& actionsToUse)
+    : state (stateToUse), file (std::move (mapFile)), actions (actionsToUse)
 {
     for (auto* parameter : state.processor.getParameters())
     {
@@ -19,6 +19,8 @@ MidiLearn::MidiLearn (juce::AudioProcessorValueTreeState& stateToUse, juce::File
                                                                                              : Kind::continuous);
         }
     }
+
+    kinds.insert (kinds.end(), actions.size(), Kind::action);
 
     load();
 }
@@ -40,7 +42,28 @@ int MidiLearn::indexOf (const juce::String& paramId) const
         if (parameters[i]->getParameterID() == paramId)
             return (int) i;
 
+    for (size_t i = 0; i < actions.size(); ++i)
+        if (paramId == actions[i].first)
+            return (int) (parameters.size() + i);
+
     return -1;
+}
+
+juce::String MidiLearn::idOf (int index) const
+{
+    return index < (int) parameters.size() ? parameters[(size_t) index]->getParameterID()
+                                           : juce::String (actions[(size_t) index - parameters.size()].first);
+}
+
+juce::String MidiLearn::getName (const juce::String& id) const
+{
+    const auto index = indexOf (id);
+
+    if (index < 0)
+        return {};
+
+    return index < (int) parameters.size() ? parameters[(size_t) index]->getName (64)
+                                           : juce::String (actions[(size_t) index - parameters.size()].second);
 }
 
 void MidiLearn::process (const juce::MidiBuffer& midi)
@@ -64,10 +87,14 @@ void MidiLearn::process (const juce::MidiBuffer& midi)
 void MidiLearn::handle (Source source, int number, int value)
 {
     auto& slots = source == Source::controller ? controllers : notes;
+    const auto risingEdge = source == Source::note || (value >= 64 && lastControllerValues[(size_t) number] < 64);
+
+    if (source == Source::controller)
+        lastControllerValues[(size_t) number] = value;
 
     if (const auto learnt = learning.load(); learnt >= 0)
     {
-        // A note can only flip a switch or step a choice; keep waiting for a CC otherwise.
+        // A note can't drive a continuous parameter: keep waiting for a CC then.
         if (source == Source::controller || kinds[(size_t) learnt] != Kind::continuous)
         {
             for (auto* list : { &controllers, &notes })
@@ -79,6 +106,10 @@ void MidiLearn::handle (Source source, int number, int value)
             learning.store (-1);
             mappingsChanged.store (true);
             triggerAsyncUpdate();
+
+            // The press that teaches an action doesn't fire it.
+            if (kinds[(size_t) learnt] == Kind::action)
+                return;
         }
     }
 
@@ -86,6 +117,14 @@ void MidiLearn::handle (Source source, int number, int value)
 
     if (index < 0)
         return;
+
+    if (kinds[(size_t) index] == Kind::action)
+    {
+        if (risingEdge && onAction != nullptr)
+            onAction (index - (int) parameters.size());
+
+        return;
+    }
 
     auto* parameter = parameters[(size_t) index];
     const auto kind = kinds[(size_t) index];
@@ -128,7 +167,7 @@ void MidiLearn::cancelLearning()
 juce::String MidiLearn::getLearningParameter() const
 {
     const auto index = learning.load();
-    return index >= 0 ? parameters[(size_t) index]->getParameterID() : juce::String();
+    return index >= 0 ? idOf (index) : juce::String();
 }
 
 void MidiLearn::forget (const juce::String& paramId)
@@ -196,7 +235,7 @@ void MidiLearn::save() const
                 auto* mapping = xml.createNewChildElement ("MAP");
                 mapping->setAttribute ("type", type);
                 mapping->setAttribute ("number", number);
-                mapping->setAttribute ("param", parameters[(size_t) index]->getParameterID());
+                mapping->setAttribute ("param", idOf (index));
             }
         }
     }

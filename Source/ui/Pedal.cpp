@@ -1,5 +1,6 @@
 #include "Pedal.h"
 #include "AmpLookAndFeel.h"
+#include "ModulePresetMenu.h"
 
 namespace
 {
@@ -44,6 +45,9 @@ Pedal::Pedal (juce::AudioProcessorValueTreeState& stateToUse, PedalId pedalId, c
 
     removeButton.onClick = [this] { if (onRemove != nullptr) onRemove(); };
     addAndMakeVisible (removeButton);
+
+    presetsButton.onClick = [this] { showModulePresetMenu (state, pedalInfos[(size_t) id].key, presetsButton); };
+    addAndMakeVisible (presetsButton);
 
     setTooltip (Help::get (juce::String ("pedal.") + pedalInfos[(size_t) id].key));
 }
@@ -137,6 +141,7 @@ void Pedal::resized()
     auto area = body.reduced (padding);
 
     removeButton.setBounds (juce::Rectangle<int> (16, 16).withPosition (body.getRight() - 19, body.getY() + 2));
+    presetsButton.setBounds (juce::Rectangle<int> (16, 16).withPosition (body.getX() + 3, body.getY() + 2));
     area.removeFromTop (5);
 
     footswitch.setBounds (juce::Rectangle<int> (footswitchSize, footswitchSize)
@@ -192,6 +197,22 @@ void Pedal::Footswitch::paintButton (juce::Graphics& g, bool shouldDrawButtonAsH
     g.setColour (juce::Colours::white.withAlpha (shouldDrawButtonAsHighlighted ? 0.8f : 0.6f));
     g.fillEllipse (dome.withSizeKeepingCentre (dome.getWidth() * 0.25f, dome.getHeight() * 0.16f)
                        .translated (-dome.getWidth() * 0.12f, -dome.getHeight() * 0.22f));
+}
+
+void Pedal::PresetsButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool)
+{
+    const auto bounds = getLocalBounds().toFloat().reduced (2.0f);
+    g.setColour (juce::Colours::black.withAlpha (shouldDrawButtonAsHighlighted ? 0.55f : 0.25f));
+    g.fillEllipse (bounds);
+
+    const auto lines = bounds.reduced (bounds.getWidth() * 0.3f);
+    g.setColour (juce::Colours::white.withAlpha (shouldDrawButtonAsHighlighted ? 0.95f : 0.55f));
+
+    for (auto row = 0; row < 3; ++row)
+    {
+        const auto y = lines.getY() + lines.getHeight() * (float) row / 2.0f;
+        g.drawLine (lines.getX(), y, lines.getRight(), y, 1.4f);
+    }
 }
 
 void Pedal::RemoveButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool)

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(BassAmp VERSION 0.6.1)
+project(BassAmp VERSION 0.7.0)
 
 # Static MSVC runtime: the app and plugin run without the Visual C++ redistributable.
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -52,10 +52,19 @@ set(BASS_AMP_SOURCES
     Source/PluginProcessor.cpp
     Source/PluginEditor.cpp
     Source/dsp/BackingTrack.cpp
+    Source/dsp/Looper.cpp
     Source/dsp/NamModel.cpp
     Source/dsp/Recorder.cpp
     Source/dsp/Tuner.cpp
+    Source/i18n/English.cpp
+    Source/i18n/French.cpp
+    Source/i18n/German.cpp
+    Source/i18n/Italian.cpp
+    Source/i18n/Language.cpp
+    Source/i18n/Portuguese.cpp
+    Source/i18n/Spanish.cpp
     Source/presets/FactoryPresets.cpp
+    Source/presets/ModulePresets.cpp
     Source/presets/PresetManager.cpp
     Source/ui/AmpHead.cpp
     Source/ui/AmpLookAndFeel.cpp
@@ -63,10 +72,13 @@ set(BASS_AMP_SOURCES
     Source/ui/EqPanel.cpp
     Source/ui/LevelMeters.cpp
     Source/ui/Help.cpp
+    Source/ui/ModulePresetMenu.cpp
     Source/ui/Logo.cpp
     Source/ui/MainPanel.cpp
     Source/ui/Pedal.cpp
     Source/ui/PlayerUnit.cpp
+    Source/ui/LoopPad.cpp
+    Source/ui/LooperPanel.cpp
     Source/ui/LooperUnit.cpp
     Source/ui/MetronomeUnit.cpp
     Source/ui/PedalBoard.cpp
