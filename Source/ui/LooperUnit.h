@@ -6,7 +6,7 @@
 
 // Looper controls: the main button records, plays and overdubs in turn; STOP, CLEAR, the
 // loop level, and a screen with the state and the loop position.
-class LooperUnit : public juce::Component, private juce::Timer
+class LooperUnit : public juce::Component, public juce::SettableTooltipClient, private juce::Timer
 {
 public:
     explicit LooperUnit (BassAmpProcessor&);

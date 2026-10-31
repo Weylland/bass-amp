@@ -87,6 +87,10 @@ public:
 
     void drawPopupMenuBackground (juce::Graphics&, int width, int height) override;
 
+    juce::Rectangle<int> getTooltipBounds (const juce::String& tipText, juce::Point<int> screenPos,
+                                           juce::Rectangle<int> parentArea) override;
+    void drawTooltip (juce::Graphics&, const juce::String& text, int width, int height) override;
+
 private:
     void drawPedalKnob (juce::Graphics&, juce::Rectangle<float>, float angle, juce::Slider&);
     void drawSkirtedKnob (juce::Graphics&, juce::Rectangle<float>, float angle, juce::Slider&);

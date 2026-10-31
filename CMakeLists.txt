@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(BassAmp VERSION 0.6.0)
+project(BassAmp VERSION 0.6.1)
 
 # Static MSVC runtime: the app and plugin run without the Visual C++ redistributable.
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -62,6 +62,7 @@ set(BASS_AMP_SOURCES
     Source/ui/EqDisplay.cpp
     Source/ui/EqPanel.cpp
     Source/ui/LevelMeters.cpp
+    Source/ui/Help.cpp
     Source/ui/Logo.cpp
     Source/ui/MainPanel.cpp
     Source/ui/Pedal.cpp
@@ -79,6 +80,11 @@ target_sources(BassAmp_Standalone PRIVATE Source/StandaloneApp.cpp)
 target_compile_definitions(BassAmp_Standalone PRIVATE JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1)
 
 target_compile_features(BassAmp PRIVATE cxx_std_17)
+
+# The help texts are French, in UTF-8.
+if(MSVC)
+    target_compile_options(BassAmp PRIVATE /utf-8)
+endif()
 
 target_compile_definitions(BassAmp PUBLIC
     JUCE_WEB_BROWSER=0
@@ -111,6 +117,10 @@ target_link_libraries(BassAmp
 juce_add_console_app(BassAmpTests)
 
 target_sources(BassAmpTests PRIVATE Tests/DspTests.cpp ${BASS_AMP_SOURCES})
+
+if(MSVC)
+    target_compile_options(BassAmpTests PRIVATE /utf-8)
+endif()
 
 target_compile_definitions(BassAmpTests PRIVATE
     JucePlugin_Name="Bass Amp"

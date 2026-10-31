@@ -428,6 +428,63 @@ void AmpLookAndFeel::drawPopupMenuBackground (juce::Graphics& g, int width, int 
     g.drawRect (0, 0, width, height);
 }
 
+namespace
+{
+    constexpr float tooltipWidth = 300.0f;
+    constexpr float tooltipPadding = 10.0f;
+
+    // First line: the title in gold; the rest: the explanation.
+    juce::TextLayout tooltipLayout (const juce::String& text)
+    {
+        const auto title = text.upToFirstOccurrenceOf ("\n", false, false);
+        const auto body = text.fromFirstOccurrenceOf ("\n", false, false);
+
+        juce::AttributedString attributed;
+        attributed.setWordWrap (juce::AttributedString::byWord);
+        attributed.append (title, juce::Font (Fonts::display (14.0f).withKerningFactor (0.04f)), Palette::gold);
+
+        if (body.isNotEmpty())
+            attributed.append ("\n" + body, juce::Font (Fonts::display (13.0f, false)), Palette::text);
+
+        juce::TextLayout layout;
+        layout.createLayout (attributed, tooltipWidth);
+        return layout;
+    }
+
+    float widestLine (const juce::TextLayout& layout)
+    {
+        auto width = 0.0f;
+
+        for (const auto& line : layout)
+            width = juce::jmax (width, line.getLineBoundsX().getEnd());
+
+        return width;
+    }
+}
+
+juce::Rectangle<int> AmpLookAndFeel::getTooltipBounds (const juce::String& tipText, juce::Point<int> screenPos,
+                                                       juce::Rectangle<int> parentArea)
+{
+    const auto layout = tooltipLayout (tipText);
+    const auto width = juce::roundToInt (widestLine (layout) + tooltipPadding * 2.0f) + 1;
+    const auto height = juce::roundToInt (layout.getHeight() + tooltipPadding * 2.0f) + 1;
+
+    const auto x = screenPos.x + 16 + width <= parentArea.getRight() ? screenPos.x + 16 : screenPos.x - width - 8;
+    const auto y = screenPos.y + 20 + height <= parentArea.getBottom() ? screenPos.y + 20 : screenPos.y - height - 8;
+    return juce::Rectangle<int> (x, y, width, height).constrainedWithin (parentArea);
+}
+
+void AmpLookAndFeel::drawTooltip (juce::Graphics& g, const juce::String& text, int width, int height)
+{
+    const auto bounds = juce::Rectangle<float> ((float) width, (float) height);
+    g.setColour (juce::Colour (0xf2141518));
+    g.fillRoundedRectangle (bounds, 6.0f);
+    g.setColour (Palette::gold.withAlpha (0.55f));
+    g.drawRoundedRectangle (bounds.reduced (0.5f), 6.0f, 1.0f);
+
+    tooltipLayout (text).draw (g, bounds.reduced (tooltipPadding));
+}
+
 void Draw::led (juce::Graphics& g, Point<float> centre, float radius, Colour colour, bool lit)
 {
     if (lit)

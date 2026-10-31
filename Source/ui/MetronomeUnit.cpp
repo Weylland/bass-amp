@@ -1,5 +1,6 @@
 #include "MetronomeUnit.h"
 #include "AmpLookAndFeel.h"
+#include "Help.h"
 
 namespace
 {
@@ -32,6 +33,12 @@ MetronomeUnit::MetronomeUnit (BassAmpProcessor& processor)
     volume.setRange (0.0, 1.0);
     volume.setValue (metronome.volume.load(), juce::dontSendNotification);
     volume.onValueChange = [this] { metronome.volume.store ((float) volume.getValue()); };
+
+    setTooltip (Help::get ("ui.metronome"));
+    onSwitch.setTooltip (Help::get ("ui.metronomeOn"));
+    tempo.setTooltip (Help::get ("ui.metronomeTempo"));
+    tapButton.setTooltip (Help::get ("ui.metronomeTap"));
+    volume.setTooltip (Help::get ("ui.metronomeVolume"));
 
     for (auto* knob : { &tempo, &volume })
         knob->getProperties().set (KnobStyle::property, KnobStyle::pedal);

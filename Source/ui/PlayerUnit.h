@@ -7,7 +7,7 @@
 
 // Backing track player: load a file, play or pause, stop, seek, loop, volume, and RE-AMP,
 // which runs the file through the rig instead of mixing it into the output.
-class PlayerUnit : public juce::Component, private juce::Timer
+class PlayerUnit : public juce::Component, public juce::SettableTooltipClient, private juce::Timer
 {
 public:
     explicit PlayerUnit (BassAmpProcessor&);

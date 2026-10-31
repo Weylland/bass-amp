@@ -1,5 +1,6 @@
 #include "LevelMeters.h"
 #include "AmpLookAndFeel.h"
+#include "Help.h"
 
 namespace
 {
@@ -29,7 +30,7 @@ LevelMeters::LevelMeters (BassAmpProcessor& processorToUse)
     : processor (processorToUse),
       limiterAttachment (processorToUse.parameters, ParamIds::limiterOn, limiterButton)
 {
-    limiterButton.setTooltip ("Output limiter: keeps the output under -1 dBFS");
+    setTooltip (Help::get ("ui.meters"));
     limiterButton.setComponentID (ParamIds::limiterOn);
     addAndMakeVisible (limiterButton);
     startTimerHz (30);

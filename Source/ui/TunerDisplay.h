@@ -5,7 +5,7 @@
 #include "../PluginProcessor.h"
 
 // Note name, cents needle and frequency, plus a button that mutes the output while tuning.
-class TunerDisplay : public juce::Component, private juce::Timer
+class TunerDisplay : public juce::Component, public juce::SettableTooltipClient, private juce::Timer
 {
 public:
     explicit TunerDisplay (BassAmpProcessor&);

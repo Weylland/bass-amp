@@ -17,7 +17,8 @@
 // The whole rig at its design size: header, pre-amp pedalboard, tuner, amp head and
 // meters, the EQ and the post-amp pedalboard, then the practice row (player, looper,
 // metronome). The editor scales it to the window.
-// Right-clicking a control opens its MIDI learn menu.
+// Right-clicking a control opens its MIDI learn menu. Hovering a control for a second
+// explains it.
 class MainPanel : public juce::Component, private juce::Timer
 {
 public:
@@ -52,6 +53,7 @@ private:
     PlayerUnit player;
     LooperUnit looperUnit;
     MetronomeUnit metronomeUnit;
+    juce::TooltipWindow tooltipWindow { this, 1000 };
 
     juce::Rectangle<int> headerArea;
 

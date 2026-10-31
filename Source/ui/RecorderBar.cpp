@@ -1,5 +1,6 @@
 #include "RecorderBar.h"
 #include "AmpLookAndFeel.h"
+#include "Help.h"
 
 namespace
 {
@@ -19,6 +20,8 @@ RecorderBar::RecorderBar (Recorder& recorderToUse)
     recordButton.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
     recordButton.onClick = [this] { toggleRecording(); };
     filesButton.onClick = [this] { showRecordings(); };
+    recordButton.setTooltip (Help::get ("ui.record"));
+    filesButton.setTooltip (Help::get ("ui.recordings"));
 
     addAndMakeVisible (recordButton);
     addAndMakeVisible (filesButton);

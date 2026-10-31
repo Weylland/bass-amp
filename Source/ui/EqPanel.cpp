@@ -1,5 +1,6 @@
 #include "EqPanel.h"
 #include "AmpLookAndFeel.h"
+#include "Help.h"
 
 namespace
 {
@@ -20,6 +21,8 @@ EqPanel::EqPanel (BassAmpProcessor& processorToUse)
 
     basicButton.onClick = [this] { setMode (Equalizer::basicMode); };
     advancedButton.onClick = [this] { setMode (Equalizer::advancedMode); };
+    basicButton.setTooltip (Help::get ("ui.eqBasic"));
+    advancedButton.setTooltip (Help::get ("ui.eqAdvanced"));
 
     for (auto* component : std::initializer_list<juce::Component*> { &onSwitch, &basicButton, &advancedButton, &display })
         addAndMakeVisible (component);

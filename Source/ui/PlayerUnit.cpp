@@ -1,5 +1,6 @@
 #include "PlayerUnit.h"
 #include "AmpLookAndFeel.h"
+#include "Help.h"
 
 namespace
 {
@@ -24,7 +25,6 @@ PlayerUnit::PlayerUnit (BassAmpProcessor& processor)
 
     loopSwitch.setToggleState (true, juce::dontSendNotification);
     loopSwitch.onClick = [this] { track.setLooping (loopSwitch.getToggleState()); };
-    reampSwitch.setTooltip ("Feed the file into the rig, like a DI track, instead of mixing it into the output");
     reampSwitch.onClick = [this] { track.reamp.store (reampSwitch.getToggleState()); };
 
     position.setRange (0.0, 1.0);
@@ -35,6 +35,15 @@ PlayerUnit::PlayerUnit (BassAmpProcessor& processor)
     volume.setValue (track.volume.load(), juce::dontSendNotification);
     volume.getProperties().set (KnobStyle::property, KnobStyle::pedal);
     volume.onValueChange = [this] { track.volume.store ((float) volume.getValue()); };
+
+    setTooltip (Help::get ("ui.player"));
+    loadButton.setTooltip (Help::get ("ui.playerLoad"));
+    playButton.setTooltip (Help::get ("ui.playerPlay"));
+    stopButton.setTooltip (Help::get ("ui.playerStop"));
+    position.setTooltip (Help::get ("ui.playerPosition"));
+    loopSwitch.setTooltip (Help::get ("ui.playerLoop"));
+    reampSwitch.setTooltip (Help::get ("ui.reamp"));
+    volume.setTooltip (Help::get ("ui.playerVolume"));
 
     for (auto* component : std::initializer_list<juce::Component*> { &loadButton, &playButton, &stopButton, &loopSwitch,
                                                                      &reampSwitch, &position, &volume })

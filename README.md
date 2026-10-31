@@ -139,6 +139,7 @@ Tests DSP (accordeur, effets, modèles d'ampli, tone stack, baffles et IR, égal
 
 ## Utilisation
 
+- Survole un élément (pédale, potard, bouton, écran) pendant une seconde : une bulle explique à quoi il sert et comment l'utiliser.
 - Double-clic sur un potard : retour à sa valeur par défaut. Survol ou glisser : la valeur s'affiche.
 - La fenêtre se redimensionne (coin en bas à droite) de 60 % à 160 %, et s'ouvre à la taille de l'écran.
 - **IN CLIP** : l'entrée de la carte son sature, baisse le gain de l'interface. **OUT CLIP** : la sortie sature, baisse le Master.

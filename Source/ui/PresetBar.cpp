@@ -1,4 +1,5 @@
 #include "PresetBar.h"
+#include "Help.h"
 
 PresetBar::PresetBar (PresetManager& presetManager)
     : presets (presetManager)
@@ -9,6 +10,11 @@ PresetBar::PresetBar (PresetManager& presetManager)
     previousButton.onClick = [this] { step (-1); };
     nextButton.onClick = [this] { step (1); };
     saveButton.onClick = [this] { askNameAndSave(); };
+
+    presetBox.setTooltip (Help::get ("ui.presetBox"));
+    previousButton.setTooltip (Help::get ("ui.previousPreset"));
+    nextButton.setTooltip (Help::get ("ui.nextPreset"));
+    saveButton.setTooltip (Help::get ("ui.savePreset"));
 
     for (auto* component : std::initializer_list<juce::Component*> { &presetBox, &previousButton, &nextButton, &saveButton })
         addAndMakeVisible (component);

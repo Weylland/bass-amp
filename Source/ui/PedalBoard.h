@@ -35,7 +35,7 @@ private:
     class AddSlot : public juce::Button
     {
     public:
-        AddSlot() : juce::Button ("Add pedal") { setTooltip ("Add a pedal"); }
+        AddSlot() : juce::Button ("Add pedal") { setTooltip (Help::get ("ui.addPedal")); }
         void paintButton (juce::Graphics&, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
     };
 

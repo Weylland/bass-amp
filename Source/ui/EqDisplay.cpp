@@ -1,5 +1,6 @@
 #include "EqDisplay.h"
 #include "AmpLookAndFeel.h"
+#include "Help.h"
 
 namespace
 {
@@ -346,6 +347,11 @@ void EqDisplay::paintNodes (juce::Graphics& g)
     g.setFont (Fonts::display (12.0f));
     g.drawText (text, juce::Rectangle<float> (plot.getX() + 34.0f, plot.getY() + 2.0f, plot.getWidth() - 40.0f, 14.0f),
                 juce::Justification::centredLeft);
+}
+
+juce::String EqDisplay::getTooltip()
+{
+    return Help::get (advanced && hoveredNode >= 0 ? juce::String (nodes[(size_t) hoveredNode].frequencyId) : juce::String ("ui.eqScreen"));
 }
 
 void EqDisplay::mouseMove (const juce::MouseEvent& event)

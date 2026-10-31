@@ -3,6 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include "../PedalChain.h"
+#include "Help.h"
 #include "TapTempo.h"
 #include "ToggleSwitch.h"
 
@@ -15,7 +16,7 @@ struct KnobSpec
 // A stompbox: painted enclosure, a row of knobs, an LED and a footswitch bound to the
 // effect's on/off parameter. Knobs on choice parameters click between positions and show
 // the current choice as their label.
-class Pedal : public juce::Component
+class Pedal : public juce::Component, public juce::SettableTooltipClient
 {
 public:
     Pedal (juce::AudioProcessorValueTreeState& state, PedalId id, const juce::String& name, const juce::String& subtitle,
@@ -42,7 +43,7 @@ private:
     class RemoveButton : public juce::Button
     {
     public:
-        RemoveButton() : juce::Button ("Remove") { setTooltip ("Remove this pedal"); }
+        RemoveButton() : juce::Button ("Remove") { setTooltip (Help::get ("ui.removePedal")); }
         void paintButton (juce::Graphics&, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
     };
 

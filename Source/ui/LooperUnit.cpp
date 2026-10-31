@@ -1,5 +1,6 @@
 #include "LooperUnit.h"
 #include "AmpLookAndFeel.h"
+#include "Help.h"
 
 namespace
 {
@@ -40,6 +41,12 @@ LooperUnit::LooperUnit (BassAmpProcessor& processor)
     level.setValue (looper.level.load(), juce::dontSendNotification);
     level.getProperties().set (KnobStyle::property, KnobStyle::pedal);
     level.onValueChange = [this] { looper.level.store ((float) level.getValue()); };
+
+    setTooltip (Help::get ("ui.looper"));
+    mainButton.setTooltip (Help::get ("ui.looperMain"));
+    stopButton.setTooltip (Help::get ("ui.looperStop"));
+    clearButton.setTooltip (Help::get ("ui.looperClear"));
+    level.setTooltip (Help::get ("ui.looperLevel"));
 
     for (auto* component : std::initializer_list<juce::Component*> { &mainButton, &stopButton, &clearButton, &level })
         addAndMakeVisible (component);

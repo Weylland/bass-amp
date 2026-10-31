@@ -7,7 +7,7 @@
 
 // Input and output peak meters with clip LEDs, the compressor gain reduction, and the
 // output limiter switch.
-class LevelMeters : public juce::Component, private juce::Timer
+class LevelMeters : public juce::Component, public juce::SettableTooltipClient, private juce::Timer
 {
 public:
     explicit LevelMeters (BassAmpProcessor&);

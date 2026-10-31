@@ -1,5 +1,6 @@
 #include "TunerDisplay.h"
 #include "AmpLookAndFeel.h"
+#include "Help.h"
 
 namespace
 {
@@ -21,6 +22,8 @@ TunerDisplay::TunerDisplay (BassAmpProcessor& processorToUse)
     muteButton.setColour (juce::TextButton::buttonOnColourId, Palette::ledRed);
     muteButton.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
     muteButton.onClick = [this] { processor.muteOutput.store (muteButton.getToggleState()); };
+    muteButton.setTooltip (Help::get ("ui.mute"));
+    setTooltip (Help::get ("ui.tuner"));
     addAndMakeVisible (muteButton);
 
     startTimerHz (20);

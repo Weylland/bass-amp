@@ -1,6 +1,7 @@
 #include "AmpHead.h"
 #include "AmpLookAndFeel.h"
 #include "AmpSkins.h"
+#include "Help.h"
 #include "../dsp/AmpModels.h"
 
 static_assert (std::tuple_size_v<decltype (ampSkins)> == std::tuple_size_v<decltype (ampModels)>, "one skin per amp model");
@@ -79,9 +80,11 @@ AmpHead::AmpHead (BassAmpProcessor& processorToUse)
     addAndMakeVisible (cabBox);
 
     irButton.onClick = [this] { chooseImpulseResponse(); };
+    irButton.setTooltip (Help::get ("ui.loadIr"));
     addAndMakeVisible (irButton);
 
     captureButton.onClick = [this] { chooseCapture(); };
+    captureButton.setTooltip (Help::get ("ui.loadNam"));
     addChildComponent (captureButton);
 
     applySkin();
@@ -110,6 +113,7 @@ void AmpHead::applySkin()
     knobs[midFreqKnob].slider->setAlpha (passive ? 0.3f : 1.0f);
 
     captureButton.setVisible (showsCapture());
+    modelBox.setTooltip (Help::get (juce::String ("model.") + ampModels[(size_t) juce::jlimit (0, (int) ampModels.size() - 1, currentModel)].name));
     shownCapture = captureText();
     modelBox.setColour (juce::ComboBox::textColourId, skin.accent.brighter (0.2f));
     modelBox.setColour (juce::ComboBox::arrowColourId, skin.accent);
@@ -130,6 +134,7 @@ void AmpHead::timerCallback()
     {
         currentCab = cab;
         shownImpulseResponse = irText;
+        cabBox.setTooltip (Help::get (juce::String ("cab.") + cabModels[(size_t) juce::jlimit (0, (int) cabModels.size() - 1, cab)].name));
         repaint (cabArea);
     }
 

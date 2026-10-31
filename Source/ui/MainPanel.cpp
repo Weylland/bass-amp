@@ -1,5 +1,6 @@
 #include "MainPanel.h"
 #include "AmpLookAndFeel.h"
+#include "Help.h"
 #include "../ParameterIds.h"
 
 namespace
@@ -24,6 +25,19 @@ namespace
 
         return nullptr;
     }
+
+    // Every control bound to a parameter carries its ID: that is also its help key.
+    void addParameterHelp (juce::Component& parent)
+    {
+        for (auto* child : parent.getChildren())
+        {
+            if (auto* client = dynamic_cast<juce::SettableTooltipClient*> (child))
+                if (const auto text = Help::get (child->getComponentID()); text.isNotEmpty())
+                    client->setTooltip (text);
+
+            addParameterHelp (*child);
+        }
+    }
 }
 
 MainPanel::MainPanel (BassAmpProcessor& processorToUse)
@@ -45,6 +59,7 @@ MainPanel::MainPanel (BassAmpProcessor& processorToUse)
              &player, &looperUnit, &metronomeUnit })
         addAndMakeVisible (component);
 
+    addParameterHelp (*this);
     addMouseListener (this, true);
     shownDeviceInfo = processor.audioDeviceInfo;
     setSize (designWidth, designHeight);

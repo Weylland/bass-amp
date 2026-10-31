@@ -8,7 +8,7 @@
 
 // Metronome controls: on/off, tempo (knob or TAP), volume, and a screen with the tempo and
 // a light per beat of the bar.
-class MetronomeUnit : public juce::Component, private juce::Timer
+class MetronomeUnit : public juce::Component, public juce::SettableTooltipClient, private juce::Timer
 {
 public:
     explicit MetronomeUnit (BassAmpProcessor&);

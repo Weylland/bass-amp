@@ -40,16 +40,19 @@ Pedal::Pedal (juce::AudioProcessorValueTreeState& stateToUse, PedalId pedalId, c
     addAndMakeVisible (footswitch);
     footswitchAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (state, toggleParamId, footswitch);
     footswitch.setComponentID (toggleParamId);
+    footswitch.setTooltip (Help::get ("ui.footswitch"));
 
     removeButton.onClick = [this] { if (onRemove != nullptr) onRemove(); };
     addAndMakeVisible (removeButton);
+
+    setTooltip (Help::get (juce::String ("pedal.") + pedalInfos[(size_t) id].key));
 }
 
 void Pedal::addTapTempo (const char* timeParamId)
 {
     tapParameter = state.getParameter (timeParamId);
     tapButton = std::make_unique<juce::TextButton> ("TAP");
-    tapButton->setTooltip ("Tap the tempo");
+    tapButton->setTooltip (Help::get ("ui.tap"));
     tapButton->onClick = [this]
     {
         if (const auto beat = tapTempo.tap())
