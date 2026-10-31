@@ -4,7 +4,8 @@
 
 #include "../Parameters.h"
 
-// Auto-wah: a resonant low-pass whose cutoff follows the playing dynamics.
+// Auto-wah: a resonant low-, band- or high-pass whose cutoff follows the playing dynamics,
+// sweeping up with the attack or down from the top.
 class EnvelopeFilter
 {
 public:
@@ -14,6 +15,8 @@ public:
         sensitivity = rawParam (state, ParamIds::envSensitivity);
         resonance   = rawParam (state, ParamIds::envResonance);
         mix         = rawParam (state, ParamIds::envMix);
+        type        = rawParam (state, ParamIds::envType);
+        direction   = rawParam (state, ParamIds::envDirection);
     }
 
     void prepare (const juce::dsp::ProcessSpec& monoSpec)
@@ -39,6 +42,11 @@ public:
         if (! on && ! wet.isSmoothing())
             return;
 
+        using Type = juce::dsp::StateVariableTPTFilterType;
+        const auto typeIndex = (size_t) juce::jlimit (0, 2, juce::roundToInt (type->load()));
+        filter.setType (std::array { Type::lowpass, Type::bandpass, Type::highpass }[typeIndex]);
+        const auto sweepsDown = direction->load() > 0.5f;
+
         const auto sensitivityGain = juce::Decibels::decibelsToGain (sensitivity->load() * 36.0f);
         filter.setResonance (resonance->load());
         auto* data = monoBlock.getChannelPointer (0);
@@ -52,7 +60,8 @@ public:
             if (++counter >= controlInterval)
             {
                 counter = 0;
-                const auto amount = juce::jlimit (0.0f, 1.0f, envelope * sensitivityGain);
+                const auto opening = juce::jlimit (0.0f, 1.0f, envelope * sensitivityGain);
+                const auto amount = sweepsDown ? 1.0f - opening : opening;
                 filter.setCutoffFrequency (minCutoff * std::pow (maxCutoff / minCutoff, amount));
             }
 
@@ -70,6 +79,8 @@ private:
     std::atomic<float>* sensitivity = nullptr;
     std::atomic<float>* resonance = nullptr;
     std::atomic<float>* mix = nullptr;
+    std::atomic<float>* type = nullptr;
+    std::atomic<float>* direction = nullptr;
 
     juce::dsp::StateVariableTPTFilter<float> filter;
     juce::SmoothedValue<float> wet;

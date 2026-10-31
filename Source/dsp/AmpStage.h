@@ -4,10 +4,11 @@
 
 #include "../Parameters.h"
 #include "AmpModels.h"
+#include "NamModel.h"
 
 // Bass head: preamp gain stages, model voicing, tone stack, contour and switches, and power
-// amp with sag, all 2x oversampled; then the cabinet (filters or an impulse response) and
-// a clean DI blended in.
+// amp with sag, all 2x oversampled, or a NAM capture followed by the tone stack; then the
+// cabinet (filters or an impulse response) and a clean DI blended in, and the low and high cuts.
 class AmpStage
 {
 public:
@@ -25,6 +26,8 @@ public:
         contour = rawParam (state, ParamIds::ampContour);
         deep    = rawParam (state, ParamIds::ampDeep);
         bright  = rawParam (state, ParamIds::ampBright);
+        lowCut  = rawParam (state, ParamIds::ampLowCut);
+        highCut = rawParam (state, ParamIds::ampHighCut);
     }
 
     void prepare (double sampleRate, int maxBlockSize)
@@ -69,10 +72,20 @@ public:
         for (auto& filter : cabinet)
             filter.prepare (baseSpec);
 
+        lowCutFilter.setType (juce::dsp::StateVariableTPTFilterType::highpass);
+        highCutFilter.setType (juce::dsp::StateVariableTPTFilterType::lowpass);
+
+        for (auto* filter : { &lowCutFilter, &highCutFilter })
+        {
+            filter->prepare (baseSpec);
+            filter->reset();
+        }
+
         convolution.prepare (baseSpec);
         convolution.reset();
 
         diBuffer.assign ((size_t) maxBlockSize, 0.0f);
+        capture.prepare (sampleRate, maxBlockSize);
 
         sagAttack = timeCoefficient (0.01f, oversampledRate);
         sagRelease = timeCoefficient (0.15f, oversampledRate);
@@ -95,6 +108,15 @@ public:
         impulseResponseLoaded.store (valid);
     }
 
+    // Message thread: reads and warms up the capture; a missing file unloads it.
+    void loadCapture (const juce::File& file)
+    {
+        if (! file.existsAsFile() || ! capture.load (file))
+            capture.unload();
+    }
+
+    double getCaptureSampleRate() const { return capture.getExpectedSampleRate(); }   // 0: none loaded, < 0: not in the file
+
     void process (juce::dsp::AudioBlock<float>& monoBlock)
     {
         updateModel();
@@ -110,6 +132,16 @@ public:
         const auto numSamples = monoBlock.getNumSamples();
         std::copy_n (monoBlock.getChannelPointer (0), numSamples, diBuffer.begin());
 
+        if (amp.neuralCapture)
+        {
+            auto* samples = monoBlock.getChannelPointer (0);
+
+            for (size_t i = 0; i < numSamples; ++i)
+                samples[i] *= preGain.getNextValue();
+
+            capture.process (samples, (int) numSamples);
+        }
+
         auto upsampled = oversampling.processSamplesUp (monoBlock);
         auto* data = upsampled.getChannelPointer (0);
 
@@ -118,10 +150,30 @@ public:
         const auto biasOffset = shape (amp.bias);
         const auto stage = [&shape, &amp, biasOffset] (float x) { return shape (x + amp.bias) - biasOffset; };
         const auto passive = amp.passiveToneStack.has_value();
+        const auto tone = [this, passive] (float x)
+        {
+            for (auto& filter : voicing)
+                x = filter.processSample (x);
+
+            x = passive ? passiveStack.processSample (x)
+                        : trebleFilter.processSample (midFilter.processSample (bassFilter.processSample (x)));
+
+            for (auto& filter : character)
+                x = filter.processSample (x);
+
+            return x;
+        };
 
         for (size_t i = 0; i < upsampled.getNumSamples(); ++i)
         {
             auto x = data[i];
+
+            if (amp.neuralCapture)
+            {
+                data[i] = tone (x);
+                continue;
+            }
+
             auto cleanLows = 0.0f;
 
             if (amp.crossoverHz > 0.0f)
@@ -136,16 +188,7 @@ public:
             if (amp.secondStageGain > 0.0f)
                 x = secondCoupling.processSample (stage (x * amp.secondStageGain)) / amp.secondStageGain;
 
-            x = x / std::sqrt (drive) + cleanLows;
-
-            for (auto& filter : voicing)
-                x = filter.processSample (x);
-
-            x = passive ? passiveStack.processSample (x)
-                        : trebleFilter.processSample (midFilter.processSample (bassFilter.processSample (x)));
-
-            for (auto& filter : character)
-                x = filter.processSample (x);
+            x = tone (x / std::sqrt (drive) + cleanLows);
 
             const auto level = std::abs (x);
             sagEnvelope = level + (level > sagEnvelope ? sagAttack : sagRelease) * (sagEnvelope - level);
@@ -170,10 +213,14 @@ public:
                     output[i] = filter.processSample (output[i]);
         }
 
+        lowCutFilter.setCutoffFrequency (lowCut->load());
+        highCutFilter.setCutoffFrequency (juce::jmin (highCut->load(), (float) baseRate * 0.45f));
+
         for (size_t i = 0; i < numSamples; ++i)
         {
             const auto amount = diBlend.getNextValue();
-            output[i] = (output[i] * (1.0f - amount) + diBuffer[i] * amount) * masterGain.getNextValue();
+            const auto blended = (output[i] * (1.0f - amount) + diBuffer[i] * amount) * masterGain.getNextValue();
+            output[i] = highCutFilter.processSample (0, lowCutFilter.processSample (0, blended));
         }
     }
 
@@ -297,6 +344,8 @@ private:
     std::atomic<float>* contour = nullptr;
     std::atomic<float>* deep = nullptr;
     std::atomic<float>* bright = nullptr;
+    std::atomic<float>* lowCut = nullptr;
+    std::atomic<float>* highCut = nullptr;
 
     double baseRate = 44100.0, oversampledRate = 88200.0;
     int currentModel = -1, currentCab = -1;
@@ -311,8 +360,10 @@ private:
     std::array<juce::dsp::IIR::Filter<float>, 4> character;
     std::array<juce::dsp::IIR::Filter<float>, 6> cabinet;
 
+    juce::dsp::StateVariableTPTFilter<float> lowCutFilter, highCutFilter;
     juce::dsp::Convolution convolution;
     std::atomic<bool> impulseResponseLoaded { false };
+    NamModel capture;
 
     std::vector<float> diBuffer;
     float sagAttack = 0.0f, sagRelease = 0.0f, sagEnvelope = 0.0f;

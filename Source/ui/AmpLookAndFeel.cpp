@@ -251,6 +251,23 @@ void AmpLookAndFeel::drawModernKnob (juce::Graphics& g, Rectangle<float> bounds,
 void AmpLookAndFeel::drawLinearSlider (juce::Graphics& g, int x, int y, int width, int height, float sliderPos, float,
                                        float, juce::Slider::SliderStyle style, juce::Slider& slider)
 {
+    if (style == juce::Slider::LinearHorizontal)
+    {
+        // A thin groove filled with the accent colour, and a small metal thumb.
+        const auto groove = Rectangle<float> ((float) x, (float) y + (float) height * 0.5f - 2.0f, (float) width, 4.0f);
+        g.setColour (juce::Colours::black.withAlpha (0.7f));
+        g.fillRoundedRectangle (groove, 2.0f);
+        g.setColour (slider.findColour (juce::Slider::trackColourId).withAlpha (0.85f));
+        g.fillRoundedRectangle (groove.withRight (sliderPos), 2.0f);
+
+        const auto thumb = Rectangle<float> (14.0f, 14.0f).withCentre ({ sliderPos, groove.getCentreY() });
+        g.setColour (juce::Colours::black.withAlpha (0.5f));
+        g.fillEllipse (thumb.translated (0.0f, 1.5f));
+        g.setGradientFill (ColourGradient (Colour (0xffe4e6ea), thumb.getX(), thumb.getY(), Colour (0xff6b6f78), thumb.getX(), thumb.getBottom(), false));
+        g.fillEllipse (thumb);
+        return;
+    }
+
     if (style != juce::Slider::LinearVertical)
     {
         LookAndFeel_V4::drawLinearSlider (g, x, y, width, height, sliderPos, 0.0f, 0.0f, style, slider);

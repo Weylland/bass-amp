@@ -6,44 +6,54 @@
 #include "AmpHead.h"
 #include "EqPanel.h"
 #include "LevelMeters.h"
-#include "Pedal.h"
+#include "LooperUnit.h"
+#include "MetronomeUnit.h"
+#include "PedalBoard.h"
+#include "PlayerUnit.h"
 #include "PresetBar.h"
 #include "RecorderBar.h"
 #include "TunerDisplay.h"
 
 // The whole rig at its design size: header, pre-amp pedalboard, tuner, amp head and
-// meters, then the EQ and the post-amp pedalboard. The editor scales it to the window.
+// meters, the EQ and the post-amp pedalboard, then the practice row (player, looper,
+// metronome). The editor scales it to the window.
+// Right-clicking a control opens its MIDI learn menu.
 class MainPanel : public juce::Component, private juce::Timer
 {
 public:
     static constexpr int designWidth = 1320;
-    static constexpr int designHeight = 800;
+    static constexpr int designHeight = 896;
 
     explicit MainPanel (BassAmpProcessor&);
     ~MainPanel() override;
 
     void paint (juce::Graphics&) override;
+    void paintOverChildren (juce::Graphics&) override;
     void resized() override;
+    void mouseDown (const juce::MouseEvent&) override;
 
 private:
     void timerCallback() override;
-    static void layoutPedals (juce::Rectangle<int> area, std::initializer_list<Pedal*> pedals);
-    static void paintBoard (juce::Graphics&, juce::Rectangle<float>);
+    void showMidiMenu (const juce::String& paramId);
+    juce::Rectangle<int> learningArea() const;
 
     BassAmpProcessor& processor;
     juce::String shownDeviceInfo;
+    juce::String shownLearning;
 
     PresetBar presetBar;
     RecorderBar recorderBar;
 
-    Pedal gate, compressor, octaver, envFilter, fuzz, distortion;
+    PedalBoard preBoard, postBoard;
     TunerDisplay tuner;
     AmpHead ampHead;
     LevelMeters meters;
     EqPanel equalizer;
-    Pedal phaser, chorus, delay, reverb;
+    PlayerUnit player;
+    LooperUnit looperUnit;
+    MetronomeUnit metronomeUnit;
 
-    juce::Rectangle<int> headerArea, preBoard, postBoard;
+    juce::Rectangle<int> headerArea;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainPanel)
 };

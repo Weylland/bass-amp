@@ -26,8 +26,12 @@ namespace
 }
 
 LevelMeters::LevelMeters (BassAmpProcessor& processorToUse)
-    : processor (processorToUse)
+    : processor (processorToUse),
+      limiterAttachment (processorToUse.parameters, ParamIds::limiterOn, limiterButton)
 {
+    limiterButton.setTooltip ("Output limiter: keeps the output under -1 dBFS");
+    limiterButton.setComponentID (ParamIds::limiterOn);
+    addAndMakeVisible (limiterButton);
     startTimerHz (30);
 }
 
@@ -61,6 +65,12 @@ void LevelMeters::mouseDown (const juce::MouseEvent&)
 {
     input.clipUntil = output.clipUntil = 0.0;
     repaint();
+}
+
+void LevelMeters::resized()
+{
+    const auto title = getLocalBounds().reduced (padding + 8, padding).removeFromTop (28);
+    limiterButton.setBounds (title.withLeft (title.getRight() - 76).reduced (0, 2));
 }
 
 void LevelMeters::paint (juce::Graphics& g)

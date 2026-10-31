@@ -3,22 +3,34 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
 
+#include "MidiLearn.h"
 #include "dsp/AmpStage.h"
+#include "dsp/BackingTrack.h"
 #include "dsp/ChorusEffect.h"
 #include "dsp/Compressor.h"
 #include "dsp/Delay.h"
 #include "dsp/Distortion.h"
 #include "dsp/EnvelopeFilter.h"
 #include "dsp/Equalizer.h"
+#include "dsp/FilterEffect.h"
+#include "dsp/FlangerEffect.h"
 #include "dsp/Fuzz.h"
+#include "dsp/Looper.h"
+#include "dsp/Metronome.h"
 #include "dsp/NoiseGate.h"
 #include "dsp/Octaver.h"
+#include "dsp/OutputLimiter.h"
 #include "dsp/PeakMeter.h"
 #include "dsp/PhaserEffect.h"
+#include "dsp/PitchShifter.h"
 #include "dsp/Recorder.h"
 #include "dsp/ReverbEffect.h"
 #include "dsp/SpectrumTap.h"
+#include "dsp/SynthEffect.h"
+#include "dsp/TremoloEffect.h"
 #include "dsp/Tuner.h"
+#include "dsp/WahEffect.h"
+#include "PedalChain.h"
 #include "presets/PresetManager.h"
 
 class BassAmpProcessor : public juce::AudioProcessor, private juce::ValueTree::Listener
@@ -38,7 +50,7 @@ public:
     bool hasEditor() const override { return true; }
 
     const juce::String getName() const override { return JucePlugin_Name; }
-    bool acceptsMidi() const override { return false; }
+    bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return false; }
     double getTailLengthSeconds() const override { return 10.0; }
 
@@ -57,34 +69,52 @@ public:
     void setCabinetImpulseResponse (const juce::File&);
     juce::File getCabinetImpulseResponse() const;
 
+    // The .nam file played by the "NAM Capture" amp model, saved with the state and presets.
+    void setCapture (const juce::File&);
+    juce::File getCapture() const;
+    double getCaptureSampleRate() const { return amp.getCaptureSampleRate(); }
+
     // Set by the standalone app; read and written on the message thread only.
     juce::String audioDeviceInfo;
 
     juce::AudioProcessorValueTreeState parameters;
     PresetManager presets { parameters };
+    PedalChain pedalChain { parameters };
+    MidiLearn midiLearn { parameters, MidiLearn::getDefaultFile() };
     Tuner tuner;
     PeakMeter inputMeter, outputMeter, ampMeter;
     SpectrumTap spectrum;
     Recorder recorder;
+    BackingTrack backingTrack;
+    Looper looper;
+    Metronome metronome;
     std::atomic<bool> muteOutput { false };
 
 private:
     void valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&) override;
     void valueTreeRedirected (juce::ValueTree&) override;
     void reloadImpulseResponse();
+    void processPedal (PedalId, juce::dsp::AudioBlock<float>& mono, const juce::dsp::ProcessContextReplacing<float>& output);
 
     NoiseGate gate;
     Compressor compressor;
     Octaver octaver;
+    SynthEffect synth;
+    PitchShifter pitchShifter;
+    FilterEffect filter;
     EnvelopeFilter envelopeFilter;
+    WahEffect wah;
     Fuzz fuzz;
     Distortion distortion;
     AmpStage amp;
     Equalizer equalizer;
     PhaserEffect phaser;
+    FlangerEffect flanger;
     ChorusEffect chorus;
+    TremoloEffect tremolo;
     Delay delay;
     ReverbEffect reverb;
+    OutputLimiter limiter;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BassAmpProcessor)
 };

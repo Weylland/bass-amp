@@ -6,55 +6,49 @@ namespace
 {
     constexpr int margin = 12;
     constexpr int headerHeight = 56;
-    constexpr int boardPadding = 12;
-    constexpr int pedalGap = 10;
+    constexpr int practiceHeight = 84;
+
+    juce::Component* findShowingChild (const juce::Component& parent, const juce::String& componentId)
+    {
+        for (auto* child : parent.getChildren())
+        {
+            if (! child->isShowing())
+                continue;
+
+            if (child->getComponentID() == componentId)
+                return child;
+
+            if (auto* found = findShowingChild (*child, componentId))
+                return found;
+        }
+
+        return nullptr;
+    }
 }
 
 MainPanel::MainPanel (BassAmpProcessor& processorToUse)
     : processor (processorToUse),
       presetBar (processorToUse.presets),
       recorderBar (processorToUse.recorder),
-      gate (processorToUse.parameters, "GATE", "Noise gate", Palette::gate,
-            { { ParamIds::gateThreshold, "Thresh" }, { ParamIds::gateRelease, "Release" } }, ParamIds::gateOn),
-      compressor (processorToUse.parameters, "COMP", "Studio compressor", Palette::compressor,
-                  { { ParamIds::compThreshold, "Thresh" }, { ParamIds::compRatio, "Ratio" }, { ParamIds::compAttack, "Attack" },
-                    { ParamIds::compRelease, "Release" }, { ParamIds::compMakeup, "Makeup" }, { ParamIds::compMix, "Mix" } },
-                  ParamIds::compOn),
-      octaver (processorToUse.parameters, "OCTAVER", "Sub and up octave", Palette::octaver,
-               { { ParamIds::octSub, "Sub" }, { ParamIds::octUp, "Up" }, { ParamIds::octDry, "Dry" } }, ParamIds::octOn),
-      envFilter (processorToUse.parameters, "ENVELOPE", "Auto-wah filter", Palette::envFilter,
-                 { { ParamIds::envSensitivity, "Sens" }, { ParamIds::envResonance, "Reso" }, { ParamIds::envMix, "Mix" } },
-                 ParamIds::envOn),
-      fuzz (processorToUse.parameters, "FUZZ", "Silicon fuzz", Palette::fuzz,
-            { { ParamIds::fuzzAmount, "Fuzz" }, { ParamIds::fuzzTone, "Tone" }, { ParamIds::fuzzBlend, "Blend" } }, ParamIds::fuzzOn),
-      distortion (processorToUse.parameters, "DRIVE", "Bass overdrive", Palette::distortion,
-                  { { ParamIds::distDrive, "Drive" }, { ParamIds::distTone, "Tone" }, { ParamIds::distBlend, "Blend" } },
-                  ParamIds::distOn),
+      preBoard (processorToUse, Board::pre),
       tuner (processorToUse),
       ampHead (processorToUse),
       meters (processorToUse),
       equalizer (processorToUse),
-      phaser (processorToUse.parameters, "PHASER", "Four-stage phase", Palette::phaser,
-              { { ParamIds::phaserRate, "Rate" }, { ParamIds::phaserDepth, "Depth" }, { ParamIds::phaserFeedback, "Regen" } },
-              ParamIds::phaserOn),
-      chorus (processorToUse.parameters, "CHORUS", "Bass chorus", Palette::chorus,
-              { { ParamIds::chorusRate, "Rate" }, { ParamIds::chorusDepth, "Depth" }, { ParamIds::chorusMix, "Mix" } },
-              ParamIds::chorusOn),
-      delay (processorToUse.parameters, "DELAY", "Analog echo", Palette::delay,
-             { { ParamIds::delayTime, "Time" }, { ParamIds::delayFeedback, "Repeat" }, { ParamIds::delayMix, "Mix" } },
-             ParamIds::delayOn),
-      reverb (processorToUse.parameters, "REVERB", "Room reverb", Palette::reverb,
-              { { ParamIds::reverbSize, "Size" }, { ParamIds::reverbDamping, "Damp" }, { ParamIds::reverbMix, "Mix" } },
-              ParamIds::reverbOn)
+      postBoard (processorToUse, Board::post),
+      player (processorToUse),
+      looperUnit (processorToUse),
+      metronomeUnit (processorToUse)
 {
     for (auto* component : std::initializer_list<juce::Component*> {
-             &presetBar, &recorderBar, &gate, &compressor, &octaver, &envFilter, &fuzz, &distortion,
-             &tuner, &ampHead, &meters, &equalizer, &phaser, &chorus, &delay, &reverb })
+             &presetBar, &recorderBar, &preBoard, &tuner, &ampHead, &meters, &equalizer, &postBoard,
+             &player, &looperUnit, &metronomeUnit })
         addAndMakeVisible (component);
 
+    addMouseListener (this, true);
     shownDeviceInfo = processor.audioDeviceInfo;
     setSize (designWidth, designHeight);
-    startTimerHz (2);
+    startTimerHz (15);
 }
 
 MainPanel::~MainPanel()
@@ -69,32 +63,81 @@ void MainPanel::timerCallback()
         shownDeviceInfo = processor.audioDeviceInfo;
         repaint (headerArea);
     }
+
+    const auto learning = processor.midiLearn.getLearningParameter();
+
+    if (learning.isNotEmpty() || learning != shownLearning)
+    {
+        repaint (learningArea());
+        shownLearning = learning;
+        repaint (learningArea());
+    }
 }
 
-void MainPanel::paintBoard (juce::Graphics& g, juce::Rectangle<float> board)
+juce::Rectangle<int> MainPanel::learningArea() const
 {
-    juce::Path outline;
-    outline.addRoundedRectangle (board, 12.0f);
-    juce::DropShadow (juce::Colours::black.withAlpha (0.6f), 18, { 0, 6 }).drawForPath (g, outline);
+    if (auto* control = findShowingChild (*this, shownLearning))
+        return getLocalArea (control, control->getLocalBounds()).expanded (48, 8).withTrimmedBottom (-24);
 
-    g.setGradientFill (juce::ColourGradient (juce::Colour (0xff1e1f23), 0.0f, board.getY(), juce::Colour (0xff111215), 0.0f, board.getBottom(), false));
-    g.fillPath (outline);
+    return {};
+}
 
-    g.saveState();
-    g.reduceClipRegion (outline);
+void MainPanel::mouseDown (const juce::MouseEvent& event)
+{
+    if (! event.mods.isPopupMenu())
+        return;
 
-    for (int rail = 1; rail <= 3; ++rail)
+    for (auto* component = event.eventComponent; component != nullptr && component != this; component = component->getParentComponent())
     {
-        const auto y = board.getY() + board.getHeight() * (float) rail / 4.0f;
-        g.setColour (juce::Colours::black.withAlpha (0.55f));
-        g.fillRect (board.getX(), y - 4.0f, board.getWidth(), 8.0f);
-        g.setColour (juce::Colours::white.withAlpha (0.05f));
-        g.fillRect (board.getX(), y + 4.0f, board.getWidth(), 1.0f);
+        if (processor.parameters.getParameter (component->getComponentID()) != nullptr)
+        {
+            showMidiMenu (component->getComponentID());
+            return;
+        }
     }
+}
 
-    g.restoreState();
-    g.setColour (juce::Colours::white.withAlpha (0.08f));
-    g.drawRoundedRectangle (board.reduced (0.5f), 12.0f, 1.0f);
+void MainPanel::showMidiMenu (const juce::String& paramId)
+{
+    auto& midi = processor.midiLearn;
+    const auto mapping = midi.describe (paramId);
+
+    juce::PopupMenu menu;
+    menu.addSectionHeader (processor.parameters.getParameter (paramId)->getName (64) + (mapping.isNotEmpty() ? "  (" + mapping + ")" : ""));
+
+    if (midi.getLearningParameter() == paramId)
+        menu.addItem ("Cancel MIDI learn", [&midi] { midi.cancelLearning(); });
+    else
+        menu.addItem ("MIDI learn", [&midi, paramId] { midi.learn (paramId); });
+
+    if (mapping.isNotEmpty())
+        menu.addItem ("Forget " + mapping, [&midi, paramId] { midi.forget (paramId); });
+
+    menu.showMenuAsync (juce::PopupMenu::Options());
+}
+
+void MainPanel::paintOverChildren (juce::Graphics& g)
+{
+    if (shownLearning.isEmpty())
+        return;
+
+    auto* control = findShowingChild (*this, shownLearning);
+
+    if (control == nullptr)
+        return;
+
+    const auto area = getLocalArea (control, control->getLocalBounds()).toFloat().expanded (4.0f);
+    const auto pulse = 0.55f + 0.45f * std::sin ((float) juce::Time::getMillisecondCounter() * 0.008f);
+
+    g.setColour (Palette::gold.withAlpha (0.25f * pulse));
+    g.fillRoundedRectangle (area, 6.0f);
+    g.setColour (Palette::gold.withAlpha (pulse));
+    g.drawRoundedRectangle (area, 6.0f, 2.0f);
+
+    g.setColour (Palette::gold);
+    g.setFont (Fonts::display (11.0f));
+    g.drawText ("MOVE A MIDI CONTROL", area.withY (area.getBottom() + 2.0f).withHeight (16.0f).expanded (40.0f, 0.0f),
+                juce::Justification::centredTop);
 }
 
 void MainPanel::paint (juce::Graphics& g)
@@ -103,9 +146,6 @@ void MainPanel::paint (juce::Graphics& g)
     g.setGradientFill (juce::ColourGradient (juce::Colour (0xff23252b), bounds.getCentreX(), bounds.getY() + bounds.getHeight() * 0.35f,
                                              juce::Colour (0xff08080a), bounds.getX(), bounds.getBottom(), true));
     g.fillRect (bounds);
-
-    paintBoard (g, preBoard.toFloat());
-    paintBoard (g, postBoard.toFloat());
 
     auto header = headerArea.reduced (margin + 8, 0);
     const auto logo = header.removeFromLeft (220).toFloat();
@@ -118,27 +158,6 @@ void MainPanel::paint (juce::Graphics& g)
     g.drawFittedText (shownDeviceInfo, header.withLeft (recorderBar.getRight() + margin), juce::Justification::centredRight, 1, 0.8f);
 }
 
-void MainPanel::layoutPedals (juce::Rectangle<int> area, std::initializer_list<Pedal*> pedals)
-{
-    auto totalWeight = 0;
-
-    for (auto* pedal : pedals)
-        totalWeight += juce::jmax (2, pedal->getNumKnobs()) + 1;
-
-    auto remainingWidth = area.getWidth() - pedalGap * ((int) pedals.size() - 1);
-    auto remainingWeight = totalWeight;
-
-    for (auto* pedal : pedals)
-    {
-        const auto weight = juce::jmax (2, pedal->getNumKnobs()) + 1;
-        const auto width = remainingWidth * weight / remainingWeight;
-        pedal->setBounds (area.removeFromLeft (width));
-        area.removeFromLeft (pedalGap);
-        remainingWidth -= width;
-        remainingWeight -= weight;
-    }
-}
-
 void MainPanel::resized()
 {
     auto area = getLocalBounds().reduced (margin, 0);
@@ -148,8 +167,7 @@ void MainPanel::resized()
     recorderBar.setBounds (juce::Rectangle<int> (200, 30).withPosition (presetBar.getRight() + 28, (headerHeight - 30) / 2 + 2));
 
     area.removeFromTop (6);
-    preBoard = area.removeFromTop (236);
-    layoutPedals (preBoard.reduced (boardPadding), { &gate, &compressor, &octaver, &envFilter, &fuzz, &distortion });
+    preBoard.setBounds (area.removeFromTop (236));
 
     area.removeFromTop (margin);
     auto middle = area.removeFromTop (240);
@@ -160,9 +178,15 @@ void MainPanel::resized()
     ampHead.setBounds (middle);
 
     area.removeFromTop (margin);
+    auto practice = area.removeFromBottom (practiceHeight + margin).withTrimmedBottom (margin);
+    player.setBounds (practice.removeFromLeft (556));
+    practice.removeFromLeft (margin);
+    metronomeUnit.setBounds (practice.removeFromRight (376));
+    practice.removeFromRight (margin);
+    looperUnit.setBounds (practice);
+
     auto bottom = area.withTrimmedBottom (margin);
     equalizer.setBounds (bottom.removeFromLeft (532));
     bottom.removeFromLeft (margin);
-    postBoard = bottom;
-    layoutPedals (postBoard.reduced (boardPadding), { &phaser, &chorus, &delay, &reverb });
+    postBoard.setBounds (bottom);
 }

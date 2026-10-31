@@ -12,6 +12,8 @@ namespace
     constexpr int topHeight = 84;
     constexpr int labelHeight = 14;
     constexpr int knobSize = 58;
+    constexpr int cutKnobSize = 36;
+    constexpr int panelKnobs = 8;
     constexpr int midFreqKnob = 3;
 
     const auto& skinFor (int model) { return ampSkins[(size_t) juce::jlimit (0, (int) ampSkins.size() - 1, model)]; }
@@ -33,6 +35,7 @@ AmpHead::AmpHead (BassAmpProcessor& processorToUse)
         { ParamIds::ampGain, "GAIN" }, { ParamIds::ampBass, "BASS" }, { ParamIds::ampMid, "MIDDLE" },
         { ParamIds::ampMidFreq, "FREQ" }, { ParamIds::ampTreble, "TREBLE" }, { ParamIds::ampContour, "CONTOUR" },
         { ParamIds::ampBlend, "DI BLEND" }, { ParamIds::ampMaster, "MASTER" },
+        { ParamIds::ampLowCut, "LO CUT" }, { ParamIds::ampHighCut, "HI CUT" },
     };
 
     for (const auto& [paramId, label] : knobSpecs)
@@ -41,6 +44,7 @@ AmpHead::AmpHead (BassAmpProcessor& processorToUse)
         knob.slider = std::make_unique<juce::Slider> (juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::NoTextBox);
         knob.slider->setPopupDisplayEnabled (true, true, nullptr);
         knob.attachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (state, paramId, *knob.slider);
+        knob.slider->setComponentID (paramId);
 
         if (auto* parameter = state.getParameter (paramId))
             knob.slider->setDoubleClickReturnValue (true, parameter->convertFrom0to1 (parameter->getDefaultValue()));
@@ -53,7 +57,8 @@ AmpHead::AmpHead (BassAmpProcessor& processorToUse)
     for (const auto& [paramId, label] : { std::pair { ParamIds::ampDeep, "DEEP" }, std::pair { ParamIds::ampBright, "BRIGHT" } })
     {
         Switch toggle;
-        toggle.button = std::make_unique<juce::ToggleButton>();
+        toggle.button = std::make_unique<ToggleSwitch>();
+        toggle.button->setComponentID (paramId);
         toggle.button->getProperties().set (ToggleStyle::property, ToggleStyle::batSwitch);
         toggle.attachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (state, paramId, *toggle.button);
         toggle.label = label;
@@ -75,6 +80,9 @@ AmpHead::AmpHead (BassAmpProcessor& processorToUse)
 
     irButton.onClick = [this] { chooseImpulseResponse(); };
     addAndMakeVisible (irButton);
+
+    captureButton.onClick = [this] { chooseCapture(); };
+    addChildComponent (captureButton);
 
     applySkin();
     startTimerHz (30);
@@ -101,6 +109,8 @@ void AmpHead::applySkin()
     knobs[midFreqKnob].slider->setEnabled (! passive);
     knobs[midFreqKnob].slider->setAlpha (passive ? 0.3f : 1.0f);
 
+    captureButton.setVisible (showsCapture());
+    shownCapture = captureText();
     modelBox.setColour (juce::ComboBox::textColourId, skin.accent.brighter (0.2f));
     modelBox.setColour (juce::ComboBox::arrowColourId, skin.accent);
 
@@ -123,6 +133,12 @@ void AmpHead::timerCallback()
         repaint (cabArea);
     }
 
+    if (const auto text = captureText(); text != shownCapture)
+    {
+        shownCapture = text;
+        repaint (ventArea);
+    }
+
     const auto target = juce::jlimit (0.0f, 1.0f, processor.ampMeter.takePeak() * 1.8f);
     const auto previous = glow;
     glow += (target > glow ? 0.5f : 0.06f) * (target - glow);
@@ -138,6 +154,49 @@ juce::String AmpHead::impulseResponseText() const
 
     const auto file = processor.getCabinetImpulseResponse();
     return file.existsAsFile() ? file.getFileNameWithoutExtension() : juce::String ("no file loaded");
+}
+
+bool AmpHead::showsCapture() const
+{
+    return ampModels[(size_t) juce::jlimit (0, (int) ampModels.size() - 1, currentModel)].neuralCapture;
+}
+
+juce::String AmpHead::captureText() const
+{
+    if (! showsCapture())
+        return {};
+
+    const auto file = processor.getCapture();
+
+    if (! file.existsAsFile())
+        return "No capture loaded";
+
+    const auto capturedRate = processor.getCaptureSampleRate();
+
+    if (juce::exactlyEqual (capturedRate, 0.0))
+        return file.getFileNameWithoutExtension() + "\nCan't read this file";
+
+    const auto playingRate = processor.getSampleRate();
+
+    if (capturedRate > 0.0 && playingRate > 0.0 && std::abs (capturedRate - playingRate) > 1.0)
+        return file.getFileNameWithoutExtension() + "\nSet audio to " + juce::String (capturedRate / 1000.0, 1) + " kHz";
+
+    return file.getFileNameWithoutExtension();
+}
+
+void AmpHead::chooseCapture()
+{
+    const auto current = processor.getCapture();
+    fileChooser = std::make_unique<juce::FileChooser> ("Load a Neural Amp Modeler capture",
+                                                       current.existsAsFile() ? current.getParentDirectory() : juce::File(),
+                                                       "*.nam");
+
+    fileChooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                              [safeThis = SafePointer<AmpHead> (this)] (const juce::FileChooser& chooser)
+    {
+        if (safeThis != nullptr && chooser.getResult().existsAsFile())
+            safeThis->processor.setCapture (chooser.getResult());
+    });
 }
 
 void AmpHead::chooseImpulseResponse()
@@ -173,7 +232,18 @@ void AmpHead::resized()
     top.removeFromLeft (14);
     cabArea = top.removeFromRight (200);
     top.removeFromRight (14);
+    auto cuts = top.removeFromRight (110);
+    top.removeFromRight (10);
+
+    for (auto knob = (size_t) panelKnobs; knob < knobs.size(); ++knob)
+    {
+        auto cell = cuts.removeFromLeft (55);
+        cell.removeFromTop (labelHeight + 2);
+        knobs[knob].slider->setBounds (cell.withSizeKeepingCentre (cutKnobSize + 10, cutKnobSize + 10));
+    }
+
     ventArea = top.reduced (0, 4);
+    captureButton.setBounds (ventArea.reduced (8, 6).removeFromBottom (22).removeFromRight (72));
 
     modelBox.setBounds (badgeArea.withTrimmedTop (24).reduced (10, 6));
 
@@ -194,7 +264,7 @@ void AmpHead::resized()
     // Gain | Bass Middle Freq Treble | Contour | Deep Bright | Blend Master
     const auto groupGap = 14;
     const auto switchWidth = 100;
-    const auto cellWidth = (controls.getWidth() - switchWidth - 4 * groupGap) / (int) knobs.size();
+    const auto cellWidth = (controls.getWidth() - switchWidth - 4 * groupGap) / panelKnobs;
 
     auto placeKnob = [&controls, cellWidth] (Knob& knob)
     {
@@ -416,7 +486,8 @@ void AmpHead::paintPanel (juce::Graphics& g)
     {
         const auto bounds = knob.slider->getBounds().toFloat();
         const auto alpha = knob.slider->isEnabled() ? 1.0f : 0.35f;
-        g.setColour (skin.ink.withMultipliedAlpha (alpha));
+        const auto ink = bounds.getY() < (float) panelArea.getY() ? coveringInk (skin) : skin.ink;
+        g.setColour (ink.withMultipliedAlpha (alpha));
         g.drawText (knob.label, bounds.withY (bounds.getY() - labelHeight - 1.0f).withHeight ((float) labelHeight).expanded (12.0f, 0.0f),
                     juce::Justification::centred);
 
@@ -425,14 +496,14 @@ void AmpHead::paintPanel (juce::Graphics& g)
 
         const auto rotary = knob.slider->getRotaryParameters();
         const auto centre = bounds.getCentre();
-        const auto radius = (float) knobSize * 0.5f + 4.0f;
+        const auto radius = bounds.getWidth() * 0.5f - 1.0f;
 
         for (int tick = 0; tick <= 10; ++tick)
         {
             const auto angle = rotary.startAngleRadians + (rotary.endAngleRadians - rotary.startAngleRadians) * (float) tick / 10.0f;
             const auto dot = centre.getPointOnCircumference (radius, angle);
             const auto size = (tick == 0 || tick == 5 || tick == 10) ? 2.6f : 1.6f;
-            g.setColour (skin.ink.withMultipliedAlpha (0.75f * alpha));
+            g.setColour (ink.withMultipliedAlpha (0.75f * alpha));
             g.fillEllipse (dot.x - size / 2.0f, dot.y - size / 2.0f, size, size);
         }
     }
@@ -468,10 +539,34 @@ void AmpHead::paintVent (juce::Graphics& g)
     g.setColour (juce::Colour (0xff050506));
     g.fillRect (vent);
 
-    if (skin.tubes)
+    if (showsCapture())
+    {
+        g.setColour (skin.accent.withAlpha (0.06f));
+        g.fillRect (vent);
+
+        auto text = vent.reduced (10.0f, 6.0f);
+        g.setColour (Palette::textDim);
+        g.setFont (Fonts::label (10.0f).withKerningFactor (0.2f));
+        g.drawText ("CAPTURE", text.removeFromTop (14.0f), juce::Justification::centredLeft);
+
+        const auto lines = juce::StringArray::fromLines (shownCapture);
+        g.setColour (skin.accent);
+        g.setFont (Fonts::display (15.0f));
+        g.drawFittedText (lines[0], text.removeFromTop (22.0f).toNearestInt(), juce::Justification::centredLeft, 1, 0.7f);
+
+        g.setColour (Palette::ledYellow);
+        g.setFont (Fonts::display (10.0f, false));
+        g.drawFittedText (lines[1], text.withRight ((float) captureButton.getX() - 6.0f).toNearestInt(),
+                          juce::Justification::centredLeft, 2, 0.8f);
+    }
+    else if (skin.tubes)
+    {
         paintTubes (g, vent);
+    }
     else
+    {
         paintGrille (g, vent);
+    }
 
     g.setGradientFill (juce::ColourGradient (juce::Colours::black.withAlpha (0.8f), 0.0f, vent.getY(),
                                              juce::Colours::transparentBlack, 0.0f, vent.getY() + 14.0f, false));

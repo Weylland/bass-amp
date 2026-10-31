@@ -21,7 +21,7 @@ struct AmpSkin
     bool tubes;              // glowing valves behind the vent, or a solid-state grille
 };
 
-inline const std::array<AmpSkin, 7> ampSkins {{
+inline const std::array<AmpSkin, 8> ampSkins {{
     // Hi-Fi: black and yellow, Italian solid-state.
     { AmpSkin::Covering::tolex, juce::Colour (0xff151515), juce::Colour (0xff1d1d1f), false,
       juce::Colour (0xfff2c230), juce::Colour (0xfff2c230), KnobStyle::modern, juce::Colour (0xff2a2a2d), juce::Colour (0xfff2c230), false },
@@ -49,4 +49,8 @@ inline const std::array<AmpSkin, 7> ampSkins {{
     // Tube DI: hammered grey enclosure, black knobs, green light.
     { AmpSkin::Covering::metal, juce::Colour (0xff474b52), juce::Colour (0xff5a5f67), false,
       juce::Colour (0xfff5f5f5), juce::Colour (0xff3ed17a), KnobStyle::pedal, juce::Colour (0xff1a1a1d), juce::Colour (0xfff5f5f5), false },
+
+    // NAM Capture: graphite modeller, teal display.
+    { AmpSkin::Covering::metal, juce::Colour (0xff1c1f24), juce::Colour (0xff262a30), false,
+      juce::Colour (0xffdde6ea), juce::Colour (0xff35d0a5), KnobStyle::modern, juce::Colour (0xff30343a), juce::Colour (0xff35d0a5), false },
 }};

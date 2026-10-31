@@ -16,6 +16,7 @@ EqPanel::EqPanel (BassAmpProcessor& processorToUse)
 
     onSwitch.setColour (juce::ToggleButton::tickColourId, Palette::gold);
     onAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (processor.parameters, ParamIds::eqOn, onSwitch);
+    onSwitch.setComponentID (ParamIds::eqOn);
 
     basicButton.onClick = [this] { setMode (Equalizer::basicMode); };
     advancedButton.onClick = [this] { setMode (Equalizer::advancedMode); };

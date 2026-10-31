@@ -3,8 +3,10 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "../PluginProcessor.h"
+#include "ToggleSwitch.h"
 
-// Input and output peak meters with clip LEDs, plus the compressor gain reduction.
+// Input and output peak meters with clip LEDs, the compressor gain reduction, and the
+// output limiter switch.
 class LevelMeters : public juce::Component, private juce::Timer
 {
 public:
@@ -13,6 +15,7 @@ public:
 
     void paint (juce::Graphics&) override;
     void mouseDown (const juce::MouseEvent&) override;
+    void resized() override;
 
 private:
     struct Meter
@@ -30,4 +33,7 @@ private:
     BassAmpProcessor& processor;
     Meter input, output;
     float gainReductionDb = 0.0f;
+
+    ToggleSwitch limiterButton { "LIMIT" };
+    juce::AudioProcessorValueTreeState::ButtonAttachment limiterAttachment;
 };

@@ -3,10 +3,11 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "../PluginProcessor.h"
+#include "ToggleSwitch.h"
 
 // The amp head: model badge and selector, glowing valves (or a grille on solid-state
-// models), cabinet and impulse response choice, and the control panel. Its look follows
-// the selected model.
+// models, or the capture screen of the NAM model), cabinet and impulse response choice, and
+// the control panel. Its look follows the selected model.
 class AmpHead : public juce::Component, private juce::Timer
 {
 public:
@@ -26,7 +27,7 @@ private:
 
     struct Switch
     {
-        std::unique_ptr<juce::ToggleButton> button;
+        std::unique_ptr<ToggleSwitch> button;
         std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> attachment;
         juce::String label;
     };
@@ -35,6 +36,9 @@ private:
     void applySkin();
     void chooseImpulseResponse();
     juce::String impulseResponseText() const;
+    void chooseCapture();
+    juce::String captureText() const;
+    bool showsCapture() const;
 
     void paintStatic (juce::Graphics&);
     void paintCovering (juce::Graphics&, juce::Rectangle<float>);
@@ -54,6 +58,7 @@ private:
     juce::ComboBox modelBox, cabBox;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> modelAttachment, cabAttachment;
     juce::TextButton irButton { "LOAD IR" };
+    juce::TextButton captureButton { "LOAD NAM" };
     std::unique_ptr<juce::FileChooser> fileChooser;
 
     juce::Rectangle<int> frameArea, topArea, badgeArea, ventArea, cabArea, panelArea, pilotArea, switchArea;
@@ -61,6 +66,7 @@ private:
     float staticLayerScale = 0.0f;
     float glow = 0.0f;
     juce::String shownImpulseResponse;
+    juce::String shownCapture;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AmpHead)
 };

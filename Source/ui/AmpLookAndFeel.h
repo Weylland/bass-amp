@@ -18,11 +18,17 @@ namespace Palette
     inline const juce::Colour gate       { 0xff3f8f5a };
     inline const juce::Colour compressor { 0xff2f6fc0 };
     inline const juce::Colour octaver    { 0xff7b3fb8 };
+    inline const juce::Colour synth      { 0xffc8357e };
+    inline const juce::Colour pitch      { 0xff7fae2c };
+    inline const juce::Colour filter     { 0xffe2c03c };
     inline const juce::Colour envFilter  { 0xff1fa58a };
+    inline const juce::Colour wah        { 0xff3a3d45 };
     inline const juce::Colour fuzz       { 0xffd2652a };
     inline const juce::Colour distortion { 0xffc23434 };
     inline const juce::Colour phaser     { 0xffe08a1f };
+    inline const juce::Colour flanger    { 0xffa8325a };
     inline const juce::Colour chorus     { 0xff2aa6c8 };
+    inline const juce::Colour tremolo    { 0xff8c6a3c };
     inline const juce::Colour delay      { 0xff3b4fb8 };
     inline const juce::Colour reverb     { 0xff9a9ea8 };
 }

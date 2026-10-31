@@ -135,6 +135,48 @@ const std::vector<FactoryPreset>& getFactoryPresets()
             { chorusOn, on }, { chorusRate, 0.5f }, { chorusDepth, 0.6f }, { chorusMix, 0.5f },
             { delayOn, on }, { delayTime, 500.0f }, { delayFeedback, 0.4f }, { delayMix, 0.3f },
             { reverbOn, on }, { reverbSize, 0.8f }, { reverbMix, 0.35f } } },
+
+        // Seventies funk: compressed punch into a bass wah, park the pedal or sweep it with an expression pedal.
+        { "Wah Funk", {
+            { ampModel, solidPunch }, { ampCab, cab410 }, { ampGain, 3.5f }, { ampBass, 2.0f }, { ampTreble, 2.0f },
+            { ampBlend, 0.3f }, { ampMaster, 6.0f },
+            { compOn, on }, { compThreshold, -22.0f }, { compRatio, 4.0f }, { compAttack, 8.0f }, { compMakeup, 6.0f },
+            { wahOn, on }, { wahPedal, 0.45f }, { wahResonance, 5.0f }, { wahBlend, 0.35f } } },
+
+        // Analog synth bass: saw through a resonant low-pass opened by the attack.
+        { "Analog Synth", {
+            { ampModel, hiFi }, { ampCab, cab115 }, { ampGain, 3.0f }, { ampBass, 2.0f }, { ampBlend, 0.2f },
+            { ampMaster, -5.6f },
+            { gateOn, on }, { gateThreshold, -58.0f },
+            { synthOn, on }, { synthWave, 1.0f }, { synthCutoff, 250.0f }, { synthResonance, 0.6f }, { synthEnvelope, 0.7f },
+            { synthMix, 0.85f } } },
+
+        // Slow resonant low-pass sweep over a driven DI.
+        { "Filter Sweep", {
+            { ampModel, tubeDi }, { ampCab, cabOff }, { ampGain, 4.0f }, { ampBass, 2.0f }, { ampMaster, -4.3f },
+            { filterOn, on }, { filterType, 1.0f }, { filterCutoff, 500.0f }, { filterResonance, 0.6f },
+            { filterRate, 0.25f }, { filterDepth, 0.6f } } },
+
+        // Octave-up lead: fuzz with the pitch shifter an octave above.
+        { "Octave Up Lead", {
+            { ampModel, tube300 }, { ampCab, cab410 }, { ampGain, 4.0f }, { ampBass, 1.0f }, { ampMid, 3.0f },
+            { ampMidFreq, 900.0f }, { ampBlend, 0.25f }, { ampMaster, -0.4f },
+            { pitchOn, on }, { pitchShift, 12.0f }, { pitchMix, 0.45f },
+            { fuzzOn, on }, { fuzzAmount, 0.6f }, { fuzzTone, 0.6f }, { fuzzBlend, 0.5f },
+            { delayOn, on }, { delayTime, 400.0f }, { delayFeedback, 0.3f }, { delayMix, 0.2f } } },
+
+        { "Jet Flanger", {
+            { ampModel, solidPunch }, { ampCab, cab410 }, { ampGain, 4.0f }, { ampBass, 2.0f }, { ampTreble, 3.0f },
+            { ampBlend, 0.3f }, { ampMaster, 5.4f },
+            { compOn, on }, { compThreshold, -20.0f }, { compRatio, 4.0f }, { compMakeup, 5.0f },
+            { flangerOn, on }, { flangerRate, 0.2f }, { flangerDepth, 0.8f }, { flangerFeedback, 0.6f }, { flangerMix, 0.6f } } },
+
+        // Tweed amp with tremolo and spring-like room.
+        { "Surf Tremolo", {
+            { ampModel, tweed }, { ampCab, cab212 }, { ampGain, 4.0f }, { ampBass, 5.0f }, { ampMid, 3.0f },
+            { ampTreble, 4.0f }, { ampBlend, 0.25f }, { ampMaster, 1.2f },
+            { tremoloOn, on }, { tremoloRate, 6.0f }, { tremoloDepth, 0.6f }, { tremoloShape, 0.3f },
+            { reverbOn, on }, { reverbSize, 0.6f }, { reverbMix, 0.3f } } },
     };
 
     return presets;

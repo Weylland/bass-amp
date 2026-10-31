@@ -5,6 +5,7 @@
 namespace
 {
     const juce::Identifier impulseResponseProperty { "cabinetImpulseResponse" };
+    const juce::Identifier captureProperty { "namCapture" };
 }
 
 BassAmpProcessor::BassAmpProcessor()
@@ -16,15 +17,28 @@ BassAmpProcessor::BassAmpProcessor()
     gate.bind (parameters);
     compressor.bind (parameters);
     octaver.bind (parameters);
+    synth.bind (parameters);
+    pitchShifter.bind (parameters);
+    filter.bind (parameters);
     envelopeFilter.bind (parameters);
+    wah.bind (parameters);
     fuzz.bind (parameters);
     distortion.bind (parameters);
     amp.bind (parameters);
     equalizer.bind (parameters);
     phaser.bind (parameters);
+    flanger.bind (parameters);
     chorus.bind (parameters);
+    tremolo.bind (parameters);
     delay.bind (parameters);
     reverb.bind (parameters);
+    limiter.bind (parameters);
+
+    midiLearn.onProgramChange = [this] (int program)
+    {
+        if (program < getNumPrograms())
+            setCurrentProgram (program);
+    };
 
     presets.loadFactoryPreset (0);
     parameters.state.addListener (this);
@@ -46,15 +60,30 @@ juce::File BassAmpProcessor::getCabinetImpulseResponse() const
     return juce::File::isAbsolutePath (path) ? juce::File (path) : juce::File();
 }
 
+void BassAmpProcessor::setCapture (const juce::File& file)
+{
+    parameters.state.setProperty (captureProperty, file.getFullPathName(), nullptr);
+}
+
+juce::File BassAmpProcessor::getCapture() const
+{
+    const auto path = parameters.state.getProperty (captureProperty).toString();
+    return juce::File::isAbsolutePath (path) ? juce::File (path) : juce::File();
+}
+
 void BassAmpProcessor::valueTreePropertyChanged (juce::ValueTree& tree, const juce::Identifier& property)
 {
     if (tree == parameters.state && property == impulseResponseProperty)
         reloadImpulseResponse();
+
+    if (tree == parameters.state && property == captureProperty)
+        amp.loadCapture (getCapture());
 }
 
 void BassAmpProcessor::valueTreeRedirected (juce::ValueTree&)
 {
     reloadImpulseResponse();
+    amp.loadCapture (getCapture());
 }
 
 void BassAmpProcessor::reloadImpulseResponse()
@@ -81,23 +110,58 @@ void BassAmpProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     tuner.prepare (sampleRate);
     spectrum.prepare (sampleRate);
     recorder.prepare (sampleRate, getTotalNumOutputChannels());
+    backingTrack.prepare (sampleRate, samplesPerBlock);
+    looper.prepare (sampleRate, getTotalNumOutputChannels());
+    metronome.prepare (sampleRate);
     gate.prepare (sampleRate);
     compressor.prepare (sampleRate);
     octaver.prepare (monoSpec);
+    synth.prepare (monoSpec);
+    pitchShifter.prepare (monoSpec);
+    filter.prepare (monoSpec);
     envelopeFilter.prepare (monoSpec);
+    wah.prepare (monoSpec);
     fuzz.prepare (sampleRate, samplesPerBlock);
     distortion.prepare (sampleRate, samplesPerBlock);
     amp.prepare (sampleRate, samplesPerBlock);
     equalizer.prepare (sampleRate);
     phaser.prepare (outputSpec);
+    flanger.prepare (outputSpec);
     chorus.prepare (outputSpec);
+    tremolo.prepare (outputSpec);
     delay.prepare (outputSpec);
     reverb.prepare (outputSpec);
+    limiter.prepare (sampleRate);
 }
 
-void BassAmpProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+void BassAmpProcessor::processPedal (PedalId pedal, juce::dsp::AudioBlock<float>& mono,
+                                     const juce::dsp::ProcessContextReplacing<float>& output)
+{
+    switch (pedal)
+    {
+        case PedalId::gate:       gate.process (mono); break;
+        case PedalId::compressor: compressor.process (mono); break;
+        case PedalId::octaver:    octaver.process (mono); break;
+        case PedalId::synth:      synth.process (mono); break;
+        case PedalId::pitch:      pitchShifter.process (mono); break;
+        case PedalId::filter:     filter.process (mono); break;
+        case PedalId::envelope:   envelopeFilter.process (mono); break;
+        case PedalId::wah:        wah.process (mono); break;
+        case PedalId::fuzz:       fuzz.process (mono); break;
+        case PedalId::drive:      distortion.process (mono); break;
+        case PedalId::phaser:     phaser.process (output); break;
+        case PedalId::flanger:    flanger.process (output); break;
+        case PedalId::chorus:     chorus.process (output); break;
+        case PedalId::tremolo:    tremolo.process (output); break;
+        case PedalId::delay:      delay.process (output); break;
+        case PedalId::reverb:     reverb.process (output); break;
+    }
+}
+
+void BassAmpProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ScopedNoDenormals noDenormals;
+    midiLearn.process (midi);
 
     const auto numInputs = getTotalNumInputChannels();
     const auto numOutputs = getTotalNumOutputChannels();
@@ -112,15 +176,19 @@ void BassAmpProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mid
     inputMeter.push (buffer.getReadPointer (0), numSamples);
     tuner.push (buffer.getReadPointer (0), numSamples);
 
+    backingTrack.render (numSamples);
+    const auto reamp = backingTrack.reamp.load();
+
+    if (reamp)
+        for (int i = 0; i < numSamples; ++i)
+            buffer.addSample (0, i, backingTrack.getMonoSample (i));
+
     juce::dsp::AudioBlock<float> block (buffer);
     auto mono = block.getSingleChannelBlock (0);
+    auto outputBlock = block.getSubsetChannelBlock (0, (size_t) numOutputs);
+    const juce::dsp::ProcessContextReplacing<float> context (outputBlock);
 
-    gate.process (mono);
-    compressor.process (mono);
-    octaver.process (mono);
-    envelopeFilter.process (mono);
-    fuzz.process (mono);
-    distortion.process (mono);
+    pedalChain.forEach (Board::pre, [&] (PedalId pedal) { processPedal (pedal, mono, context); });
     amp.process (mono);
     ampMeter.push (buffer.getReadPointer (0), numSamples);
     equalizer.process (mono);
@@ -128,18 +196,22 @@ void BassAmpProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mid
     for (int channel = 1; channel < numOutputs; ++channel)
         buffer.copyFrom (channel, 0, buffer, 0, 0, numSamples);
 
-    auto outputBlock = block.getSubsetChannelBlock (0, (size_t) numOutputs);
-    const juce::dsp::ProcessContextReplacing<float> context (outputBlock);
-    phaser.process (context);
-    chorus.process (context);
-    delay.process (context);
-    reverb.process (context);
+    pedalChain.forEach (Board::post, [&] (PedalId pedal) { processPedal (pedal, mono, context); });
+
+    if (! reamp)
+        for (int channel = 0; channel < numOutputs; ++channel)
+            for (int i = 0; i < numSamples; ++i)
+                buffer.addSample (channel, i, backingTrack.getSample (channel, i));
+
+    looper.process (outputBlock);
+    limiter.process (outputBlock);
 
     for (int channel = 0; channel < numOutputs; ++channel)
         outputMeter.push (buffer.getReadPointer (channel), numSamples);
 
     spectrum.push (buffer.getReadPointer (0), numSamples);
     recorder.push (buffer, numOutputs, numSamples);
+    metronome.process (outputBlock);
 
     if (muteOutput.load())
         outputBlock.clear();

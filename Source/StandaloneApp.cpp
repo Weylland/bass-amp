@@ -3,6 +3,7 @@
 
 #include "PluginProcessor.h"
 #include "ui/AmpLookAndFeel.h"
+#include "ui/Logo.h"
 
 namespace
 {
@@ -163,6 +164,11 @@ public:
 
     void initialise (const juce::String&) override
     {
+        auto* splash = new juce::SplashScreen (getApplicationName(), Logo::createSplash (getApplicationVersion()), true);
+
+        if (auto* peer = splash->getPeer())
+            peer->performAnyPendingRepaintsNow();
+
         auto* settings = appProperties.getUserSettings();
         const auto needsLowLatencySetup = ! settings->getBoolValue (lowLatencySetupKey, false);
 
@@ -186,7 +192,12 @@ public:
             settings->setValue (lowLatencySetupKey, true);
         }
 
+        // MIDI controllers work without a trip to the settings: every MIDI input is opened.
+        for (const auto& input : juce::MidiInput::getAvailableDevices())
+            mainWindow->getDeviceManager().setMidiInputDeviceEnabled (input.identifier, true);
+
         mainWindow->setVisible (true);
+        splash->deleteAfterDelay (juce::RelativeTime::seconds (2.0), true);
         startTimer (500);
     }
 

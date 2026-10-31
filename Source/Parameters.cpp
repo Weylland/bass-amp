@@ -47,6 +47,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { id, version }, name, false));
     };
 
+    auto addChoice = [&layout] (const char* id, int version, const char* name, const juce::StringArray& choices, int defaultIndex)
+    {
+        layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { id, version }, name, choices, defaultIndex));
+    };
+
     addToggle (ParamIds::gateOn, 2, "Gate On");
     addFloat (ParamIds::gateThreshold, 2, "Gate Threshold", { -90.0f, -20.0f, 0.1f }, -60.0f, withUnit ("dB", 1));
     addFloat (ParamIds::gateRelease,   2, "Gate Release", skewed (10.0f, 500.0f, 1.0f, 100.0f), 100.0f, withUnit ("ms", 0));
@@ -70,6 +75,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
     addFloat (ParamIds::envSensitivity, 2, "Env Sensitivity", unitRange, 0.5f, asPercent());
     addFloat (ParamIds::envResonance,   2, "Env Resonance", skewed (0.7f, 8.0f, 0.01f, 2.5f), 3.0f, withUnit ("Q", 1));
     addFloat (ParamIds::envMix,         2, "Env Mix", unitRange, 1.0f, asPercent());
+    addChoice (ParamIds::envType,      6, "Env Type", { "LP", "BP", "HP" }, 0);
+    addChoice (ParamIds::envDirection, 6, "Env Sweep", { "Up", "Down" }, 0);
 
     addToggle (ParamIds::fuzzOn, 2, "Fuzz On");
     addFloat (ParamIds::fuzzAmount, 2, "Fuzz", unitRange, 0.6f, asPercent());
@@ -80,6 +87,32 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
     addFloat (ParamIds::distDrive, 1, "Drive", unitRange, 0.5f, asPercent());
     addFloat (ParamIds::distTone,  1, "Tone", skewed (400.0f, 8000.0f, 1.0f, 2000.0f), 2500.0f, withUnit ("Hz", 0));
     addFloat (ParamIds::distBlend, 1, "Blend", unitRange, 0.5f, asPercent());
+
+    addToggle (ParamIds::filterOn, 6, "Filter On");
+    addChoice (ParamIds::filterType, 6, "Filter Type", { "LP 12", "LP 24", "BP 12", "BP 24", "HP 12", "HP 24" }, 1);
+    addFloat (ParamIds::filterCutoff,    6, "Filter Cutoff", skewed (40.0f, 8000.0f, 1.0f, 600.0f), 800.0f, withUnit ("Hz", 0));
+    addFloat (ParamIds::filterResonance, 6, "Filter Resonance", unitRange, 0.4f, asPercent());
+    addFloat (ParamIds::filterRate,      6, "Filter LFO Rate", skewed (0.05f, 10.0f, 0.01f, 1.0f), 0.5f, withUnit ("Hz", 2));
+    addFloat (ParamIds::filterDepth,     6, "Filter LFO Depth", unitRange, 0.0f, asPercent());
+
+    addToggle (ParamIds::wahOn, 6, "Wah On");
+    addFloat (ParamIds::wahPedal,     6, "Wah Pedal", unitRange, 0.5f, asPercent());
+    addFloat (ParamIds::wahResonance, 6, "Wah Resonance", skewed (1.0f, 12.0f, 0.01f, 4.0f), 5.0f, withUnit ("Q", 1));
+    addFloat (ParamIds::wahBlend,     6, "Wah Clean Blend", unitRange, 0.25f, asPercent());
+
+    addToggle (ParamIds::synthOn, 6, "Synth On");
+    addChoice (ParamIds::synthWave, 6, "Synth Wave", { "Square", "Saw" }, 0);
+    addFloat (ParamIds::synthCutoff,    6, "Synth Cutoff", skewed (80.0f, 4000.0f, 1.0f, 500.0f), 400.0f, withUnit ("Hz", 0));
+    addFloat (ParamIds::synthResonance, 6, "Synth Resonance", unitRange, 0.5f, asPercent());
+    addFloat (ParamIds::synthEnvelope,  6, "Synth Envelope", unitRange, 0.6f, asPercent());
+    addFloat (ParamIds::synthMix,       6, "Synth Mix", unitRange, 0.7f, asPercent());
+
+    addToggle (ParamIds::pitchOn, 6, "Pitch On");
+    addFloat (ParamIds::pitchShift,  6, "Pitch Shift", { -12.0f, 12.0f, 1.0f }, 12.0f,
+              juce::AudioParameterFloatAttributes().withStringFromValueFunction (
+                  [] (float value, int) { return (value > 0.0f ? "+" : "") + juce::String (juce::roundToInt (value)) + " st"; }));
+    addFloat (ParamIds::pitchDetune, 6, "Pitch Detune", { -50.0f, 50.0f, 1.0f }, 0.0f, withUnit ("ct", 0));
+    addFloat (ParamIds::pitchMix,    6, "Pitch Mix", unitRange, 0.5f, asPercent());
 
     juce::StringArray modelNames, cabNames;
 
@@ -101,10 +134,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
     addFloat (ParamIds::ampContour, 5, "Contour",  unitRange, 0.0f, asPercent());
     addToggle (ParamIds::ampDeep,   5, "Deep");
     addToggle (ParamIds::ampBright, 5, "Bright");
+    addFloat (ParamIds::ampLowCut,  6, "Low Cut",  skewed (20.0f, 250.0f, 1.0f, 60.0f), 20.0f, withUnit ("Hz", 0));
+    addFloat (ParamIds::ampHighCut, 6, "High Cut", skewed (1500.0f, 20000.0f, 1.0f, 6000.0f), 20000.0f, withUnit ("Hz", 0));
 
     addToggle (ParamIds::eqOn, 5, "EQ On");
-    layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { ParamIds::eqMode, 5 }, "EQ Mode",
-                                                              juce::StringArray { "Basic", "Advanced" }, 0));
+    addChoice (ParamIds::eqMode, 5, "EQ Mode", { "Basic", "Advanced" }, 0);
 
     const char* graphicNames[] { "EQ 33 Hz", "EQ 63 Hz", "EQ 125 Hz", "EQ 250 Hz", "EQ 500 Hz", "EQ 1 kHz", "EQ 2 kHz", "EQ 4 kHz", "EQ 8 kHz" };
 
@@ -131,10 +165,21 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
     addFloat (ParamIds::phaserDepth,    5, "Phaser Depth", unitRange, 0.6f, asPercent());
     addFloat (ParamIds::phaserFeedback, 5, "Phaser Feedback", { 0.0f, 0.9f, 0.001f }, 0.3f, asPercent());
 
+    addToggle (ParamIds::flangerOn, 6, "Flanger On");
+    addFloat (ParamIds::flangerRate,     6, "Flanger Rate", skewed (0.05f, 5.0f, 0.01f, 0.5f), 0.3f, withUnit ("Hz", 2));
+    addFloat (ParamIds::flangerDepth,    6, "Flanger Depth", unitRange, 0.7f, asPercent());
+    addFloat (ParamIds::flangerFeedback, 6, "Flanger Feedback", { 0.0f, 0.9f, 0.001f }, 0.5f, asPercent());
+    addFloat (ParamIds::flangerMix,      6, "Flanger Mix", unitRange, 0.5f, asPercent());
+
     addToggle (ParamIds::chorusOn, 1, "Chorus On");
     addFloat (ParamIds::chorusRate,  1, "Rate", skewed (0.1f, 5.0f, 0.01f, 1.0f), 0.8f, withUnit ("Hz", 2));
     addFloat (ParamIds::chorusDepth, 1, "Depth", unitRange, 0.4f, asPercent());
     addFloat (ParamIds::chorusMix,   1, "Mix", unitRange, 0.5f, asPercent());
+
+    addToggle (ParamIds::tremoloOn, 6, "Tremolo On");
+    addFloat (ParamIds::tremoloRate,  6, "Tremolo Rate", skewed (0.5f, 15.0f, 0.01f, 4.0f), 5.0f, withUnit ("Hz", 2));
+    addFloat (ParamIds::tremoloDepth, 6, "Tremolo Depth", unitRange, 0.6f, asPercent());
+    addFloat (ParamIds::tremoloShape, 6, "Tremolo Shape", unitRange, 0.0f, asPercent());
 
     addToggle (ParamIds::delayOn, 2, "Delay On");
     addFloat (ParamIds::delayTime,     2, "Delay Time", skewed (20.0f, 1500.0f, 1.0f, 350.0f), 350.0f, withUnit ("ms", 0));
@@ -145,6 +190,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
     addFloat (ParamIds::reverbSize,    1, "Size", unitRange, 0.5f, asPercent());
     addFloat (ParamIds::reverbDamping, 1, "Damping", unitRange, 0.5f, asPercent());
     addFloat (ParamIds::reverbMix,     1, "Mix", unitRange, 0.25f, asPercent());
+
+    layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { ParamIds::limiterOn, 6 }, "Output Limiter", true));
 
     return layout;
 }

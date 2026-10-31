@@ -10,9 +10,10 @@ namespace
     constexpr int footswitchSize = 42;
 }
 
-Pedal::Pedal (juce::AudioProcessorValueTreeState& state, const juce::String& pedalName, const juce::String& pedalSubtitle,
-              juce::Colour pedalColour, const std::vector<KnobSpec>& knobs, const char* toggleParamId)
-    : name (pedalName), subtitle (pedalSubtitle), colour (pedalColour)
+Pedal::Pedal (juce::AudioProcessorValueTreeState& stateToUse, PedalId pedalId, const juce::String& pedalName,
+              const juce::String& pedalSubtitle, juce::Colour pedalColour, const std::vector<KnobSpec>& knobs,
+              const char* toggleParamId)
+    : state (stateToUse), id (pedalId), name (pedalName), subtitle (pedalSubtitle), colour (pedalColour)
 {
     for (const auto& spec : knobs)
     {
@@ -22,9 +23,15 @@ Pedal::Pedal (juce::AudioProcessorValueTreeState& state, const juce::String& ped
         addAndMakeVisible (slider);
 
         attachments.add (new juce::AudioProcessorValueTreeState::SliderAttachment (state, spec.paramId, *slider));
+        slider->setComponentID (spec.paramId);
 
         if (auto* parameter = state.getParameter (spec.paramId))
             slider->setDoubleClickReturnValue (true, parameter->convertFrom0to1 (parameter->getDefaultValue()));
+
+        choices.push_back (dynamic_cast<juce::AudioParameterChoice*> (state.getParameter (spec.paramId)));
+
+        if (choices.back() != nullptr)
+            slider->onValueChange = [this] { repaint(); };
 
         labels.add (spec.label.toUpperCase());
     }
@@ -32,6 +39,32 @@ Pedal::Pedal (juce::AudioProcessorValueTreeState& state, const juce::String& ped
     footswitch.onStateChange = [this] { repaint(); };
     addAndMakeVisible (footswitch);
     footswitchAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (state, toggleParamId, footswitch);
+    footswitch.setComponentID (toggleParamId);
+
+    removeButton.onClick = [this] { if (onRemove != nullptr) onRemove(); };
+    addAndMakeVisible (removeButton);
+}
+
+void Pedal::addTapTempo (const char* timeParamId)
+{
+    tapParameter = state.getParameter (timeParamId);
+    tapButton = std::make_unique<juce::TextButton> ("TAP");
+    tapButton->setTooltip ("Tap the tempo");
+    tapButton->onClick = [this]
+    {
+        if (const auto beat = tapTempo.tap())
+            tapParameter->setValueNotifyingHost (tapParameter->convertTo0to1 ((float) *beat));
+    };
+    addAndMakeVisible (*tapButton);
+    resized();
+}
+
+juce::String Pedal::labelFor (int knob) const
+{
+    if (auto* choice = choices[(size_t) knob])
+        return choice->getCurrentChoiceName().toUpperCase();
+
+    return labels[knob];
 }
 
 juce::Rectangle<float> Pedal::enclosure() const
@@ -77,18 +110,20 @@ void Pedal::paint (juce::Graphics& g)
     g.drawRoundedRectangle (body.reduced (1.5f), cornerSize - 1.5f, 1.0f);
 
     const auto ink = inkColour();
-    g.setColour (ink.withAlpha (0.85f));
     g.setFont (Fonts::label (10.5f));
 
     for (int i = 0; i < labels.size(); ++i)
-        g.drawFittedText (labels[i], labelAreas[i], juce::Justification::centred, 1, 0.7f);
+    {
+        g.setColour (ink.withAlpha (choices[(size_t) i] != nullptr ? 1.0f : 0.85f));
+        g.drawFittedText (labelFor (i), labelAreas[i].reduced (2, 0), juce::Justification::centred, 1, 0.55f);
+    }
 
     g.setColour (ink);
     g.setFont (Fonts::display (24.0f).withKerningFactor (0.04f));
-    g.drawText (name, nameArea.withHeight (26), juce::Justification::centred);
+    g.drawFittedText (name, nameArea.withHeight (26), juce::Justification::centred, 1, 0.8f);
     g.setColour (ink.withAlpha (0.6f));
     g.setFont (Fonts::label (10.0f));
-    g.drawText (subtitle.toUpperCase(), nameArea.withTrimmedTop (26), juce::Justification::centredTop);
+    g.drawFittedText (subtitle.toUpperCase(), nameArea.withTrimmedTop (26), juce::Justification::centredTop, 1, 0.8f);
 
     Draw::led (g, ledCentre, 4.5f, Palette::ledRed, footswitch.getToggleState());
 }
@@ -98,12 +133,19 @@ void Pedal::resized()
     const auto body = enclosure().toNearestInt();
     auto area = body.reduced (padding);
 
+    removeButton.setBounds (juce::Rectangle<int> (16, 16).withPosition (body.getRight() - 19, body.getY() + 2));
+    area.removeFromTop (5);
+
     footswitch.setBounds (juce::Rectangle<int> (footswitchSize, footswitchSize)
                               .withCentre ({ body.getCentreX(), area.getBottom() - footswitchSize / 2 }));
+
+    if (tapButton != nullptr)
+        tapButton->setBounds (juce::Rectangle<int> (40, 22).withCentre ({ body.getX() + 34, footswitch.getBounds().getCentreY() }));
+
     area.setBottom (footswitch.getY() - 14);
 
     nameArea = area.removeFromBottom (40);
-    ledCentre ={ (float) body.getRight() - 22.0f, (float) footswitch.getBounds().getCentreY() };
+    ledCentre = { (float) body.getRight() - 22.0f, (float) footswitch.getBounds().getCentreY() };
 
     const auto cellWidth = area.getWidth() / juce::jmax (1, sliders.size());
     const auto knobSize = juce::jmin (maxKnobSize, cellWidth - 4, area.getHeight() - labelHeight - 2);
@@ -147,4 +189,16 @@ void Pedal::Footswitch::paintButton (juce::Graphics& g, bool shouldDrawButtonAsH
     g.setColour (juce::Colours::white.withAlpha (shouldDrawButtonAsHighlighted ? 0.8f : 0.6f));
     g.fillEllipse (dome.withSizeKeepingCentre (dome.getWidth() * 0.25f, dome.getHeight() * 0.16f)
                        .translated (-dome.getWidth() * 0.12f, -dome.getHeight() * 0.22f));
+}
+
+void Pedal::RemoveButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool)
+{
+    const auto bounds = getLocalBounds().toFloat().reduced (2.0f);
+    g.setColour (juce::Colours::black.withAlpha (shouldDrawButtonAsHighlighted ? 0.55f : 0.25f));
+    g.fillEllipse (bounds);
+
+    const auto cross = bounds.reduced (bounds.getWidth() * 0.32f);
+    g.setColour (juce::Colours::white.withAlpha (shouldDrawButtonAsHighlighted ? 0.95f : 0.55f));
+    g.drawLine ({ cross.getTopLeft(), cross.getBottomRight() }, 1.6f);
+    g.drawLine ({ cross.getTopRight(), cross.getBottomLeft() }, 1.6f);
 }

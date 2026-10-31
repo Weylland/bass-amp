@@ -1,5 +1,6 @@
 #include "../Source/PluginProcessor.h"
 #include "../Source/ParameterIds.h"
+#include "../Source/ui/Logo.h"
 #include "../Source/ui/MainPanel.h"
 
 #include <iostream>
@@ -180,18 +181,230 @@ namespace
                detected ? juce::String (*detected, 2) + " Hz" : juce::String ("nothing"));
     }
 
+    // RMS of a sine through the processor, after the filters settle.
+    float sineLevelDb (BassAmpProcessor& processor, float frequency)
+    {
+        render (processor, sine (frequency, 0.1f), 0.2);
+        return render (processor, sine (frequency, 0.1f), 0.3).rmsDb();
+    }
+
+    void testFilterPedal()
+    {
+        auto processor = makeProcessor();
+        setParam (*processor, ParamIds::filterOn, 1.0f);
+        setParam (*processor, ParamIds::filterCutoff, 200.0f);
+        setParam (*processor, ParamIds::filterResonance, 0.0f);
+
+        setParam (*processor, ParamIds::filterType, 1.0f);
+        const auto lowPassAttenuation = sineLevelDb (*processor, 60.0f) - sineLevelDb (*processor, 3200.0f);
+        setParam (*processor, ParamIds::filterType, 5.0f);
+        const auto highPassAttenuation = sineLevelDb (*processor, 3200.0f) - sineLevelDb (*processor, 40.0f);
+
+        check (lowPassAttenuation > 70.0f && highPassAttenuation > 25.0f, "filter pedal LP 24 and HP 24",
+               juce::String (lowPassAttenuation, 1) + " / " + juce::String (highPassAttenuation, 1) + " dB");
+    }
+
+    void testEnvelopeSweepsDown()
+    {
+        auto processor = makeProcessor();
+        setParam (*processor, ParamIds::envOn, 1.0f);
+        setParam (*processor, ParamIds::envSensitivity, 1.0f);
+        const auto up = sineLevelDb (*processor, 2000.0f);
+        setParam (*processor, ParamIds::envDirection, 1.0f);
+        const auto down = sineLevelDb (*processor, 2000.0f);
+
+        check (up - down > 12.0f, "envelope filter sweeps up or down", juce::String (up, 1) + " / " + juce::String (down, 1) + " dB at 2 kHz");
+    }
+
+    void testAmpCuts()
+    {
+        auto processor = makeProcessor();
+        const auto flat = sineLevelDb (*processor, 50.0f) - sineLevelDb (*processor, 5000.0f);
+        setParam (*processor, ParamIds::ampLowCut, 200.0f);
+        setParam (*processor, ParamIds::ampHighCut, 1500.0f);
+        const auto lowCut = sineLevelDb (*processor, 50.0f);
+        const auto highCut = sineLevelDb (*processor, 6000.0f);
+        const auto mid = sineLevelDb (*processor, 550.0f);
+
+        check (std::abs (flat) < 1.5f && mid - lowCut > 18.0f && mid - highCut > 18.0f, "amp low and high cut",
+               "flat " + juce::String (flat, 1) + " dB, cuts " + juce::String (mid - lowCut, 1) + " / " + juce::String (mid - highCut, 1) + " dB");
+    }
+
+    void testWah()
+    {
+        auto processor = makeProcessor();
+        setParam (*processor, ParamIds::wahOn, 1.0f);
+        setParam (*processor, ParamIds::wahPedal, 0.0f);
+        const auto heel = sineLevelDb (*processor, 1500.0f);
+        setParam (*processor, ParamIds::wahPedal, 1.0f);
+        const auto toe = sineLevelDb (*processor, 1500.0f);
+
+        check (toe - heel > 9.0f, "wah sweeps with the pedal", "1.5 kHz: heel " + juce::String (heel, 1) + ", toe " + juce::String (toe, 1) + " dB");
+    }
+
+    // The frequency the output tuner hears for a played note.
+    float detectedOutputFrequency (BassAmpProcessor& processor, Signal note)
+    {
+        Tuner outputTuner;
+        outputTuner.prepare (testSampleRate);
+        render (processor, note, 0.6, &outputTuner);
+        return outputTuner.detectFrequency().value_or (0.0f);
+    }
+
+    void testPitchShifterAndSynth()
+    {
+        auto processor = makeProcessor();
+        setParam (*processor, ParamIds::pitchOn, 1.0f);
+        setParam (*processor, ParamIds::pitchMix, 1.0f);
+        setParam (*processor, ParamIds::pitchShift, 12.0f);
+        const auto up = detectedOutputFrequency (*processor, sine (55.0f, 0.3f));
+        setParam (*processor, ParamIds::pitchShift, -7.0f);
+        const auto fifthDown = detectedOutputFrequency (*processor, sine (110.0f, 0.3f));
+
+        check (std::abs (up - 110.0f) < 2.0f && std::abs (fifthDown - 73.42f) < 2.0f, "pitch shifter +12 and -7 semitones",
+               juce::String (up, 1) + " Hz, " + juce::String (fifthDown, 1) + " Hz");
+
+        auto synthProcessor = makeProcessor();
+        setParam (*synthProcessor, ParamIds::synthOn, 1.0f);
+        setParam (*synthProcessor, ParamIds::synthMix, 1.0f);
+        const auto square = detectedOutputFrequency (*synthProcessor, bassTone (55.0f, 0.3f));
+        setParam (*synthProcessor, ParamIds::synthWave, 1.0f);
+        const auto saw = detectedOutputFrequency (*synthProcessor, bassTone (82.4f, 0.3f));
+        const auto level = render (*synthProcessor, bassTone (82.4f, 0.3f), 0.3).rmsDb();
+
+        check (std::abs (square - 55.0f) < 1.5f && std::abs (saw - 82.4f) < 1.5f && level > -40.0f, "synth tracks the note",
+               "square " + juce::String (square, 1) + " Hz, saw " + juce::String (saw, 1) + " Hz, " + juce::String (level, 1) + " dB");
+    }
+
+    void testModulationEffects()
+    {
+        auto processor = makeProcessor();
+        const auto dry = sineLevelDb (*processor, 440.0f);
+
+        setParam (*processor, ParamIds::tremoloOn, 1.0f);
+        setParam (*processor, ParamIds::tremoloDepth, 1.0f);
+        const auto tremolo = sineLevelDb (*processor, 440.0f);
+        setParam (*processor, ParamIds::tremoloOn, 0.0f);
+
+        setParam (*processor, ParamIds::flangerOn, 1.0f);
+        const auto flanger = render (*processor, sine (440.0f, 0.1f), 1.0);
+
+        check (tremolo < dry - 2.0f && flanger.finite && std::abs (flanger.rmsDb() - dry) < 6.0f, "tremolo and flanger",
+               "dry " + juce::String (dry, 1) + ", tremolo " + juce::String (tremolo, 1) + ", flanger " + juce::String (flanger.rmsDb(), 1) + " dB");
+    }
+
+    void testLimiter()
+    {
+        auto processor = makeProcessor();
+        setParam (*processor, ParamIds::ampMaster, 6.0f);
+        setParam (*processor, ParamIds::ampModel, 0.0f);
+        const auto limited = render (*processor, sine (100.0f, 1.0f), 0.5);
+        setParam (*processor, ParamIds::limiterOn, 0.0f);
+        const auto open = render (*processor, sine (100.0f, 1.0f), 0.5);
+
+        check (limited.peak <= 0.8913f && open.peak > 1.0f, "output limiter holds -1 dBFS",
+               "peak " + juce::String (limited.peak, 4) + " limited, " + juce::String (open.peak, 3) + " open");
+    }
+
+    void testPedalChain()
+    {
+        auto processor = makeProcessor();
+        auto& chain = processor->pedalChain;
+        auto order = [&chain] (Board board)
+        {
+            std::vector<PedalId> pedals;
+            chain.forEach (board, [&] (PedalId pedal) { pedals.push_back (pedal); });
+            return pedals;
+        };
+
+        const auto defaultShown = chain.getShown (Board::pre).size() == 6 && chain.getShown (Board::post).size() == 4;
+        chain.show (PedalId::synth);
+        const auto synthShown = chain.getShown (Board::pre)[3] == PedalId::synth && processor->parameters.getRawParameterValue (ParamIds::synthOn)->load() > 0.5f;
+        chain.move (PedalId::drive, 0);
+        chain.hide (PedalId::gate);
+        const auto shown = chain.getShown (Board::pre);
+        const auto audioOrder = order (Board::pre);
+        const auto position = [&audioOrder] (PedalId pedal) { return std::find (audioOrder.begin(), audioOrder.end(), pedal) - audioOrder.begin(); };
+        const auto movedFirst = ! shown.empty() && shown.front() == PedalId::drive && position (PedalId::drive) < position (PedalId::compressor);
+        const auto gateHidden = std::find (shown.begin(), shown.end(), PedalId::gate) == shown.end() && audioOrder.size() == 10;
+
+        setParam (*processor, ParamIds::wahOn, 1.0f);
+        const auto wahShown = chain.getShown (Board::pre).size() == shown.size() + 1;
+
+        processor->setCurrentProgram (0);
+        const auto reset = chain.getShown (Board::pre).size() == 6 && order (Board::pre).front() == PedalId::gate;
+
+        check (defaultShown && synthShown && movedFirst && gateHidden && wahShown && reset, "pedal chain show, move, hide, reset",
+               juce::String ((int) defaultShown) + juce::String ((int) synthShown) + juce::String ((int) movedFirst)
+                   + juce::String ((int) gateHidden) + juce::String ((int) wahShown) + juce::String ((int) reset));
+    }
+
+    void testMidiLearn()
+    {
+        auto processor = makeProcessor();
+        auto& parameters = processor->parameters;
+        const auto mapFile = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("BassAmpMidiMapTest.xml");
+        mapFile.deleteFile();
+
+        auto value = [&parameters] (const char* id) { return parameters.getRawParameterValue (id)->load(); };
+        auto send = [] (MidiLearn& midi, const juce::MidiMessage& message)
+        {
+            juce::MidiBuffer buffer;
+            buffer.addEvent (message, 0);
+            midi.process (buffer);
+        };
+
+        {
+            MidiLearn midi (parameters, mapFile);
+            send (midi, juce::MidiMessage::controllerEvent (1, 11, 0));
+            const auto expressionDefault = value (ParamIds::wahPedal) < 0.01f;
+
+            midi.learn (ParamIds::filterCutoff);
+            send (midi, juce::MidiMessage::noteOn (1, 40, 1.0f));
+            const auto noteIgnoredForKnob = midi.getLearningParameter() == ParamIds::filterCutoff;
+            send (midi, juce::MidiMessage::controllerEvent (1, 20, 127));
+            const auto ccLearnt = midi.describe (ParamIds::filterCutoff) == "CC 20" && value (ParamIds::filterCutoff) > 7999.0f;
+
+            midi.learn (ParamIds::filterOn);
+            send (midi, juce::MidiMessage::noteOn (1, 36, 1.0f));
+            const auto noteToggles = value (ParamIds::filterOn) > 0.5f;
+            send (midi, juce::MidiMessage::noteOn (1, 36, 1.0f));
+            const auto noteTogglesBack = value (ParamIds::filterOn) < 0.5f;
+
+            midi.forget (ParamIds::wahPedal);
+
+            check (expressionDefault && noteIgnoredForKnob && ccLearnt && noteToggles && noteTogglesBack, "MIDI learn: CC, note toggle, expression",
+                   juce::String ((int) expressionDefault) + juce::String ((int) noteIgnoredForKnob) + juce::String ((int) ccLearnt)
+                       + juce::String ((int) noteToggles) + juce::String ((int) noteTogglesBack));
+        }
+
+        MidiLearn reloaded (parameters, mapFile);
+        send (reloaded, juce::MidiMessage::controllerEvent (1, 20, 0));
+        check (reloaded.describe (ParamIds::filterCutoff) == "CC 20" && reloaded.describe (ParamIds::wahPedal).isEmpty()
+                   && value (ParamIds::filterCutoff) < 41.0f,
+               "MIDI map saved and reloaded", reloaded.describe (ParamIds::filterOn));
+        mapFile.deleteFile();
+    }
+
     void testFullChainIsStable()
     {
         auto processor = makeProcessor();
 
         for (const auto* toggle : { ParamIds::gateOn, ParamIds::compOn, ParamIds::octOn, ParamIds::envOn, ParamIds::fuzzOn,
                                     ParamIds::distOn, ParamIds::eqOn, ParamIds::phaserOn, ParamIds::chorusOn, ParamIds::delayOn,
-                                    ParamIds::reverbOn, ParamIds::ampDeep, ParamIds::ampBright })
+                                    ParamIds::reverbOn, ParamIds::ampDeep, ParamIds::ampBright, ParamIds::filterOn,
+                                    ParamIds::wahOn, ParamIds::synthOn, ParamIds::pitchOn, ParamIds::flangerOn,
+                                    ParamIds::tremoloOn })
             setParam (*processor, toggle, 1.0f);
 
         setParam (*processor, ParamIds::octUp, 1.0f);
         setParam (*processor, ParamIds::ampContour, 1.0f);
         setParam (*processor, ParamIds::phaserFeedback, 0.9f);
+        setParam (*processor, ParamIds::flangerFeedback, 0.9f);
+        setParam (*processor, ParamIds::filterResonance, 1.0f);
+        setParam (*processor, ParamIds::filterDepth, 1.0f);
+        setParam (*processor, ParamIds::synthResonance, 1.0f);
+        setParam (*processor, ParamIds::wahResonance, 12.0f);
 
         for (const auto* band : ParamIds::graphicEq)
             setParam (*processor, band, 12.0f);
@@ -223,6 +436,9 @@ namespace
 
         for (int model = 0; model < (int) ampModels.size(); ++model)
         {
+            if (ampModels[(size_t) model].neuralCapture)
+                continue;
+
             for (const auto gainValue : { 2.0f, 5.0f, 8.0f })
             {
                 auto processor = makeProcessor();
@@ -299,6 +515,44 @@ namespace
             harmonics += bandEnergy (fundamentalBin * h);
 
         return 100.0f * std::sqrt (harmonics / bandEnergy (fundamentalBin));
+    }
+
+    void testNamCapture()
+    {
+        const auto models = juce::File (BASS_AMP_NAM_MODELS);
+        const auto captureIndex = (float) ampModels.size() - 1.0f;
+        auto renderWith = [&] (const juce::File& capture)
+        {
+            auto processor = makeProcessor();
+            setParam (*processor, ParamIds::ampModel, captureIndex);
+            setParam (*processor, ParamIds::ampCab, 1.0f);
+            setParam (*processor, ParamIds::ampBlend, 0.0f);
+            setParam (*processor, ParamIds::ampMaster, 0.0f);
+            processor->setCapture (capture);
+            const auto rate = processor->getCaptureSampleRate();
+            render (*processor, bassTone (55.0f, 0.2f), 0.5);
+            return std::pair { render (*processor, bassTone (55.0f, 0.2f), 1.0), rate };
+        };
+
+        const auto [captured, rate] = renderWith (models.getChildFile ("A2.nam"));
+        const auto [lstm, lstmRate] = renderWith (models.getChildFile ("lstm.nam"));
+        const auto [missing, missingRate] = renderWith (models.getChildFile ("missing.nam"));
+
+        auto reference = makeProcessor();
+        setParam (*reference, ParamIds::ampModel, 1.0f);
+        setParam (*reference, ParamIds::ampCab, 1.0f);
+        setParam (*reference, ParamIds::ampBlend, 0.0f);
+        setParam (*reference, ParamIds::ampMaster, 0.0f);
+        render (*reference, bassTone (55.0f, 0.2f), 0.5);
+        const auto tube = render (*reference, bassTone (55.0f, 0.2f), 1.0);
+
+        check (captured.finite && lstm.finite && juce::exactlyEqual (rate, 48000.0) && juce::exactlyEqual (lstmRate, 48000.0)
+                   && captured.rmsDb() > -40.0f && lstm.rmsDb() > -40.0f && std::abs (captured.rmsDb() - missing.rmsDb()) > 1.0f
+                   && missing.finite && juce::exactlyEqual (missingRate, 0.0) && missing.rmsDb() > -40.0f,
+               "NAM captures load and play, a missing file passes the signal",
+               "A2 WaveNet " + juce::String (captured.rmsDb(), 1) + " dB at " + juce::String (rate / 1000.0, 1) + " kHz, LSTM "
+                   + juce::String (lstm.rmsDb(), 1) + " dB, Tube 300 " + juce::String (tube.rmsDb(), 1) + " dB, no file "
+                   + juce::String (missing.rmsDb(), 1) + " dB");
     }
 
     void testAmpModelCharacter()
@@ -577,6 +831,139 @@ namespace
         file.deleteFile();
     }
 
+    void testLooper()
+    {
+        Looper looper;
+        looper.prepare (testSampleRate, 2);
+        juce::AudioBuffer<float> buffer (2, 480);
+        auto runBlocks = [&] (float input, int blocks)
+        {
+            auto peak = 0.0f;
+
+            for (int b = 0; b < blocks; ++b)
+            {
+                for (int channel = 0; channel < 2; ++channel)
+                    juce::FloatVectorOperations::fill (buffer.getWritePointer (channel), input, buffer.getNumSamples());
+
+                juce::dsp::AudioBlock<float> block (buffer);
+                looper.process (block);
+                peak = buffer.getSample (0, buffer.getNumSamples() - 1);
+            }
+
+            return peak;
+        };
+
+        looper.press (Looper::Command::main);
+        const auto whileRecording = runBlocks (0.5f, 10);
+        looper.press (Looper::Command::main);
+        const auto played = runBlocks (0.0f, 20);
+        const auto length = looper.getLengthSeconds();
+        looper.press (Looper::Command::main);
+        runBlocks (0.25f, 10);
+        looper.press (Looper::Command::main);
+        const auto layered = runBlocks (0.0f, 10);
+        looper.press (Looper::Command::stop);
+        const auto stopped = runBlocks (0.0f, 2);
+        looper.press (Looper::Command::clear);
+        runBlocks (0.0f, 1);
+
+        check (std::abs (whileRecording - 0.5f) < 1.0e-6f && std::abs (played - 0.5f) < 1.0e-6f && std::abs (length - 0.1) < 1.0e-6
+                   && std::abs (layered - 0.75f) < 1.0e-6f && stopped == 0.0f && looper.getState() == Looper::State::empty,
+               "looper records, plays, overdubs, stops, clears",
+               "loop " + juce::String (length, 3) + " s, played " + juce::String (played, 2) + ", layered " + juce::String (layered, 2));
+    }
+
+    void testMetronome()
+    {
+        Metronome metronome;
+        metronome.prepare (testSampleRate);
+        metronome.bpm.store (120.0f);
+        juce::AudioBuffer<float> buffer (2, 480);
+        auto clicks = 0;
+        auto peak = 0.0f;
+        auto silentFor = 1000;
+
+        auto run = [&] (double seconds)
+        {
+            for (int b = 0; b < (int) (seconds * testSampleRate) / buffer.getNumSamples(); ++b)
+            {
+                buffer.clear();
+                juce::dsp::AudioBlock<float> block (buffer);
+                metronome.process (block);
+
+                for (int i = 0; i < buffer.getNumSamples(); ++i)
+                {
+                    const auto sample = std::abs (buffer.getSample (1, i));
+                    peak = juce::jmax (peak, sample);
+
+                    if (sample > 0.001f && silentFor > 1000)
+                        ++clicks;
+
+                    silentFor = sample > 0.001f ? 0 : silentFor + 1;
+                }
+            }
+        };
+
+        run (0.5);
+        const auto offClicks = clicks;
+        metronome.enabled.store (true);
+        run (1.99);
+        const auto beat = metronome.getBeat();
+
+        check (offClicks == 0 && clicks == 4 && beat == 3 && peak > 0.3f, "metronome clicks four beats in 2 s at 120 BPM",
+               juce::String (clicks) + " clicks, beat " + juce::String (beat) + ", peak " + juce::String (peak, 2));
+    }
+
+    void testBackingTrack()
+    {
+        const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("BassAmpBackingTest.wav");
+        file.deleteFile();
+
+        {
+            juce::WavAudioFormat wav;
+            std::unique_ptr<juce::AudioFormatWriter> writer (wav.createWriterFor (new juce::FileOutputStream (file), testSampleRate, 2, 24, {}, 0));
+            juce::AudioBuffer<float> tone (2, (int) testSampleRate);
+
+            for (int i = 0; i < tone.getNumSamples(); ++i)
+                for (int channel = 0; channel < 2; ++channel)
+                    tone.setSample (channel, i, sine (220.0f, 0.5f) (i));
+
+            writer->writeFromAudioSampleBuffer (tone, 0, tone.getNumSamples());
+        }
+
+        BackingTrack track;
+        track.volume.store (1.0f);
+        track.prepare (testSampleRate, blockSize);
+        const auto loaded = track.load (file);
+        track.play();
+        juce::Thread::sleep (300);
+
+        auto peakOf = [&track] (int blocks)
+        {
+            auto peak = 0.0f;
+
+            for (int b = 0; b < blocks; ++b)
+            {
+                track.render (blockSize);
+
+                for (int i = 0; i < blockSize; ++i)
+                    peak = juce::jmax (peak, std::abs (track.getMonoSample (i)));
+            }
+
+            return peak;
+        };
+
+        const auto playing = peakOf (200);
+        track.stop();
+        const auto stopped = peakOf (20);
+
+        check (loaded && std::abs (track.getLengthSeconds() - 1.0) < 0.01 && std::abs (playing - 0.5f) < 0.01f && stopped == 0.0f,
+               "backing track plays a WAV and stops",
+               juce::String (track.getLengthSeconds(), 2) + " s, peak " + juce::String (playing, 3) + ", stopped " + juce::String (stopped, 3));
+
+        file.deleteFile();
+    }
+
     void testMeters()
     {
         auto processor = makeProcessor();
@@ -604,6 +991,20 @@ static int saveEditorSnapshot (const juce::File& target, int preset)
     return stream.openedOk() && juce::PNGImageFormat().writeImageToStream (image, stream) ? 0 : 1;
 }
 
+static int saveArtwork (const juce::File& directory)
+{
+    auto save = [&directory] (const juce::Image& image, const char* name)
+    {
+        const auto target = directory.getChildFile (name);
+        target.deleteFile();
+        juce::FileOutputStream stream (target);
+        return stream.openedOk() && juce::PNGImageFormat().writeImageToStream (image, stream);
+    };
+
+    return directory.createDirectory() && save (Logo::createIcon (1024), "icon.png")
+               && save (Logo::createSplash (JucePlugin_VersionString), "splash.png") ? 0 : 1;
+}
+
 int main (int argc, char* argv[])
 {
     juce::ScopedJuceInitialiser_GUI juceInitialiser;
@@ -611,13 +1012,26 @@ int main (int argc, char* argv[])
     if (argc >= 3 && juce::String (argv[1]) == "--snapshot")
         return saveEditorSnapshot (juce::File::getCurrentWorkingDirectory().getChildFile (argv[2]), argc > 3 ? juce::String (argv[3]).getIntValue() : 0);
 
+    if (argc >= 3 && juce::String (argv[1]) == "--artwork")
+        return saveArtwork (juce::File::getCurrentWorkingDirectory().getChildFile (argv[2]));
+
     testTuner();
     testGate();
     testCompressor();
     testOctaver();
+    testFilterPedal();
+    testEnvelopeSweepsDown();
+    testAmpCuts();
+    testWah();
+    testPitchShifterAndSynth();
+    testModulationEffects();
+    testLimiter();
+    testPedalChain();
+    testMidiLearn();
     testFullChainIsStable();
     testBypassIsTransparentEnough();
     testAmpModels();
+    testNamCapture();
     testAmpModelCharacter();
     testPassiveToneStack();
     testCabinetsAndBlend();
@@ -627,6 +1041,9 @@ int main (int argc, char* argv[])
     testFactoryPresets();
     testUserPresetRoundTrip();
     testRecorder();
+    testLooper();
+    testMetronome();
+    testBackingTrack();
     testMeters();
 
     std::cout << std::endl << (failures == 0 ? "All tests passed" : juce::String (failures) + " test(s) failed") << std::endl;

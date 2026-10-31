@@ -1,5 +1,6 @@
 #include "PresetManager.h"
 #include "FactoryPresets.h"
+#include "../PedalChain.h"
 
 namespace
 {
@@ -40,6 +41,8 @@ void PresetManager::loadFactoryPreset (int index)
         return;
 
     const auto& preset = getFactoryPresets()[(size_t) index];
+
+    state.state.removeProperty (PedalChain::property, nullptr);
 
     for (auto* parameter : state.processor.getParameters())
         if (auto* ranged = dynamic_cast<juce::RangedAudioParameter*> (parameter))

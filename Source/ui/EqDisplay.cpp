@@ -41,6 +41,7 @@ EqDisplay::EqDisplay (juce::AudioProcessorValueTreeState& stateToUse, SpectrumTa
         fader->setDoubleClickReturnValue (true, 0.0);
         addAndMakeVisible (fader);
         faderAttachments.add (new juce::AudioProcessorValueTreeState::SliderAttachment (state, paramId, *fader));
+        fader->setComponentID (paramId);
     }
 }
 

@@ -24,6 +24,7 @@ struct AmpModel
     float midQ;
     std::optional<ToneStackCircuit> passiveToneStack;  // replaces the active tone stack when set
     std::array<EqBand, 4> voicing;
+    bool neuralCapture = false;  // preamp and power amp replaced by a NAM capture; Gain sets its input level
 };
 
 using EqType = EqBand::Type;
@@ -36,7 +37,8 @@ using EqType = EqBand::Type;
 // Flip Top: small studio tube amp, round and dark, compresses early (Ampeg B-15).
 // Solid Punch: solid-state rock head, mid scoop and bright 4 kHz bite (Gallien-Krueger 800RB).
 // Tube DI: tube-emulation preamp DI, focused and punchy (Tech 21 SansAmp Bass Driver).
-inline const std::array<AmpModel, 7> ampModels {{
+// NAM Capture: a Neural Amp Modeler capture of a real amp, with the tone controls after it.
+inline const std::array<AmpModel, 8> ampModels {{
     { "Hi-Fi", Clipping::solidState, 0.0f, 18.0f, 0.03f, 0.0f, 0.0f, 0.5f, 0.0f, -2.5f,
       50.0f, 7000.0f, 0.7f, std::nullopt,
       {{ { EqType::lowShelf, 45.0f, 0.7f, 1.0f }, { EqType::peak, 380.0f, 0.7f, -1.0f },
@@ -71,6 +73,10 @@ inline const std::array<AmpModel, 7> ampModels {{
       80.0f, 3000.0f, 0.8f, std::nullopt,
       {{ { EqType::highPass, 30.0f, 0.7f, 0.0f }, { EqType::peak, 900.0f, 0.9f, 2.0f },
          { EqType::highShelf, 2500.0f, 0.7f, 2.0f }, { EqType::lowPass, 6000.0f, 0.7f, 0.0f } }} },
+
+    { "NAM Capture", Clipping::solidState, -12.0f, 12.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+      80.0f, 4000.0f, 0.8f, std::nullopt,
+      {{ { EqType::none }, { EqType::none }, { EqType::none }, { EqType::none } }}, true },
 }};
 
 struct CabModel
