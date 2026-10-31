@@ -4,7 +4,8 @@
 
 #include "../Parameters.h"
 
-// Feed-forward peak compressor with a 6 dB soft knee. No look-ahead, so no added latency.
+// Feed-forward peak compressor with a 6 dB soft knee and a parallel (New York) mix.
+// No look-ahead, so no added latency.
 class Compressor
 {
 public:
@@ -16,6 +17,7 @@ public:
         attack    = rawParam (state, ParamIds::compAttack);
         release   = rawParam (state, ParamIds::compRelease);
         makeup    = rawParam (state, ParamIds::compMakeup);
+        mix       = rawParam (state, ParamIds::compMix);
     }
 
     void prepare (double newSampleRate)
@@ -31,7 +33,7 @@ public:
     void process (juce::dsp::AudioBlock<float>& monoBlock)
     {
         const auto on = isOn (enabled);
-        active.setTargetValue (on ? 1.0f : 0.0f);
+        active.setTargetValue (on ? mix->load() : 0.0f);
         makeupDb.setTargetValue (makeup->load());
 
         if (! on && ! active.isSmoothing())
@@ -56,8 +58,9 @@ public:
             envelopeDb = targetDb + coeff * (envelopeDb - targetDb);
             maxReduction = juce::jmin (maxReduction, envelopeDb);
 
-            const auto totalDb = active.getNextValue() * (envelopeDb + makeupDb.getNextValue());
-            data[i] *= std::exp (totalDb * decibelsToNeper);
+            const auto compressedGain = std::exp ((envelopeDb + makeupDb.getNextValue()) * decibelsToNeper);
+            const auto amount = active.getNextValue();
+            data[i] *= 1.0f - amount + amount * compressedGain;
         }
 
         gainReductionDb.store (on ? -maxReduction : 0.0f);
@@ -89,6 +92,7 @@ private:
     std::atomic<float>* attack = nullptr;
     std::atomic<float>* release = nullptr;
     std::atomic<float>* makeup = nullptr;
+    std::atomic<float>* mix = nullptr;
 
     double sampleRate = 44100.0;
     float envelopeDb = 0.0f;

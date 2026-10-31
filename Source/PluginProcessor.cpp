@@ -2,6 +2,11 @@
 #include "PluginEditor.h"
 #include "Parameters.h"
 
+namespace
+{
+    const juce::Identifier impulseResponseProperty { "cabinetImpulseResponse" };
+}
+
 BassAmpProcessor::BassAmpProcessor()
     : AudioProcessor (BusesProperties()
                           .withInput ("Input", juce::AudioChannelSet::mono(), true)
@@ -15,11 +20,46 @@ BassAmpProcessor::BassAmpProcessor()
     fuzz.bind (parameters);
     distortion.bind (parameters);
     amp.bind (parameters);
+    equalizer.bind (parameters);
+    phaser.bind (parameters);
     chorus.bind (parameters);
     delay.bind (parameters);
     reverb.bind (parameters);
 
     presets.loadFactoryPreset (0);
+    parameters.state.addListener (this);
+}
+
+BassAmpProcessor::~BassAmpProcessor()
+{
+    parameters.state.removeListener (this);
+}
+
+void BassAmpProcessor::setCabinetImpulseResponse (const juce::File& file)
+{
+    parameters.state.setProperty (impulseResponseProperty, file.getFullPathName(), nullptr);
+}
+
+juce::File BassAmpProcessor::getCabinetImpulseResponse() const
+{
+    const auto path = parameters.state.getProperty (impulseResponseProperty).toString();
+    return juce::File::isAbsolutePath (path) ? juce::File (path) : juce::File();
+}
+
+void BassAmpProcessor::valueTreePropertyChanged (juce::ValueTree& tree, const juce::Identifier& property)
+{
+    if (tree == parameters.state && property == impulseResponseProperty)
+        reloadImpulseResponse();
+}
+
+void BassAmpProcessor::valueTreeRedirected (juce::ValueTree&)
+{
+    reloadImpulseResponse();
+}
+
+void BassAmpProcessor::reloadImpulseResponse()
+{
+    amp.loadImpulseResponse (getCabinetImpulseResponse());
 }
 
 bool BassAmpProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -39,6 +79,7 @@ void BassAmpProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     const juce::dsp::ProcessSpec outputSpec { sampleRate, maxBlockSize, (juce::uint32) juce::jmax (1, getTotalNumOutputChannels()) };
 
     tuner.prepare (sampleRate);
+    spectrum.prepare (sampleRate);
     recorder.prepare (sampleRate, getTotalNumOutputChannels());
     gate.prepare (sampleRate);
     compressor.prepare (sampleRate);
@@ -47,6 +88,8 @@ void BassAmpProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     fuzz.prepare (sampleRate, samplesPerBlock);
     distortion.prepare (sampleRate, samplesPerBlock);
     amp.prepare (sampleRate, samplesPerBlock);
+    equalizer.prepare (sampleRate);
+    phaser.prepare (outputSpec);
     chorus.prepare (outputSpec);
     delay.prepare (outputSpec);
     reverb.prepare (outputSpec);
@@ -79,12 +122,15 @@ void BassAmpProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mid
     fuzz.process (mono);
     distortion.process (mono);
     amp.process (mono);
+    ampMeter.push (buffer.getReadPointer (0), numSamples);
+    equalizer.process (mono);
 
     for (int channel = 1; channel < numOutputs; ++channel)
         buffer.copyFrom (channel, 0, buffer, 0, 0, numSamples);
 
     auto outputBlock = block.getSubsetChannelBlock (0, (size_t) numOutputs);
     const juce::dsp::ProcessContextReplacing<float> context (outputBlock);
+    phaser.process (context);
     chorus.process (context);
     delay.process (context);
     reverb.process (context);
@@ -92,6 +138,7 @@ void BassAmpProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mid
     for (int channel = 0; channel < numOutputs; ++channel)
         outputMeter.push (buffer.getReadPointer (channel), numSamples);
 
+    spectrum.push (buffer.getReadPointer (0), numSamples);
     recorder.push (buffer, numOutputs, numSamples);
 
     if (muteOutput.load())

@@ -4,6 +4,8 @@
 namespace
 {
     constexpr int padding = 12;
+    constexpr int clipLampHeight = 22;
+    constexpr int numSegments = 24;
     constexpr float floorDb = -60.0f;
     constexpr double clipHoldSeconds = 2.0;
     constexpr float decayDbPerFrame = 1.5f;
@@ -63,69 +65,102 @@ void LevelMeters::mouseDown (const juce::MouseEvent&)
 
 void LevelMeters::paint (juce::Graphics& g)
 {
-    const auto bounds = getLocalBounds().toFloat().reduced (1.0f);
-    g.setColour (Palette::panel);
-    g.fillRoundedRectangle (bounds, 10.0f);
-    g.setColour (Palette::textDim.withAlpha (0.35f));
-    g.drawRoundedRectangle (bounds, 10.0f, 1.0f);
+    Draw::unitChassis (g, getLocalBounds().toFloat());
 
-    auto area = getLocalBounds().reduced (padding);
-    g.setColour (Palette::text);
-    g.setFont (juce::FontOptions (15.0f, juce::Font::bold));
-    g.drawText ("LEVELS", area.removeFromTop (26), juce::Justification::centredLeft);
-    area.removeFromTop (4);
+    auto area = getLocalBounds().reduced (padding + 8, padding).withTrimmedBottom (4);
+    g.setColour (Palette::gold);
+    g.setFont (Fonts::display (20.0f).withKerningFactor (0.12f));
+    g.drawText ("LEVELS", area.removeFromTop (28), juce::Justification::centredLeft);
+    area.removeFromTop (8);
+
+    Draw::screen (g, area.toFloat(), 8.0f);
+    area = area.reduced (12, 8);
 
     const auto now = juce::Time::getMillisecondCounterHiRes() * 0.001;
-    const auto rowHeight = area.getHeight() / 3;
-    drawMeter (g, area.removeFromTop (rowHeight), "IN", input, now);
-    drawMeter (g, area.removeFromTop (rowHeight), "OUT", output, now);
-    drawGainReduction (g, area);
+    auto labels = area.removeFromBottom (16);
+    const auto columnWidth = area.getWidth() / 4;
+
+    auto inColumn = area.removeFromLeft (columnWidth);
+    auto scaleColumn = area.removeFromLeft (columnWidth);
+    auto outColumn = area.removeFromLeft (columnWidth);
+    auto compColumn = area;
+
+    drawMeter (g, inColumn, input, now);
+    drawMeter (g, outColumn, output, now);
+    drawGainReduction (g, compColumn);
+
+    const auto bar = scaleColumn.withTrimmedTop (clipLampHeight + 4).toFloat();
+    g.setFont (Fonts::display (10.0f, false));
+    g.setColour (Palette::textDim);
+
+    for (const auto db : { 0.0f, -6.0f, -12.0f, -24.0f, -36.0f, -48.0f })
+    {
+        const auto y = bar.getBottom() - bar.getHeight() * proportionOf (db);
+        g.drawText (juce::String (juce::roundToInt (db)), juce::Rectangle<float> (bar.getX(), y - 6.0f, bar.getWidth(), 12.0f),
+                    juce::Justification::centred);
+    }
+
+    g.setFont (Fonts::label (10.5f));
+    g.setColour (Palette::text.withAlpha (0.8f));
+    g.drawText ("IN", labels.removeFromLeft (columnWidth), juce::Justification::centred);
+    labels.removeFromLeft (columnWidth);
+    g.drawText ("OUT", labels.removeFromLeft (columnWidth), juce::Justification::centred);
+    g.drawText ("COMP", labels, juce::Justification::centred);
 }
 
-void LevelMeters::drawMeter (juce::Graphics& g, juce::Rectangle<int> area, const juce::String& name,
-                             const Meter& meter, double now) const
+void LevelMeters::drawMeter (juce::Graphics& g, juce::Rectangle<int> area, const Meter& meter, double now) const
 {
-    g.setColour (Palette::textDim);
-    g.setFont (juce::FontOptions (12.0f, juce::Font::bold));
-    g.drawText (name, area.removeFromLeft (34), juce::Justification::centredLeft);
-
     const auto isClipping = now < meter.clipUntil;
-    auto led = area.removeFromRight (46).toFloat().withSizeKeepingCentre (42.0f, 18.0f);
-    g.setColour (isClipping ? clipColour : Palette::track);
-    g.fillRoundedRectangle (led, 4.0f);
-    g.setColour (isClipping ? juce::Colours::white : Palette::textDim);
-    g.setFont (juce::FontOptions (11.0f, juce::Font::bold));
-    g.drawText ("CLIP", led, juce::Justification::centred);
+    const auto lamp = area.removeFromTop (clipLampHeight).toFloat().withSizeKeepingCentre ((float) area.getWidth() - 6.0f, 16.0f);
 
-    const auto bar = area.toFloat().withSizeKeepingCentre ((float) area.getWidth() - 8.0f, 10.0f);
-    g.setColour (Palette::track);
-    g.fillRoundedRectangle (bar, 3.0f);
+    if (isClipping)
+    {
+        g.setColour (clipColour.withAlpha (0.35f));
+        g.fillRoundedRectangle (lamp.expanded (3.0f), 5.0f);
+    }
 
-    const auto level = proportionOf (meter.levelDb);
-    const auto colour = meter.levelDb > -1.0f ? clipColour : (meter.levelDb > -6.0f ? hotColour : okColour);
-    g.setColour (colour);
-    g.fillRoundedRectangle (bar.withWidth (bar.getWidth() * level), 3.0f);
+    g.setColour (isClipping ? clipColour : juce::Colour (0xff2a1414));
+    g.fillRoundedRectangle (lamp, 3.0f);
+    g.setColour (isClipping ? juce::Colours::white : clipColour.withAlpha (0.45f));
+    g.setFont (Fonts::label (10.0f));
+    g.drawText ("CLIP", lamp, juce::Justification::centred);
 
-    g.setColour (Palette::textDim.withAlpha (0.6f));
-    const auto sixDbMark = bar.getX() + bar.getWidth() * proportionOf (-6.0f);
-    g.fillRect (sixDbMark, bar.getY() - 2.0f, 1.0f, bar.getHeight() + 4.0f);
+    drawSegments (g, area.withTrimmedTop (4), proportionOf (meter.levelDb), true);
 }
 
 void LevelMeters::drawGainReduction (juce::Graphics& g, juce::Rectangle<int> area) const
 {
-    g.setColour (Palette::textDim);
-    g.setFont (juce::FontOptions (12.0f, juce::Font::bold));
-    g.drawText ("COMP", area.removeFromLeft (34), juce::Justification::centredLeft);
+    const auto readout = area.removeFromTop (clipLampHeight);
+    g.setColour (Palette::gold);
+    g.setFont (Fonts::display (11.0f));
+    g.drawText (gainReductionDb < 0.05f ? juce::String ("0.0") : "-" + juce::String (gainReductionDb, 1), readout, juce::Justification::centred);
 
-    g.setFont (juce::FontOptions (11.0f));
-    const auto reductionText = gainReductionDb < 0.05f ? juce::String ("0.0 dB") : "-" + juce::String (gainReductionDb, 1) + " dB";
-    g.drawText (reductionText, area.removeFromRight (46), juce::Justification::centred);
+    drawSegments (g, area.withTrimmedTop (4), juce::jlimit (0.0f, 1.0f, gainReductionDb / maxGainReductionDb), false);
+}
 
-    const auto bar = area.toFloat().withSizeKeepingCentre ((float) area.getWidth() - 8.0f, 10.0f);
-    g.setColour (Palette::track);
-    g.fillRoundedRectangle (bar, 3.0f);
+// A column of LED segments. Level meters fill upwards in green, yellow and red;
+// gain reduction fills downwards in gold.
+void LevelMeters::drawSegments (juce::Graphics& g, juce::Rectangle<int> area, float amount, bool isLevel) const
+{
+    const auto bar = area.toFloat().withSizeKeepingCentre (14.0f, (float) area.getHeight());
+    const auto segmentHeight = bar.getHeight() / (float) numSegments;
 
-    const auto amount = juce::jlimit (0.0f, 1.0f, gainReductionDb / maxGainReductionDb);
-    g.setColour (Palette::amp);
-    g.fillRoundedRectangle (bar.withTrimmedLeft (bar.getWidth() * (1.0f - amount)), 3.0f);
+    for (int i = 0; i < numSegments; ++i)
+    {
+        const auto proportion = ((float) i + 0.5f) / (float) numSegments;
+        const auto db = floorDb * (1.0f - proportion);
+        const auto colour = ! isLevel ? Palette::gold : (db > -3.0f ? clipColour : (db > -12.0f ? hotColour : okColour));
+        const auto lit = proportion <= amount;
+        const auto y = isLevel ? bar.getBottom() - segmentHeight * (float) (i + 1) : bar.getY() + segmentHeight * (float) i;
+        const auto segment = juce::Rectangle<float> (bar.getX(), y, bar.getWidth(), segmentHeight - 1.5f);
+
+        if (lit)
+        {
+            g.setColour (colour.withAlpha (0.25f));
+            g.fillRoundedRectangle (segment.expanded (2.5f, 0.5f), 2.0f);
+        }
+
+        g.setColour (lit ? colour : colour.withMultipliedBrightness (0.18f));
+        g.fillRoundedRectangle (segment, 1.0f);
+    }
 }

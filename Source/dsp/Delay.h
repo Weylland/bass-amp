@@ -4,8 +4,9 @@
 
 #include "../Parameters.h"
 
-// Stereo feedback delay with damped repeats. Switching it off stops feeding new
-// signal in but lets the existing repeats fade out.
+// Stereo feedback delay with damped repeats; a low cut in the loop keeps the repeats
+// from muddying the bass. Switching it off stops feeding new signal in but lets the
+// existing repeats fade out.
 class Delay
 {
 public:
@@ -26,6 +27,8 @@ public:
         delayLine.reset();
 
         damping.assign (spec.numChannels, 0.0f);
+        lowCut.assign (spec.numChannels, 0.0f);
+        lowCutCoeff = 1.0f - std::exp (-juce::MathConstants<float>::twoPi * lowCutHz / (float) sampleRate);
         delaySamples.reset (sampleRate, 0.15);
         delaySamples.setCurrentAndTargetValue (time->load() * 0.001f * (float) sampleRate);
         input.reset (sampleRate, 0.02);
@@ -55,7 +58,8 @@ public:
                 const auto delayed = delayLine.popSample (channel);
                 damping[(size_t) channel] += dampingCoeff * (delayed - damping[(size_t) channel]);
 
-                const auto repeat = damping[(size_t) channel];
+                lowCut[(size_t) channel] += lowCutCoeff * (damping[(size_t) channel] - lowCut[(size_t) channel]);
+                const auto repeat = damping[(size_t) channel] - lowCut[(size_t) channel];
                 delayLine.pushSample (channel, data[i] * send + repeat * feedbackGain);
                 data[i] += repeat * wet;
             }
@@ -65,6 +69,7 @@ public:
 private:
     static constexpr double maxDelaySeconds = 1.5;
     static constexpr float dampingCoeff = 0.45f;
+    static constexpr float lowCutHz = 120.0f;
 
     std::atomic<float>* enabled = nullptr;
     std::atomic<float>* time = nullptr;
@@ -73,6 +78,7 @@ private:
 
     double sampleRate = 44100.0;
     juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear> delayLine;
-    std::vector<float> damping;
+    std::vector<float> damping, lowCut;
+    float lowCutCoeff = 0.0f;
     juce::SmoothedValue<float> delaySamples, input;
 };

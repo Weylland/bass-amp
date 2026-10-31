@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(BassAmp VERSION 0.4.0)
+project(BassAmp VERSION 0.5.0)
 
 # Static MSVC runtime: the app and plugin run without the Visual C++ redistributable.
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -28,7 +28,7 @@ juce_add_plugin(BassAmp
     NEEDS_MIDI_OUTPUT FALSE
     COPY_PLUGIN_AFTER_BUILD FALSE)
 
-target_sources(BassAmp PRIVATE
+set(BASS_AMP_SOURCES
     Source/Parameters.cpp
     Source/PluginProcessor.cpp
     Source/PluginEditor.cpp
@@ -36,12 +36,18 @@ target_sources(BassAmp PRIVATE
     Source/dsp/Tuner.cpp
     Source/presets/FactoryPresets.cpp
     Source/presets/PresetManager.cpp
+    Source/ui/AmpHead.cpp
     Source/ui/AmpLookAndFeel.cpp
+    Source/ui/EqDisplay.cpp
+    Source/ui/EqPanel.cpp
     Source/ui/LevelMeters.cpp
+    Source/ui/MainPanel.cpp
+    Source/ui/Pedal.cpp
     Source/ui/PresetBar.cpp
     Source/ui/RecorderBar.cpp
-    Source/ui/Section.cpp
     Source/ui/TunerDisplay.cpp)
+
+target_sources(BassAmp PRIVATE ${BASS_AMP_SOURCES})
 
 target_sources(BassAmp_Standalone PRIVATE Source/StandaloneApp.cpp)
 target_compile_definitions(BassAmp_Standalone PRIVATE JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1)
@@ -76,21 +82,7 @@ target_link_libraries(BassAmp
 
 juce_add_console_app(BassAmpTests)
 
-target_sources(BassAmpTests PRIVATE
-    Tests/DspTests.cpp
-    Source/Parameters.cpp
-    Source/PluginProcessor.cpp
-    Source/PluginEditor.cpp
-    Source/dsp/Recorder.cpp
-    Source/dsp/Tuner.cpp
-    Source/presets/FactoryPresets.cpp
-    Source/presets/PresetManager.cpp
-    Source/ui/AmpLookAndFeel.cpp
-    Source/ui/LevelMeters.cpp
-    Source/ui/PresetBar.cpp
-    Source/ui/RecorderBar.cpp
-    Source/ui/Section.cpp
-    Source/ui/TunerDisplay.cpp)
+target_sources(BassAmpTests PRIVATE Tests/DspTests.cpp ${BASS_AMP_SOURCES})
 
 target_compile_definitions(BassAmpTests PRIVATE
     JucePlugin_Name="Bass Amp"

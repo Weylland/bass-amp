@@ -19,6 +19,7 @@ private:
 
     BassAmpProcessor& processor;
     juce::TextButton muteButton { "MUTE" };
+    juce::Rectangle<int> titleArea, screenArea;
 
     float smoothedMidi = 0.0f;
     bool hasPitch = false;

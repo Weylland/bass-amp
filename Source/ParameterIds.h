@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 namespace ParamIds
 {
     inline constexpr auto gateOn        = "gate_on";
@@ -12,10 +14,12 @@ namespace ParamIds
     inline constexpr auto compAttack    = "comp_attack";
     inline constexpr auto compRelease   = "comp_release";
     inline constexpr auto compMakeup    = "comp_makeup";
+    inline constexpr auto compMix       = "comp_mix";
 
     inline constexpr auto octOn  = "oct_on";
     inline constexpr auto octSub = "oct_sub";
     inline constexpr auto octDry = "oct_dry";
+    inline constexpr auto octUp  = "oct_up";
 
     inline constexpr auto envOn          = "env_on";
     inline constexpr auto envSensitivity = "env_sens";
@@ -41,6 +45,34 @@ namespace ParamIds
     inline constexpr auto ampTreble  = "amp_treble";
     inline constexpr auto ampMaster  = "amp_master";
     inline constexpr auto ampBlend   = "amp_blend";
+    inline constexpr auto ampContour = "amp_contour";
+    inline constexpr auto ampDeep    = "amp_deep";
+    inline constexpr auto ampBright  = "amp_bright";
+
+    inline constexpr auto eqOn   = "eq_on";
+    inline constexpr auto eqMode = "eq_mode";
+
+    inline constexpr std::array<const char*, 9> graphicEq {
+        "geq_33", "geq_63", "geq_125", "geq_250", "geq_500", "geq_1k", "geq_2k", "geq_4k", "geq_8k"
+    };
+
+    inline constexpr auto peqLowCut    = "peq_low_cut";
+    inline constexpr auto peqLowFreq   = "peq_low_freq";
+    inline constexpr auto peqLowGain   = "peq_low_gain";
+    inline constexpr auto peqMid1Freq  = "peq_mid1_freq";
+    inline constexpr auto peqMid1Gain  = "peq_mid1_gain";
+    inline constexpr auto peqMid1Q     = "peq_mid1_q";
+    inline constexpr auto peqMid2Freq  = "peq_mid2_freq";
+    inline constexpr auto peqMid2Gain  = "peq_mid2_gain";
+    inline constexpr auto peqMid2Q     = "peq_mid2_q";
+    inline constexpr auto peqHighFreq  = "peq_high_freq";
+    inline constexpr auto peqHighGain  = "peq_high_gain";
+    inline constexpr auto peqHighCut   = "peq_high_cut";
+
+    inline constexpr auto phaserOn       = "phaser_on";
+    inline constexpr auto phaserRate     = "phaser_rate";
+    inline constexpr auto phaserDepth    = "phaser_depth";
+    inline constexpr auto phaserFeedback = "phaser_feedback";
 
     inline constexpr auto chorusOn    = "chorus_on";
     inline constexpr auto chorusRate  = "chorus_rate";

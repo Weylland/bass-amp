@@ -18,10 +18,8 @@ TunerDisplay::TunerDisplay (BassAmpProcessor& processorToUse)
 {
     muteButton.setClickingTogglesState (true);
     muteButton.setToggleState (processor.muteOutput.load(), juce::dontSendNotification);
-    muteButton.setColour (juce::TextButton::buttonColourId, Palette::panel.brighter (0.08f));
-    muteButton.setColour (juce::TextButton::buttonOnColourId, Palette::distortion);
-    muteButton.setColour (juce::TextButton::textColourOffId, Palette::textDim);
-    muteButton.setColour (juce::TextButton::textColourOnId, Palette::text);
+    muteButton.setColour (juce::TextButton::buttonOnColourId, Palette::ledRed);
+    muteButton.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
     muteButton.onClick = [this] { processor.muteOutput.store (muteButton.getToggleState()); };
     addAndMakeVisible (muteButton);
 
@@ -57,61 +55,67 @@ void TunerDisplay::timerCallback()
 
 void TunerDisplay::paint (juce::Graphics& g)
 {
-    const auto bounds = getLocalBounds().toFloat().reduced (1.0f);
-    g.setColour (Palette::panel);
-    g.fillRoundedRectangle (bounds, 10.0f);
-    g.setColour (Palette::chorus.withAlpha (0.35f));
-    g.drawRoundedRectangle (bounds, 10.0f, 1.0f);
+    Draw::unitChassis (g, getLocalBounds().toFloat());
 
-    auto area = getLocalBounds().reduced (padding);
-    g.setColour (Palette::chorus);
-    g.setFont (juce::FontOptions (15.0f, juce::Font::bold));
-    g.drawText ("TUNER", area.removeFromTop (26), juce::Justification::centredLeft);
+    g.setColour (Palette::gold);
+    g.setFont (Fonts::display (20.0f).withKerningFactor (0.12f));
+    g.drawText ("TUNER", titleArea, juce::Justification::centredLeft);
+
+    Draw::screen (g, screenArea.toFloat(), 8.0f);
+    auto area = screenArea.reduced (10, 8);
 
     const auto nearest = juce::roundToInt (smoothedMidi);
     const auto cents = (smoothedMidi - (float) nearest) * 100.0f;
     const auto inTune = hasPitch && std::abs (cents) <= inTuneCents;
-    const auto noteColour = ! hasPitch ? Palette::textDim : (inTune ? juce::Colour (0xff5fd68a) : Palette::text);
+    const auto noteColour = ! hasPitch ? Palette::textDim.withAlpha (0.4f) : (inTune ? Palette::ledGreen : Palette::text);
 
-    auto meterArea = area.removeFromBottom (34);
-    auto textArea = area;
+    auto ledRow = area.removeFromBottom (22);
+    auto infoRow = area.removeFromBottom (18);
+    const auto name = hasPitch ? noteName (nearest) : juce::String ("--");
+
+    if (inTune)
+    {
+        g.setColour (Palette::ledGreen.withAlpha (0.18f));
+        g.fillEllipse (area.toFloat().withSizeKeepingCentre ((float) area.getHeight() * 1.6f, (float) area.getHeight()));
+    }
 
     g.setColour (noteColour);
-    g.setFont (juce::FontOptions (44.0f, juce::Font::bold));
-    g.drawText (hasPitch ? noteName (nearest) : "--", textArea.removeFromLeft (textArea.getWidth() / 2), juce::Justification::centred);
+    g.setFont (Fonts::display ((float) area.getHeight() * (hasPitch ? 0.85f : 0.4f)));
+    g.drawText (name, area, juce::Justification::centred);
 
+    g.setFont (Fonts::display (13.0f, false));
     g.setColour (Palette::textDim);
-    g.setFont (juce::FontOptions (14.0f));
 
-    if (hasPitch)
+    if (! hasPitch)
+        g.drawText ("A = 440 Hz", infoRow, juce::Justification::centred);
+    else
     {
         const auto frequency = 440.0f * std::pow (2.0f, (smoothedMidi - 69.0f) / 12.0f);
-        const auto centsText = (cents >= 0.0f ? "+" : "") + juce::String (juce::roundToInt (cents)) + " cents";
-        g.drawText (juce::String (frequency, 1) + " Hz", textArea.removeFromTop (textArea.getHeight() / 2), juce::Justification::centredBottom);
-        g.drawText (centsText, textArea, juce::Justification::centredTop);
+        const auto centsText = (cents >= 0.0f ? "+" : "") + juce::String (juce::roundToInt (cents)) + " ct";
+        g.drawText (juce::String (frequency, 1) + " Hz", infoRow.removeFromLeft (infoRow.getWidth() / 2), juce::Justification::centredLeft);
+        g.drawText (centsText, infoRow, juce::Justification::centredRight);
     }
 
-    const auto scale = meterArea.toFloat().reduced (4.0f, 10.0f);
-    g.setColour (Palette::track);
-    g.fillRoundedRectangle (scale, 3.0f);
+    // 21 LEDs from -50 to +50 cents, the centre one green.
+    constexpr int numLeds = 21;
+    const auto spacing = (float) ledRow.getWidth() / (float) numLeds;
+    const auto litLed = hasPitch ? juce::roundToInt ((juce::jlimit (-50.0f, 50.0f, cents) + 50.0f) / 100.0f * (numLeds - 1)) : -1;
 
-    for (int tick = -50; tick <= 50; tick += 10)
+    for (int i = 0; i < numLeds; ++i)
     {
-        const auto x = scale.getX() + scale.getWidth() * ((float) tick + 50.0f) / 100.0f;
-        g.setColour (tick == 0 ? Palette::text : Palette::textDim.withAlpha (0.5f));
-        g.fillRect (x - 0.5f, scale.getY() - (tick == 0 ? 6.0f : 3.0f), 1.0f, scale.getHeight() + (tick == 0 ? 12.0f : 6.0f));
-    }
-
-    if (hasPitch)
-    {
-        const auto x = scale.getX() + scale.getWidth() * (juce::jlimit (-50.0f, 50.0f, cents) + 50.0f) / 100.0f;
-        g.setColour (inTune ? juce::Colour (0xff5fd68a) : Palette::distortion);
-        g.fillRoundedRectangle (juce::Rectangle<float> (6.0f, scale.getHeight() + 14.0f).withCentre ({ x, scale.getCentreY() }), 3.0f);
+        const auto distance = std::abs (i - numLeds / 2);
+        const auto colour = distance == 0 ? Palette::ledGreen : (distance <= 3 ? Palette::ledYellow : Palette::ledRed);
+        const juce::Point<float> centre { (float) ledRow.getX() + spacing * ((float) i + 0.5f), (float) ledRow.getCentreY() };
+        Draw::led (g, centre, distance == 0 ? 4.0f : 3.0f, colour, i == litLed || (inTune && distance == 0));
     }
 }
 
 void TunerDisplay::resized()
 {
-    auto header = getLocalBounds().reduced (padding).removeFromTop (26);
-    muteButton.setBounds (header.removeFromRight (64).withSizeKeepingCentre (64, 22));
+    auto area = getLocalBounds().reduced (padding + 8, padding).withTrimmedBottom (4);
+    auto header = area.removeFromTop (28);
+    muteButton.setBounds (header.removeFromRight (64).withSizeKeepingCentre (64, 24));
+    titleArea = header;
+    area.removeFromTop (8);
+    screenArea = area;
 }

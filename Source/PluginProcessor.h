@@ -9,19 +9,23 @@
 #include "dsp/Delay.h"
 #include "dsp/Distortion.h"
 #include "dsp/EnvelopeFilter.h"
+#include "dsp/Equalizer.h"
 #include "dsp/Fuzz.h"
 #include "dsp/NoiseGate.h"
 #include "dsp/Octaver.h"
 #include "dsp/PeakMeter.h"
+#include "dsp/PhaserEffect.h"
 #include "dsp/Recorder.h"
 #include "dsp/ReverbEffect.h"
+#include "dsp/SpectrumTap.h"
 #include "dsp/Tuner.h"
 #include "presets/PresetManager.h"
 
-class BassAmpProcessor : public juce::AudioProcessor
+class BassAmpProcessor : public juce::AudioProcessor, private juce::ValueTree::Listener
 {
 public:
     BassAmpProcessor();
+    ~BassAmpProcessor() override;
 
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override {}
@@ -49,17 +53,26 @@ public:
 
     float getCompressorGainReductionDb() const { return compressor.getGainReductionDb(); }
 
+    // The impulse response file played by the "IR File" cabinet, saved with the state and presets.
+    void setCabinetImpulseResponse (const juce::File&);
+    juce::File getCabinetImpulseResponse() const;
+
     // Set by the standalone app; read and written on the message thread only.
     juce::String audioDeviceInfo;
 
     juce::AudioProcessorValueTreeState parameters;
     PresetManager presets { parameters };
     Tuner tuner;
-    PeakMeter inputMeter, outputMeter;
+    PeakMeter inputMeter, outputMeter, ampMeter;
+    SpectrumTap spectrum;
     Recorder recorder;
     std::atomic<bool> muteOutput { false };
 
 private:
+    void valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&) override;
+    void valueTreeRedirected (juce::ValueTree&) override;
+    void reloadImpulseResponse();
+
     NoiseGate gate;
     Compressor compressor;
     Octaver octaver;
@@ -67,6 +80,8 @@ private:
     Fuzz fuzz;
     Distortion distortion;
     AmpStage amp;
+    Equalizer equalizer;
+    PhaserEffect phaser;
     ChorusEffect chorus;
     Delay delay;
     ReverbEffect reverb;

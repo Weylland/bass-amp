@@ -2,27 +2,55 @@
 
 Ampli de basse en logiciel (JUCE 8, C++17) : application autonome et plugins pour Windows (VST3) et macOS (VST3, AU).
 
-Chaîne : **Gate → Compresseur → Octaver → Filtre d'enveloppe → Fuzz → Disto → Ampli → Baffle + DI → Chorus → Delay → Reverb**.
+Chaîne : **Gate → Compresseur → Octaver → Filtre d'enveloppe → Fuzz → Disto → Ampli → Baffle + DI → EQ → Phaser → Chorus → Delay → Reverb**.
 
-En plus : accordeur (31 à 500 Hz, détection YIN), vumètres d'entrée et de sortie avec témoins CLIP, réduction de gain du compresseur, et enregistrement en WAV.
+En plus : accordeur (31 à 500 Hz, détection YIN), vumètres d'entrée et de sortie avec témoins CLIP, réduction de gain du compresseur, analyseur de spectre et enregistrement en WAV.
 
 ## Ampli
 
-Préampli à lampes (étages triode asymétriques), voicing du modèle, EQ (Bass, Mid avec fréquence réglable, Treble) et ampli de puissance push-pull avec sag. Tout l'ampli tourne en suréchantillonnage 2x.
+Préampli (lampes ou transistors selon le modèle), voicing du modèle, section de tonalité, puis ampli de puissance avec sag. Tout l'ampli tourne en suréchantillonnage 2x.
 
-| Modèle | Caractère |
-|---|---|
-| Clean | Tête transistor moderne, neutre et hi-fi |
-| Vintage | Tête tout-lampes dans l'esprit SVT : bas-médiums chauds, aigus arrondis, compression naturelle (sag) |
-| Modern | Préampli à crossover dans l'esprit Darkglass : graves propres, haut du spectre saturé avec du grain dans les médiums |
+| Modèle | Inspiré de | Caractère |
+|---|---|---|
+| Hi-Fi | Markbass Little Mark | Transistor neutre et moderne, idéal pour le slap |
+| Tube 300 | Ampeg SVT-CL | Tout-lampes, bas-médiums chauds, aigus arrondis, sag |
+| Crossover | Darkglass B7K / Microtubes | Graves propres, haut du spectre saturé, grain dans les médiums |
+| Tweed | Fender Bassman 5F6-A | Tone stack passif modélisé d'après le circuit (Yeh, Guitarix), rond et vintage |
+| Flip Top | Ampeg B-15 | Lampes à faible puissance, le son Motown |
+| Solid Punch | Gallien-Krueger 800RB | Transistor punchy, aigus à 4 kHz, attaque nette |
+| Tube DI | Tech 21 SansAmp Bass Driver | Préampli DI de studio, du propre au grain |
 
-Baffles : 8x10, 4x10, 1x15, ou Off (DI seul). **DI Blend** mélange le signal direct (avant l'ampli) avec l'ampli et le baffle, comme en studio.
+Les potards de l'ampli :
 
-Les modèles sont calibrés au même volume perçu à gain égal.
+- **Gain**, **Bass**, **Middle** avec fréquence réglable (**Freq**), **Treble** et **Master**. Freq est inactif sur Tweed, dont le tone stack passif a ses fréquences fixes.
+- **Contour** creuse les médiums vers 380 Hz et ouvre graves et aigus, comme le VPF des Markbass.
+- **Deep** ajoute du bas et retire du 500 Hz. **Bright** ajoute de l'aigu.
+- **DI Blend** mélange le signal direct (avant l'ampli) avec l'ampli et le baffle, comme en studio.
+
+Baffles : 8x10, 4x10, 1x15, 2x12, 2x10 Hi-Fi, Off (DI seul), ou **IR File**. **LOAD IR** charge une réponse impulsionnelle de baffle (WAV, AIFF, FLAC) et passe le baffle sur IR File. Le chemin du fichier est sauvegardé avec les presets utilisateur et la session du DAW. Sans IR chargée, IR File laisse passer le signal tel quel.
+
+Les modèles sont calibrés au même volume perçu à gain égal (écart < 1 dB).
+
+## Égaliseur
+
+Deux modes, avec un bouton ON pour le bypass :
+
+- **Basic** : graphique 9 bandes par octave (33 Hz à 8 kHz), ±12 dB, avec des faders.
+- **Advanced** : paramétrique 6 points (coupe-bas, shelf grave, deux bandes de médiums, shelf aigu, coupe-haut), ±18 dB. On glisse les points sur la courbe ; la molette règle le Q des médiums et le double-clic remet un point à zéro.
+
+Le passage d'un mode à l'autre se fait en fondu, sans clic. L'écran affiche la courbe de l'EQ par-dessus le spectre du son de sortie.
+
+## Effets
+
+- **Compresseur** avec **Mix** pour la compression parallèle.
+- **Octaver** : octave basse (**Sub**), octave haute (**Up**) et signal direct (**Dry**).
+- **Phaser** : 4 étages, vitesse, profondeur et réinjection (**Regen**).
+- **Chorus** de basse : le chorus ne s'applique qu'au-dessus de 200 Hz, les graves restent centrés et fermes.
+- **Delay** et **Reverb** : coupe-bas sur le signal d'effet pour ne pas brouiller les graves.
 
 ## Presets
 
-11 presets d'usine : Vintage Tube, Clean DI, Motown Flats, Slap Funk, Modern Growl, Metal Grind, Fuzz Lead, Funk Envelope, Synth Octave, Dub Deep, Ambient Chorus. Ils sont équilibrés au même volume, à moins de 3 dB près.
+18 presets d'usine, pensés autour des sons de référence : Tube 300 Rock, Tube 300 Ultra, Motown Flip Top, Fifties Tweed, Rock Punch 4x10, Slap Hi-Fi, Jazz Warm, Tube DI Studio, Tube DI Grit, Crossover Metal, Crossover Djent, Punk Pick, Fuzz Lead, Funk Envelope, Synth Octave, Dub Deep, Fretless Phase, Ambient Chorus. Ils sont équilibrés au même volume, à moins de 1 dB près.
 
 **Save** enregistre le son en cours dans `Documents/Bass Amp/Presets/<nom>.bassamp`. Les flèches passent d'un preset à l'autre. En VST3, les presets d'usine apparaissent aussi comme programmes dans le DAW.
 
@@ -62,8 +90,8 @@ cmake --build build --parallel
 
 La CI GitHub Actions compile et teste les deux plateformes à chaque push. Un tag `v*` publie automatiquement les zips dans une release.
 
-Tests DSP (accordeur, gate, compresseur, octaver, modèles d'ampli, baffles, presets, stabilité de la chaîne) : `test.bat`.
-`test.bat --snapshot ui.png` exporte une capture de l'interface.
+Tests DSP (accordeur, gate, compresseur, octaver, modèles d'ampli, tone stack, baffles et IR, égaliseur, presets, stabilité de la chaîne) : `test.bat`.
+`test.bat --snapshot ui.png [preset]` exporte une capture de l'interface, avec le preset d'usine choisi.
 
 ## Latence
 
@@ -76,7 +104,8 @@ Tests DSP (accordeur, gate, compresseur, octaver, modèles d'ampli, baffles, pre
 
 ## Utilisation
 
-- Double-clic sur un potard : retour à sa valeur par défaut.
+- Double-clic sur un potard : retour à sa valeur par défaut. Survol ou glisser : la valeur s'affiche.
+- La fenêtre se redimensionne (coin en bas à droite) de 60 % à 160 %, et s'ouvre à la taille de l'écran.
 - **IN CLIP** : l'entrée de la carte son sature, baisse le gain de l'interface. **OUT CLIP** : la sortie sature, baisse le Master.
 - Clic sur le bloc LEVELS : efface les témoins CLIP.
 - **MUTE** dans l'accordeur coupe la sortie pendant l'accordage.

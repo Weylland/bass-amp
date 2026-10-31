@@ -2,13 +2,10 @@
 
 #include "PluginProcessor.h"
 #include "ui/AmpLookAndFeel.h"
-#include "ui/LevelMeters.h"
-#include "ui/PresetBar.h"
-#include "ui/RecorderBar.h"
-#include "ui/Section.h"
-#include "ui/TunerDisplay.h"
+#include "ui/MainPanel.h"
 
-class BassAmpEditor : public juce::AudioProcessorEditor, private juce::Timer
+// Hosts the rig drawn at its design size and scales it to the window, keeping the aspect ratio.
+class BassAmpEditor : public juce::AudioProcessorEditor
 {
 public:
     explicit BassAmpEditor (BassAmpProcessor&);
@@ -18,28 +15,6 @@ public:
     void resized() override;
 
 private:
-    void timerCallback() override;
-    static void layoutRow (juce::Rectangle<int> area, std::initializer_list<Section*> sections);
-
-    BassAmpProcessor& bassAmp;
     AmpLookAndFeel lookAndFeel;
-    juce::String shownDeviceInfo;
-
-    PresetBar presetBar;
-    RecorderBar recorderBar;
-    TunerDisplay tuner;
-    LevelMeters meters;
-
-    Section gateSection;
-    Section compressorSection;
-    Section octaverSection;
-    Section envFilterSection;
-    Section fuzzSection;
-    Section distortionSection;
-    Section ampSection;
-    Section chorusSection;
-    Section delaySection;
-    Section reverbSection;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BassAmpEditor)
+    MainPanel panel;
 };

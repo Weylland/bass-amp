@@ -23,8 +23,9 @@ private:
 
     void timerCallback() override;
     void update (Meter&, float peak, float clipThreshold, double now);
-    void drawMeter (juce::Graphics&, juce::Rectangle<int> area, const juce::String& name, const Meter&, double now) const;
+    void drawMeter (juce::Graphics&, juce::Rectangle<int> area, const Meter&, double now) const;
     void drawGainReduction (juce::Graphics&, juce::Rectangle<int> area) const;
+    void drawSegments (juce::Graphics&, juce::Rectangle<int> area, float amount, bool isLevel) const;
 
     BassAmpProcessor& processor;
     Meter input, output;
