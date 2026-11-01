@@ -194,7 +194,8 @@ const Translations& englishTranslations()
                                "to switch it from a pad of your controller. A gold dot on a control means a MIDI control "
                                "drives it." },
             { "ui.tap", "TAP\nTap at least twice in rhythm: the delay time locks to your tempo." },
-            { "ui.pedalPresets", "PEDAL PRESETS\nReady-made settings for this pedal. The rest of your sound doesn't change." },
+            { "ui.pedalPresets", "PEDAL PRESETS\nReady-made settings for this pedal. The rest of your sound doesn't change. "
+                                 "Save... keeps your own settings in the list too." },
             { "ui.removePedal", "REMOVE\nTurns the pedal off and puts it away. Bring it back with + ADD." },
             { "ui.addPedal", "+ ADD\nAdds a pedal to this pedalboard. Then drag a pedal to move it: "
                              "the sound follows the order shown, left to right." },
@@ -216,12 +217,14 @@ const Translations& englishTranslations()
             { "ui.meters", "LEVELS\nIN: what comes in (your bass); OUT: what goes out; COMP: compressor reduction. Red CLIP: "
                            "overload, lower your interface gain (IN) or the Master (OUT). Click to clear the lights. Click IN "
                            "1 / IN 2 to choose the interface input your bass is plugged into." },
-            { "ui.eqPresets", "EQ PRESETS\nReady-made curves: vocals, guitar, round bass, slap... Only the equalizer changes." },
+            { "ui.eqPresets", "EQ PRESETS\nReady-made curves: vocals, guitar, round bass, slap... Only the equalizer changes. "
+                              "Save... keeps your own settings in the list too." },
             { "ui.eqBasic", "BASIC\n9-band graphic equalizer, with faders." },
             { "ui.eqAdvanced", "ADVANCED\nParametric equalizer: 6 points to drag on the curve, more precise." },
             { "ui.eqScreen", "EQ SCREEN\nThe curve shows the correction, the background the spectrum of the output. "
                              "Spot frequency bumps to fix them." },
-            { "ui.ampPresets", "AMP PRESETS\nReady-made amp and cabinet settings. Pedals and EQ don't change." },
+            { "ui.ampPresets", "AMP PRESETS\nReady-made amp and cabinet settings. Pedals and EQ don't change. Save... keeps "
+                               "your own settings in the list too. They keep the IR and capture files too." },
             { "ui.power", "POWER\nThe pilot lamp, as on a real amp: it stays lit while the app runs. There is nothing to set "
                           "here." },
             { "ui.language", "LANGUAGE\nThe language of the help bubbles and menus. Control names stay in English, "

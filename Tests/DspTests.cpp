@@ -872,6 +872,40 @@ namespace
         check (loudest - quietest < 3.0f, "presets are level-matched", "spread " + juce::String (loudest - quietest, 1) + " dB");
     }
 
+    void testUserModulePresets()
+    {
+        auto processor = makeProcessor();
+        auto& state = processor->parameters;
+        const auto root = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("BassAmpModuleTest");
+        root.deleteRecursively();
+        const auto value = [&state] (const char* id) { return state.getRawParameterValue (id)->load(); };
+        const auto irPath = root.getChildFile ("cab.wav").getFullPathName();
+
+        setParam (*processor, ParamIds::ampGain, 7.5f);
+        setParam (*processor, ParamIds::ampBass, 4.0f);
+        state.state.setProperty (PresetManager::impulseResponseProperty, irPath, nullptr);
+        const auto saved = saveUserModulePreset (state, "amp", "My Amp", root);
+
+        setParam (*processor, ParamIds::ampGain, 2.0f);
+        setParam (*processor, ParamIds::ampBass, 0.0f);
+        state.state.setProperty (PresetManager::impulseResponseProperty, juce::String(), nullptr);
+        setParam (*processor, ParamIds::limiterOn, 0.0f);
+        const auto activeBefore = isUserModulePresetActive (state, "amp", saved);
+        const auto loaded = loadUserModulePreset (state, "amp", saved);
+
+        const auto listed = getUserModulePresets ("amp", root).size() == 1 && getUserModulePresets ("eq", root).isEmpty();
+        const auto restored = std::abs (value (ParamIds::ampGain) - 7.5f) < 0.01f && std::abs (value (ParamIds::ampBass) - 4.0f) < 0.01f
+                              && state.state.getProperty (PresetManager::impulseResponseProperty).toString() == irPath;
+        const auto alone = value (ParamIds::limiterOn) < 0.5f;
+
+        check (saved.existsAsFile() && listed && ! activeBefore && loaded && restored && alone
+                   && isUserModulePresetActive (state, "amp", saved),
+               "user amp preset saved and loaded alone, with its IR",
+               "gain " + juce::String (value (ParamIds::ampGain), 2) + ", " + saved.getFileName());
+
+        root.deleteRecursively();
+    }
+
     void testModulePresets()
     {
         auto processor = makeProcessor();
@@ -1569,6 +1603,7 @@ int main (int argc, char* argv[])
     testCompressorMix();
     testFactoryPresets();
     testModulePresets();
+    testUserModulePresets();
     testTranslations();
     testUserPresetRoundTrip();
     testInputChannel();

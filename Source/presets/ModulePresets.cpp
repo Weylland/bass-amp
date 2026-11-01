@@ -1,7 +1,9 @@
 #include "ModulePresets.h"
+#include "PresetManager.h"
 #include "../PedalChain.h"
 
 #include <map>
+#include <optional>
 
 namespace
 {
@@ -183,8 +185,8 @@ namespace
         return {};
     }
 
-    template <typename Function>
-    void forEachTarget (const juce::AudioProcessorValueTreeState& state, const juce::String& module, const FactoryPreset& preset,
+    template <typename Values, typename Function>
+    void forEachTarget (const juce::AudioProcessorValueTreeState& state, const juce::String& module, const Values& values,
                         Function&& function)
     {
         const auto unit = unitFor (module);
@@ -200,7 +202,7 @@ namespace
 
             auto target = ranged->getDefaultValue();
 
-            for (const auto& [paramId, value] : preset.values)
+            for (const auto& [paramId, value] : values)
                 if (ranged->getParameterID() == paramId)
                     target = ranged->convertTo0to1 (value);
 
@@ -225,7 +227,7 @@ const std::vector<FactoryPreset>& getModulePresets (const juce::String& module)
 
 void applyModulePreset (juce::AudioProcessorValueTreeState& state, const juce::String& module, const FactoryPreset& preset)
 {
-    forEachTarget (state, module, preset, [] (juce::RangedAudioParameter& parameter, float target)
+    forEachTarget (state, module, preset.values, [] (juce::RangedAudioParameter& parameter, float target)
                    { parameter.setValueNotifyingHost (target); });
 
     if (auto* toggle = state.getParameter (unitFor (module).toggleId))
@@ -235,7 +237,125 @@ void applyModulePreset (juce::AudioProcessorValueTreeState& state, const juce::S
 bool isModulePresetActive (const juce::AudioProcessorValueTreeState& state, const juce::String& module, const FactoryPreset& preset)
 {
     auto active = true;
-    forEachTarget (state, module, preset, [&active] (juce::RangedAudioParameter& parameter, float target)
+    forEachTarget (state, module, preset.values, [&active] (juce::RangedAudioParameter& parameter, float target)
                    { active = active && std::abs (parameter.getValue() - target) < 0.002f; });
+    return active;
+}
+
+namespace
+{
+    constexpr const char* moduleExtension = ".xml";
+    const juce::Identifier moduleTag { "MODULE_PRESET" }, paramTag { "PARAM" }, idAttribute { "id" }, valueAttribute { "value" };
+
+    std::array<juce::Identifier, 2> filesOf (const juce::String& module)
+    {
+        if (module == "amp")
+            return { PresetManager::impulseResponseProperty, PresetManager::captureProperty };
+
+        return {};
+    }
+
+    struct UserValues
+    {
+        std::vector<std::pair<juce::String, float>> values;
+        juce::NamedValueSet files;
+    };
+
+    std::optional<UserValues> readUserPreset (const juce::File& file)
+    {
+        const auto xml = juce::XmlDocument::parse (file);
+
+        if (xml == nullptr || ! xml->hasTagName (moduleTag.toString()))
+            return std::nullopt;
+
+        UserValues preset;
+
+        for (const auto* param : xml->getChildWithTagNameIterator (paramTag.toString()))
+            preset.values.emplace_back (param->getStringAttribute (idAttribute), (float) param->getDoubleAttribute (valueAttribute));
+
+        for (int i = 0; i < xml->getNumAttributes(); ++i)
+            preset.files.set (xml->getAttributeName (i), xml->getAttributeValue (i));
+
+        return preset;
+    }
+}
+
+juce::File getDefaultModulePresetDirectory()
+{
+    return PresetManager::getDefaultUserDirectory().getChildFile ("Modules");
+}
+
+juce::Array<juce::File> getUserModulePresets (const juce::String& module, const juce::File& root)
+{
+    auto files = root.getChildFile (module).findChildFiles (juce::File::findFiles, false, juce::String ("*") + moduleExtension);
+    files.sort();
+    return files;
+}
+
+juce::File getUserModulePresetFile (const juce::String& module, const juce::String& name, const juce::File& root)
+{
+    return root.getChildFile (module).getChildFile (juce::File::createLegalFileName (name.trim()) + moduleExtension);
+}
+
+juce::File saveUserModulePreset (const juce::AudioProcessorValueTreeState& state, const juce::String& module, const juce::String& name,
+                                 const juce::File& root)
+{
+    const auto file = getUserModulePresetFile (module, name, root);
+
+    if (juce::File::createLegalFileName (name.trim()).isEmpty() || ! file.getParentDirectory().createDirectory())
+        return {};
+
+    juce::XmlElement xml (moduleTag);
+    const std::vector<std::pair<juce::String, float>> none;
+
+    forEachTarget (state, module, none, [&xml] (juce::RangedAudioParameter& parameter, float)
+    {
+        auto* param = xml.createNewChildElement (paramTag.toString());
+        param->setAttribute (idAttribute, parameter.getParameterID());
+        param->setAttribute (valueAttribute, parameter.convertFrom0to1 (parameter.getValue()));
+    });
+
+    for (const auto& property : filesOf (module))
+        if (property.isValid())
+            xml.setAttribute (property, state.state.getProperty (property).toString());
+
+    return xml.writeTo (file) ? file : juce::File();
+}
+
+bool loadUserModulePreset (juce::AudioProcessorValueTreeState& state, const juce::String& module, const juce::File& file)
+{
+    const auto preset = readUserPreset (file);
+
+    if (! preset.has_value())
+        return false;
+
+    forEachTarget (state, module, preset->values, [] (juce::RangedAudioParameter& parameter, float target)
+                   { parameter.setValueNotifyingHost (target); });
+
+    for (const auto& property : filesOf (module))
+        if (property.isValid() && preset->files.contains (property))
+            state.state.setProperty (property, preset->files[property], nullptr);
+
+    if (auto* toggle = state.getParameter (unitFor (module).toggleId))
+        toggle->setValueNotifyingHost (1.0f);
+
+    return true;
+}
+
+bool isUserModulePresetActive (const juce::AudioProcessorValueTreeState& state, const juce::String& module, const juce::File& file)
+{
+    const auto preset = readUserPreset (file);
+
+    if (! preset.has_value())
+        return false;
+
+    auto active = true;
+    forEachTarget (state, module, preset->values, [&active] (juce::RangedAudioParameter& parameter, float target)
+                   { active = active && std::abs (parameter.getValue() - target) < 0.002f; });
+
+    for (const auto& property : filesOf (module))
+        if (property.isValid())
+            active = active && state.state.getProperty (property).toString() == preset->files[property].toString();
+
     return active;
 }

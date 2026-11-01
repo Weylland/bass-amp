@@ -195,7 +195,8 @@ const Translations& portugueseTranslations()
                                "learn, para acionar com um pad do seu controlador. Um ponto dourado num controle indica que um "
                                "controle MIDI o comanda." },
             { "ui.tap", "TAP\nBata pelo menos duas vezes no ritmo: o tempo do delay se ajusta ao seu andamento." },
-            { "ui.pedalPresets", "PRESETS DO PEDAL\nAjustes prontos para este pedal. O resto do seu som não muda." },
+            { "ui.pedalPresets", "PRESETS DO PEDAL\nAjustes prontos para este pedal. O resto do seu som não muda. Salvar... "
+                                 "adiciona seus próprios ajustes à lista." },
             { "ui.removePedal", "REMOVER\nDesliga o pedal e o guarda. Traga de volta com + ADD." },
             { "ui.addPedal", "+ ADD\nAdiciona um pedal a este pedalboard. Depois arraste um pedal para movê-lo: "
                              "o som segue a ordem mostrada, da esquerda para a direita." },
@@ -217,12 +218,14 @@ const Translations& portugueseTranslations()
             { "ui.meters", "NÍVEIS\nIN: o que entra (seu baixo); OUT: o que sai; COMP: redução do compressor. CLIP vermelho: "
                            "saturação, abaixe o ganho da interface (IN) ou o master (OUT). Clique para apagar as luzes. Clique "
                            "em IN 1 / IN 2 para escolher a entrada da interface onde o baixo está ligado." },
-            { "ui.eqPresets", "PRESETS DE EQ\nCurvas prontas: voz, guitarra, baixo redondo, slap… Só o equalizador muda." },
+            { "ui.eqPresets", "PRESETS DE EQ\nCurvas prontas: voz, guitarra, baixo redondo, slap… Só o equalizador muda. "
+                              "Salvar... adiciona seus próprios ajustes à lista." },
             { "ui.eqBasic", "BASIC\nEqualizador gráfico de 9 bandas com faders." },
             { "ui.eqAdvanced", "ADVANCED\nEqualizador paramétrico: 6 pontos para arrastar na curva, mais preciso." },
             { "ui.eqScreen", "TELA DO EQ\nA curva mostra a correção, o fundo mostra o espectro da saída. "
                              "Identifique os picos de frequência para corrigi-los." },
-            { "ui.ampPresets", "PRESETS DE AMP\nAjustes prontos de amp e caixa. Pedais e EQ não mudam." },
+            { "ui.ampPresets", "PRESETS DE AMP\nAjustes prontos de amp e caixa. Pedais e EQ não mudam. Salvar... adiciona seus "
+                               "próprios ajustes à lista. Também guardam o IR e a captura." },
             { "ui.power", "POWER\nA luz de energia, como num amp de verdade: fica acesa enquanto o app está rodando. Não há "
                           "nada para ajustar aqui." },
             { "ui.language", "IDIOMA\nO idioma dos balões de ajuda e dos menus. Os nomes dos controles ficam em inglês, "
@@ -309,6 +312,7 @@ const Translations& portugueseTranslations()
             { "No audio device: Options > Audio/MIDI Settings", "Nenhum dispositivo de áudio: Opções > Configurações de áudio/MIDI" },
             { "latency", "latência" },
             { "Language", "Idioma" },
+            { "Save...", "Salvar..." },
             { "Drag the handles to cut the start or the end of the loop. The whole take is kept.", "Arrasta as alças para cortar o início ou o fim do loop. A gravação inteira é mantida." },
             { "Synced to the metronome: a bar of count-in, then loops start and end on a bar.", "Sincronizado com o metrônomo: um compasso de contagem, depois os loops começam e terminam num compasso." },
             { "Free: recording starts on your first note; the first loop sets the length the others follow.", "Livre: a gravação começa na sua primeira nota; o primeiro loop define a duração que os outros seguem." },

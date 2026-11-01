@@ -160,6 +160,8 @@ Chaque module a aussi ses presets, qui ne touchent que lui :
 - **PRESETS** dans l'EQ : Flat, Vocals, Electric Guitar, Acoustic Guitar, Round Bass, Slap Smile, Rock Growl, Fingerstyle Warm, Anti-Mud, Old Radio.
 - Le bouton à trois traits en haut à gauche de chaque pédale : 3 à 5 réglages pour cette pédale.
 
+Dans chacun de ces menus, **Enregistrer...** ajoute les réglages actuels du module sous le nom de ton choix : ta fuzz préférée, une courbe d'EQ, un ampli avec son IR et sa capture NAM. Ils apparaissent sous **Les miens** et se chargent par-dessus n'importe quel son, comme ceux fournis ; **Supprimer** en retire un (il va dans la corbeille). Ils sont rangés dans `Documents/Bass Amp/Presets/Modules/<module>`.
+
 ## Utilisation
 
 - Survole un élément (pédale, potard, bouton, écran) pendant une seconde : une bulle explique à quoi il sert et comment l'utiliser.

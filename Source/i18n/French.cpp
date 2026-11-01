@@ -193,7 +193,8 @@ const Translations& frenchTranslations()
                                "MIDI learn, pour la commander avec un pad de ton contrôleur. Un point doré sur un réglage "
                                "indique qu'un contrôle MIDI le pilote." },
             { "ui.tap", "TAP\nTape au moins deux fois en rythme : le temps du delay se cale sur ton tempo." },
-            { "ui.pedalPresets", "PRESETS DE LA PÉDALE\nDes réglages tout prêts pour cette pédale. Le reste de ton son ne change pas." },
+            { "ui.pedalPresets", "PRESETS DE LA PÉDALE\nDes réglages tout prêts pour cette pédale. Le reste de ton son ne "
+                                 "change pas. Enregistrer... ajoute tes propres réglages à la liste." },
             { "ui.removePedal", "RETIRER\nÉteint la pédale et la range. Tu peux la remettre avec + ADD." },
             { "ui.addPedal", "+ ADD\nAjoute une pédale sur ce pedalboard. Ensuite, glisse une pédale pour changer sa place : "
                              "le son suit l'ordre affiché, de gauche à droite." },
@@ -217,12 +218,15 @@ const Translations& frenchTranslations()
                            "rouge : saturation, baisse le gain de ta carte son (IN) ou le Master (OUT). Clique pour effacer "
                            "les témoins. Clique sur IN 1 / IN 2 pour choisir l'entrée de la carte son où ta basse est "
                            "branchée." },
-            { "ui.eqPresets", "PRESETS D'EQ\nDes courbes toutes prêtes : voix, guitare, basse ronde, slap… Seul l'égaliseur change." },
+            { "ui.eqPresets", "PRESETS D'EQ\nDes courbes toutes prêtes : voix, guitare, basse ronde, slap… Seul l'égaliseur "
+                              "change. Enregistrer... ajoute tes propres réglages à la liste." },
             { "ui.eqBasic", "BASIC\nÉgaliseur graphique 9 bandes, avec des faders." },
             { "ui.eqAdvanced", "ADVANCED\nÉgaliseur paramétrique : 6 points à glisser sur la courbe, plus précis." },
             { "ui.eqScreen", "ÉCRAN DE L'EQ\nLa courbe montre la correction, le fond le spectre du son qui sort. "
                              "Repère les bosses de fréquences pour les corriger." },
-            { "ui.ampPresets", "PRESETS D'AMPLI\nDes réglages d'ampli et de baffle tout prêts. Les pédales et l'EQ ne changent pas." },
+            { "ui.ampPresets", "PRESETS D'AMPLI\nDes réglages d'ampli et de baffle tout prêts. Les pédales et l'EQ ne changent "
+                               "pas. Enregistrer... ajoute tes propres réglages à la liste. Ils gardent aussi l'IR et la "
+                               "capture." },
             { "ui.power", "POWER\nLe voyant d'alimentation, comme sur un vrai ampli : il reste allumé tant que l'appli tourne. "
                           "Il n'y a rien à régler ici." },
             { "ui.language", "LANGUE\nLa langue des bulles d'aide et des menus. Les noms des réglages restent en anglais, comme sur le vrai matériel." },
@@ -310,6 +314,7 @@ const Translations& frenchTranslations()
             { "No audio device: Options > Audio/MIDI Settings", "Aucun périphérique audio : Options > Réglages audio/MIDI" },
             { "latency", "latence" },
             { "Language", "Langue" },
+            { "Save...", "Enregistrer..." },
             { "Drag the handles to cut the start or the end of the loop. The whole take is kept.", "Glisse les poignées pour couper le début ou la fin de la boucle. La prise entière est gardée." },
             { "Synced to the metronome: a bar of count-in, then loops start and end on a bar.", "Calé sur le métronome : une mesure de décompte, puis les boucles démarrent et finissent sur une mesure." },
             { "Free: recording starts on your first note; the first loop sets the length the others follow.", "Libre : l'enregistrement démarre à ta première note ; la première boucle donne la longueur que suivent les autres." },

@@ -160,6 +160,8 @@ Each module also has its own presets, which only touch it:
 - **PRESETS** in the EQ: Flat, Vocals, Electric Guitar, Acoustic Guitar, Round Bass, Slap Smile, Rock Growl, Fingerstyle Warm, Anti-Mud, Old Radio.
 - The three-line button at the top left of each pedal: 3 to 5 settings for that pedal.
 
+In each of these menus, **Save...** adds the current settings of that module under a name of yours: your favourite fuzz, an EQ curve, an amp with its IR and NAM capture. They are listed under **User** and load on top of any sound, like the built-in ones; **Delete** removes one (it goes to the trash). They are kept in `Documents/Bass Amp/Presets/Modules/<module>`.
+
 ## Usage
 
 - Hover an element (pedal, knob, button, screen) for a second: a bubble explains what it's for and how to use it.
