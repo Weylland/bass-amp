@@ -30,7 +30,8 @@ BassAmpEditor::BassAmpEditor (BassAmpProcessor& audioProcessor)
     setResizable (true, true);
     setWindowLimits (false);
 
-    const auto scale = initialScale();
+    const auto savedScale = (double) audioProcessor.editorWidth / MainPanel::designWidth;
+    const auto scale = audioProcessor.editorWidth > 0 ? juce::jlimit (minScale, maxScale, savedScale) : initialScale();
     setSize (juce::roundToInt (MainPanel::designWidth * scale), juce::roundToInt (MainPanel::designHeight * scale));
 }
 
@@ -91,15 +92,15 @@ bool BassAmpEditor::keyPressed (const juce::KeyPress& key)
 
 bool BassAmpEditor::keyPressed (const juce::KeyPress& key, juce::Component*)
 {
-    auto& undoManager = static_cast<BassAmpProcessor&> (processor).undoManager;
+    auto& history = static_cast<BassAmpProcessor&> (processor).undoHistory;
     const auto command = key.getModifiers().isCommandDown();
     const auto shift = key.getModifiers().isShiftDown();
     const auto letter = juce::CharacterFunctions::toUpperCase ((juce::juce_wchar) key.getKeyCode());
 
     if (command && letter == 'Z' && ! shift)
-        undoManager.undo();
+        history.undo();
     else if (command && ((letter == 'Z' && shift) || letter == 'Y'))
-        undoManager.redo();
+        history.redo();
     else if (key == juce::KeyPress::F11Key)
         setFullScreen (! isFullScreen());
     else if (key == juce::KeyPress::escapeKey && isFullScreen())
@@ -133,6 +134,9 @@ void BassAmpEditor::resized()
 {
     if (panel == nullptr)
         return;
+
+    if (! isFullScreen())
+        static_cast<BassAmpProcessor&> (processor).editorWidth = getWidth();
 
     const auto scale = juce::jmin ((float) getWidth() / (float) MainPanel::designWidth, (float) getHeight() / (float) MainPanel::designHeight);
     panel->setTransform (juce::AffineTransform::scale (scale).translated (((float) getWidth() - MainPanel::designWidth * scale) / 2.0f,

@@ -6,7 +6,7 @@
 #include "ToggleSwitch.h"
 
 // Input and output peak meters with clip LEDs, the compressor gain reduction, and the
-// output limiter switch.
+// output limiter switch. Clicking IN picks the interface input the bass is plugged into.
 class LevelMeters : public juce::Component, public juce::SettableTooltipClient, private juce::Timer
 {
 public:
@@ -29,10 +29,12 @@ private:
     void drawMeter (juce::Graphics&, juce::Rectangle<int> area, const Meter&, double now) const;
     void drawGainReduction (juce::Graphics&, juce::Rectangle<int> area) const;
     void drawSegments (juce::Graphics&, juce::Rectangle<int> area, float amount, bool isLevel) const;
+    void showInputMenu();
 
     BassAmpProcessor& processor;
     Meter input, output;
     float gainReductionDb = 0.0f;
+    juce::Rectangle<int> inputLabelArea;
 
     ToggleSwitch limiterButton { "LIMIT" };
     juce::AudioProcessorValueTreeState::ButtonAttachment limiterAttachment;

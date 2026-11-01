@@ -1,6 +1,7 @@
 #include "PlayerUnit.h"
 #include "AmpLookAndFeel.h"
 #include "Help.h"
+#include "Message.h"
 #include "../i18n/Language.h"
 
 namespace
@@ -67,11 +68,19 @@ void PlayerUnit::chooseFile()
     fileChooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                               [safeThis = juce::Component::SafePointer<PlayerUnit> (this)] (const juce::FileChooser& chooser)
     {
-        if (safeThis != nullptr && chooser.getResult().existsAsFile() && safeThis->track.load (chooser.getResult()))
+        const auto file = chooser.getResult();
+
+        if (safeThis == nullptr || ! file.existsAsFile())
+            return;
+
+        if (! safeThis->track.load (file))
         {
-            safeThis->track.play();
-            safeThis->repaint();
+            Message::show ("Error whilst loading", "Couldn't read from the specified file!", file.getFullPathName());
+            return;
         }
+
+        safeThis->track.play();
+        safeThis->repaint();
     });
 }
 

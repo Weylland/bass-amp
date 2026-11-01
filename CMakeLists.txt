@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(BassAmp VERSION 0.8.0)
+project(BassAmp VERSION 0.9.0)
 
 # Static MSVC runtime: the app and plugin run without the Visual C++ redistributable.
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -21,7 +21,7 @@ juce_add_plugin(BassAmp
     PLUGIN_MANUFACTURER_CODE Nsam
     PLUGIN_CODE Bamp
     FORMATS ${PLUGIN_FORMATS}
-    AU_MAIN_TYPE kAudioUnitType_Effect
+    AU_MAIN_TYPE kAudioUnitType_MusicEffect
     MICROPHONE_PERMISSION_ENABLED TRUE
     MICROPHONE_PERMISSION_TEXT "Bass Amp needs the audio input to hear your bass."
     IS_SYNTH FALSE
@@ -51,6 +51,8 @@ set(BASS_AMP_SOURCES
     Source/Parameters.cpp
     Source/PluginProcessor.cpp
     Source/PluginEditor.cpp
+    Source/UndoHistory.cpp
+    Source/UpdateCheck.cpp
     Source/dsp/BackingTrack.cpp
     Source/dsp/Looper.cpp
     Source/dsp/NamModel.cpp

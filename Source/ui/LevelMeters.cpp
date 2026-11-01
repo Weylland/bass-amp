@@ -1,6 +1,7 @@
 #include "LevelMeters.h"
 #include "AmpLookAndFeel.h"
 #include "Help.h"
+#include "../i18n/Language.h"
 
 namespace
 {
@@ -62,10 +63,36 @@ void LevelMeters::timerCallback()
     repaint();
 }
 
-void LevelMeters::mouseDown (const juce::MouseEvent&)
+void LevelMeters::mouseDown (const juce::MouseEvent& event)
 {
+    if (inputLabelArea.contains (event.getPosition()))
+    {
+        showInputMenu();
+        return;
+    }
+
     input.clipUntil = output.clipUntil = 0.0;
     repaint();
+}
+
+void LevelMeters::showInputMenu()
+{
+    juce::PopupMenu menu;
+    const auto selected = processor.inputChannel.load();
+
+    for (int channel = 0; channel < 2; ++channel)
+        menu.addItem (channel + 1, Language::tr ("Input") + " " + juce::String (channel + 1),
+                      channel < processor.getNumSelectableInputs(), channel == selected);
+
+    menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this).withTargetScreenArea (localAreaToGlobal (inputLabelArea)),
+                        [safeThis = SafePointer<LevelMeters> (this)] (int result)
+    {
+        if (safeThis != nullptr && result > 0)
+        {
+            safeThis->processor.inputChannel = result - 1;
+            safeThis->repaint();
+        }
+    });
 }
 
 void LevelMeters::resized()
@@ -111,9 +138,13 @@ void LevelMeters::paint (juce::Graphics& g)
                     juce::Justification::centred);
     }
 
+    inputLabelArea = labels.removeFromLeft (columnWidth).expanded (4, 2);
+    g.setColour (Palette::gold.withAlpha (0.15f));
+    g.fillRoundedRectangle (inputLabelArea.toFloat(), 3.0f);
     g.setFont (Fonts::label (10.5f));
+    g.setColour (Palette::gold);
+    g.drawText ("IN " + juce::String (processor.inputChannel.load() + 1), inputLabelArea, juce::Justification::centred);
     g.setColour (Palette::text.withAlpha (0.8f));
-    g.drawText ("IN", labels.removeFromLeft (columnWidth), juce::Justification::centred);
     labels.removeFromLeft (columnWidth);
     g.drawText ("OUT", labels.removeFromLeft (columnWidth), juce::Justification::centred);
     g.drawText ("COMP", labels, juce::Justification::centred);

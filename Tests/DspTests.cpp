@@ -953,22 +953,34 @@ namespace
     {
         auto processor = makeProcessor();
         auto& state = processor->parameters;
-        auto& undo = processor->undoManager;
+        UndoHistory history (state, [] { return juce::StringArray { ParamIds::wahPedal }; });
+        const auto value = [&state] (const char* id) { return state.getRawParameterValue (id)->load(); };
 
         setParam (*processor, ParamIds::ampGain, 3.0f);
-        state.copyState();
-        undo.beginNewTransaction();
+        history.checkpoint();
         setParam (*processor, ParamIds::ampGain, 8.0f);
-        state.copyState();
-        undo.beginNewTransaction();
-
-        undo.undo();
-        const auto undone = state.getRawParameterValue (ParamIds::ampGain)->load();
-        undo.redo();
-        const auto redone = state.getRawParameterValue (ParamIds::ampGain)->load();
+        history.undo();
+        const auto undone = value (ParamIds::ampGain);
+        history.redo();
+        const auto redone = value (ParamIds::ampGain);
 
         check (std::abs (undone - 3.0f) < 0.01f && std::abs (redone - 8.0f) < 0.01f, "undo and redo a change",
                "gain " + juce::String (undone, 2) + " then " + juce::String (redone, 2));
+
+        processor->presets.loadFactoryPreset (2);
+        history.checkpoint();
+        const auto before = processor->presets.getCurrentPresetName();
+        const auto shownBefore = processor->pedalChain.getShown (Board::pre);
+        processor->presets.loadFactoryPreset (5);
+        processor->pedalChain.show (PedalId::synth);
+        setParam (*processor, ParamIds::wahPedal, 0.9f);
+        history.undo();
+
+        const auto synthGone = processor->pedalChain.getShown (Board::pre) == shownBefore && value (ParamIds::synthOn) < 0.5f;
+        const auto presetBack = processor->presets.getCurrentPresetName() == before && processor->presets.getCurrentFactoryIndex() == 2;
+        const auto midiKept = std::abs (value (ParamIds::wahPedal) - 0.9f) < 0.01f;
+        check (synthGone && presetBack && midiKept, "undo a preset load and a pedal, not MIDI",
+               juce::String ("pedal, preset, MIDI: ") + juce::String ((int) synthGone) + juce::String ((int) presetBack) + juce::String ((int) midiKept));
     }
 
     void testTranslations()
@@ -998,6 +1010,55 @@ namespace
                problems.isEmpty() ? juce::String ((int) Language::available.size()) + " languages, " + juce::String ((int) english.help.size())
                                         + " help texts, " + juce::String ((int) french.messages.size()) + " messages"
                                   : problems.joinIntoString (", "));
+    }
+
+    void testUpdateVersions()
+    {
+        const auto ok = UpdateCheck::isNewer ("0.9.0", "0.8.0") && UpdateCheck::isNewer ("0.10.0", "0.9.5") && UpdateCheck::isNewer ("1.0", "0.9.9")
+                        && ! UpdateCheck::isNewer ("0.8.0", "0.8.0") && ! UpdateCheck::isNewer ("0.7.9", "0.8.0") && ! UpdateCheck::isNewer ("", "0.8.0");
+        check (ok, "update check compares versions", "0.10.0 > 0.9.5");
+    }
+
+    void testInputChannel()
+    {
+        const auto peakWith = [] (int channel)
+        {
+            auto processor = makeProcessor();
+            processor->setPlayConfigDetails (2, 2, testSampleRate, blockSize);
+            processor->inputChannel = channel;
+
+            juce::AudioBuffer<float> buffer (2, blockSize);
+            juce::MidiBuffer midi;
+            auto peak = 0.0f;
+
+            for (int block = 0; block < 20; ++block)
+            {
+                buffer.clear();
+
+                for (int i = 0; i < blockSize; ++i)
+                    buffer.setSample (1, i, 0.3f * std::sin (juce::MathConstants<float>::twoPi * 110.0f * (float) (block * blockSize + i) / (float) testSampleRate));
+
+                processor->processBlock (buffer, midi);
+                peak = juce::jmax (peak, buffer.getMagnitude (0, 0, blockSize));
+            }
+
+            return peak;
+        };
+
+        const auto fromInput1 = peakWith (0);
+        const auto fromInput2 = peakWith (1);
+
+        auto processor = makeProcessor();
+        processor->inputChannel = 1;
+        juce::MemoryBlock session;
+        processor->getStateInformation (session);
+        auto restored = makeProcessor();
+        restored->setStateInformation (session.getData(), (int) session.getSize());
+        const auto savedPreset = processor->parameters.copyState().hasProperty ("inputChannel");
+
+        check (fromInput1 < 1.0e-4f && fromInput2 > 0.05f && restored->inputChannel.load() == 1 && ! savedPreset,
+               "bass on input 2", "input 1 " + juce::String (fromInput1, 4) + ", input 2 " + juce::String (fromInput2, 3)
+                                      + ", session " + juce::String (restored->inputChannel.load()));
     }
 
     void testUserPresetRoundTrip()
@@ -1033,6 +1094,42 @@ namespace
         check (cleanAfterLoad && modifiedByKnob && cleanAfterFactory && modifiedByOrder, "preset marked modified",
                juce::String ("clean after load, knob, factory, order: ") + juce::String ((int) cleanAfterLoad) + juce::String ((int) modifiedByKnob)
                    + juce::String ((int) cleanAfterFactory) + juce::String ((int) modifiedByOrder));
+
+        // A preset saved before KILL LOW existed doesn't keep the current KILL LOW.
+        auto xml = juce::XmlDocument::parse (file);
+        xml->removeChildElement (xml->getChildByAttribute ("id", ParamIds::killLow), true);
+        xml->writeTo (file);
+        setParam (*processor, ParamIds::killLow, 1.0f);
+        presets.loadUserPreset (file);
+        const auto killLow = processor->parameters.getRawParameterValue (ParamIds::killLow)->load();
+        check (killLow < 0.5f, "older preset gets defaults", "kill low " + juce::String (killLow, 1));
+
+        // Export with an IR, import elsewhere, rename.
+        const auto irSource = directory.getSiblingFile ("BassAmpTestIR.wav");
+        {
+            juce::AudioBuffer<float> impulse (1, 64);
+            impulse.clear();
+            impulse.setSample (0, 0, 1.0f);
+            std::unique_ptr<juce::AudioFormatWriter> writer (juce::WavAudioFormat().createWriterFor (irSource.createOutputStream().release(),
+                                                                                                    testSampleRate, 1, 24, {}, 0));
+            writer->writeFromAudioSampleBuffer (impulse, 0, 64);
+        }
+
+        processor->parameters.state.setProperty (PresetManager::impulseResponseProperty, irSource.getFullPathName(), nullptr);
+        const auto zip = directory.getSiblingFile ("BassAmpTestExport.zip");
+        const auto exported = presets.exportPreset (zip);
+        const auto imported = presets.importPreset (zip);
+        const auto importedXml = juce::XmlDocument::parse (imported);
+        const juce::File importedIr (importedXml != nullptr ? importedXml->getStringAttribute (PresetManager::impulseResponseProperty) : juce::String());
+        const auto importedExists = imported.existsAsFile();
+        const auto renamed = presets.renameUserPreset (imported, "Shared Sound");
+
+        check (exported && importedExists && importedIr.existsAsFile() && importedIr.isAChildOf (directory)
+                   && renamed.getFileName() == "Shared Sound.bassamp" && ! imported.exists(),
+               "preset export, import with its IR, rename", imported.getFileName() + ", IR " + importedIr.getFullPathName());
+
+        irSource.deleteFile();
+        zip.deleteFile();
 
         directory.deleteRecursively();
     }
@@ -1407,6 +1504,8 @@ int main (int argc, char* argv[])
     testModulePresets();
     testTranslations();
     testUserPresetRoundTrip();
+    testInputChannel();
+    testUpdateVersions();
     testRecorder();
     testLooper();
     testLooperPlayback();

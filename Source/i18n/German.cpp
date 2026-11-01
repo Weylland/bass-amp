@@ -205,6 +205,9 @@ const Translations& germanTranslations()
             { "ui.previousPreset", "VORHERIGES PRESET" },
             { "ui.nextPreset", "NÄCHSTES PRESET" },
             { "ui.savePreset", "SAVE\nSpeichert den aktuellen Sound als Preset in Dokumente/Bass Amp/Presets." },
+            { "ui.presetMenu", "PRESET-MENÜ\nBenenne das geladene Benutzer-Preset um oder lösche es, importiere ein Preset, "
+                               "das dir jemand geschickt hat, exportiere diesen Sound zum Teilen (ein Zip mit seinen IR- und "
+                               "Capture-Dateien) oder öffne den Preset-Ordner." },
             { "ui.record", "REC\nNimmt auf, was aus der App kommt (mit Effekten), als WAV in Dokumente/Bass Amp/Recordings. "
                            "Erneut klicken zum Stoppen." },
             { "ui.recordings", "FILES\nÖffnet den Ordner mit den Aufnahmen." },
@@ -213,7 +216,9 @@ const Translations& germanTranslations()
                           "450 Hz; Doppelklick: zurück auf 440 Hz." },
             { "ui.mute", "MUTE\nSchaltet den Ausgang stumm, während du stimmst." },
             { "ui.meters", "PEGEL\nIN: was hereinkommt (dein Bass); OUT: was hinausgeht; COMP: Reduktion des Kompressors. "
-                           "Rotes CLIP: Übersteuerung, senke den Gain deines Interfaces (IN) oder den Master (OUT). Klicken setzt die Lampen zurück." },
+                           "Rotes CLIP: Übersteuerung, senke den Gain deines Interfaces (IN) oder den Master (OUT). Klicken "
+                           "setzt die Lampen zurück. Klicke auf IN 1 / IN 2, um den Interface-Eingang zu wählen, an dem dein "
+                           "Bass hängt." },
             { "ui.eqPresets", "EQ-PRESETS\nFertige Kurven: Gesang, Gitarre, runder Bass, Slap… Nur der Equalizer ändert sich." },
             { "ui.eqBasic", "BASIC\nGrafischer 9-Band-Equalizer mit Fadern." },
             { "ui.eqAdvanced", "ADVANCED\nParametrischer Equalizer: 6 Punkte zum Ziehen auf der Kurve, präziser." },
@@ -224,6 +229,8 @@ const Translations& germanTranslations()
                           "Hier gibt es nichts einzustellen." },
             { "ui.language", "SPRACHE\nDie Sprache der Hilfeblasen und Menüs. Die Reglernamen bleiben auf Englisch, "
                              "wie auf echtem Equipment." },
+            { "ui.update", "NEUE VERSION\nEine neuere Version von Bass Amp ist erschienen. Klicke, um ihre Download-Seite zu "
+                           "öffnen. Bass Amp prüft einmal pro Start bei GitHub; es werden keine Daten über dich gesendet." },
             { "ui.fullScreen", "VOLLBILD\nVergrößert die App auf den ganzen Bildschirm. F11 macht dasselbe, Escape führt zurück ins Fenster." },
             { "ui.loadIr", "LOAD IR\nLädt eine Box-Impulsantwort (WAV, AIFF, FLAC) und stellt die Box auf IR File." },
             { "ui.loadNam", "LOAD NAM\nLädt ein .nam-Verstärker-Capture (TONE3000 bietet Tausende). "
@@ -291,6 +298,26 @@ const Translations& germanTranslations()
             { "No audio device: Options > Audio/MIDI Settings", "Kein Audiogerät: Optionen > Audio/MIDI-Einstellungen" },
             { "latency", "Latenz" },
             { "Language", "Sprache" },
+            { "available", "verfügbar" },
+            { "Rename...", "Umbenennen..." },
+            { "Delete...", "Löschen..." },
+            { "Import...", "Importieren..." },
+            { "Export...", "Exportieren..." },
+            { "Open presets folder", "Preset-Ordner öffnen" },
+            { "Rename preset", "Preset umbenennen" },
+            { "Rename", "Umbenennen" },
+            { "Delete preset?", "Preset löschen?" },
+            { "Delete", "Löschen" },
+            { "Import a preset", "Preset importieren" },
+            { "Export this sound", "Diesen Sound exportieren" },
+            { "This file isn't a Bass Amp preset.", "Diese Datei ist kein Bass-Amp-Preset." },
+            { "File not found", "Datei nicht gefunden" },
+            { "Replace preset?", "Preset ersetzen?" },
+            { "A preset with this name already exists.", "Ein Preset mit diesem Namen existiert bereits." },
+            { "Replace", "Ersetzen" },
+            { "Audio input is muted to avoid feedback loop", "Der Audioeingang ist stummgeschaltet, um Rückkopplungen zu vermeiden" },
+            { "Settings...", "Einstellungen..." },
+            { "Input", "Eingang" },
             { "Options", "Optionen" },
             { "Audio/MIDI Settings", "Audio/MIDI-Einstellungen" },
             { "Audio/MIDI Settings...", "Audio/MIDI-Einstellungen..." },

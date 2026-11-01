@@ -4,15 +4,16 @@
 
 namespace
 {
-    const juce::Identifier impulseResponseProperty { "cabinetImpulseResponse" };
-    const juce::Identifier captureProperty { "namCapture" };
+    // Saved with the session but not with presets: they belong to the setup, not to the sound.
+    constexpr auto inputChannelAttribute = "inputChannel";
+    constexpr auto editorWidthAttribute = "editorWidth";
 }
 
 BassAmpProcessor::BassAmpProcessor()
     : AudioProcessor (BusesProperties()
-                          .withInput ("Input", juce::AudioChannelSet::mono(), true)
+                          .withInput ("Input", juce::AudioChannelSet::stereo(), true)
                           .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
-      parameters (*this, &undoManager, "PARAMETERS", createParameterLayout())
+      parameters (*this, nullptr, "PARAMETERS", createParameterLayout())
 {
     gate.bind (parameters);
     compressor.bind (parameters);
@@ -43,6 +44,7 @@ BassAmpProcessor::BassAmpProcessor()
     midiLearn.onAction = [this] (int action) { looper.trigger (action); };
 
     presets.loadFactoryPreset (0);
+    undoHistory.clear();
     parameters.state.addListener (this);
 }
 
@@ -53,32 +55,32 @@ BassAmpProcessor::~BassAmpProcessor()
 
 void BassAmpProcessor::setCabinetImpulseResponse (const juce::File& file)
 {
-    parameters.state.setProperty (impulseResponseProperty, file.getFullPathName(), nullptr);
+    parameters.state.setProperty (PresetManager::impulseResponseProperty, file.getFullPathName(), nullptr);
 }
 
 juce::File BassAmpProcessor::getCabinetImpulseResponse() const
 {
-    const auto path = parameters.state.getProperty (impulseResponseProperty).toString();
+    const auto path = parameters.state.getProperty (PresetManager::impulseResponseProperty).toString();
     return juce::File::isAbsolutePath (path) ? juce::File (path) : juce::File();
 }
 
 void BassAmpProcessor::setCapture (const juce::File& file)
 {
-    parameters.state.setProperty (captureProperty, file.getFullPathName(), nullptr);
+    parameters.state.setProperty (PresetManager::captureProperty, file.getFullPathName(), nullptr);
 }
 
 juce::File BassAmpProcessor::getCapture() const
 {
-    const auto path = parameters.state.getProperty (captureProperty).toString();
+    const auto path = parameters.state.getProperty (PresetManager::captureProperty).toString();
     return juce::File::isAbsolutePath (path) ? juce::File (path) : juce::File();
 }
 
 void BassAmpProcessor::valueTreePropertyChanged (juce::ValueTree& tree, const juce::Identifier& property)
 {
-    if (tree == parameters.state && property == impulseResponseProperty)
+    if (tree == parameters.state && property == PresetManager::impulseResponseProperty)
         reloadImpulseResponse();
 
-    if (tree == parameters.state && property == captureProperty)
+    if (tree == parameters.state && property == PresetManager::captureProperty)
         amp.loadCapture (getCapture());
 }
 
@@ -195,6 +197,9 @@ void BassAmpProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mid
         return;
     }
 
+    if (inputChannel.load() == 1 && numInputs > 1)
+        buffer.copyFrom (0, 0, buffer, 1, 0, numSamples);
+
     inputMeter.push (buffer.getReadPointer (0), numSamples);
     tuner.push (buffer.getReadPointer (0), numSamples);
 
@@ -248,7 +253,11 @@ juce::AudioProcessorEditor* BassAmpProcessor::createEditor()
 void BassAmpProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     if (auto xml = parameters.copyState().createXml())
+    {
+        xml->setAttribute (inputChannelAttribute, inputChannel.load());
+        xml->setAttribute (editorWidthAttribute, editorWidth);
         copyXmlToBinary (*xml, destData);
+    }
 }
 
 void BassAmpProcessor::setStateInformation (const void* data, int sizeInBytes)
@@ -256,8 +265,14 @@ void BassAmpProcessor::setStateInformation (const void* data, int sizeInBytes)
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
         if (xml->hasTagName (parameters.state.getType()))
         {
-            parameters.replaceState (juce::ValueTree::fromXml (*xml));
+            inputChannel = juce::jlimit (0, 1, xml->getIntAttribute (inputChannelAttribute));
+            editorWidth = xml->getIntAttribute (editorWidthAttribute);
+            xml->removeAttribute (inputChannelAttribute);
+            xml->removeAttribute (editorWidthAttribute);
+
+            presets.restoreState (juce::ValueTree::fromXml (*xml));
             presets.markUnmodified();
+            undoHistory.clear();
         }
 }
 

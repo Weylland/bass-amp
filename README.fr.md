@@ -17,7 +17,7 @@ Un bug, une idée ? [Ouvre une issue](https://github.com/Weylland/bass-amp/issue
 1. Télécharge la dernière version sur la [page des releases](https://github.com/Weylland/bass-amp/releases/latest) et installe-la (voir [Windows](#installation-windows) ou [macOS](#installation-macos)).
 2. Baisse le volume de tes enceintes ou de ton casque avant le premier lancement.
 3. Branche ta basse sur ta carte son et ouvre Bass Amp.
-4. Si tu n'entends rien, choisis ta carte son dans **Options → Audio/MIDI Settings** (en haut à gauche de la fenêtre).
+4. Si tu n'entends rien, choisis ta carte son dans **Options → Audio/MIDI Settings** (en haut à gauche de la fenêtre). Si ta basse est branchée sur l'entrée 2, clique sur **IN 1** sous le vumètre d'entrée et choisis **Entrée 2**.
 5. Choisis un son dans la liste des presets en haut, puis survole un réglage pendant une seconde : une bulle explique à quoi il sert.
 
 ## Installation (Windows)
@@ -69,7 +69,7 @@ Les potards de l'ampli :
 - **DI Blend** mélange le signal direct (avant l'ampli) avec l'ampli et le baffle, comme en studio.
 - **Lo Cut** (20 à 250 Hz) et **Hi Cut** (1,5 à 20 kHz), en haut de la tête : coupe-bas et coupe-haut en sortie d'ampli, pour resserrer les graves ou adoucir les aigus.
 
-Baffles : 8x10, 4x10, 1x15, 2x12, 2x10 Hi-Fi, Off (DI seul), ou **IR File**. **LOAD IR** charge une réponse impulsionnelle de baffle (WAV, AIFF, FLAC) et passe le baffle sur IR File. Le chemin du fichier est sauvegardé avec les presets utilisateur et la session du DAW. Sans IR chargée, IR File laisse passer le signal tel quel.
+Baffles : 8x10, 4x10, 1x15, 2x12, 2x10 Hi-Fi, Off (DI seul), ou **IR File**. **LOAD IR** charge une réponse impulsionnelle de baffle (WAV, AIFF, FLAC) et passe le baffle sur IR File. Le chemin du fichier est sauvegardé avec les presets utilisateur et la session du DAW. Sans IR chargée, IR File laisse passer le signal tel quel. Si le fichier a été déplacé ou supprimé, la tête affiche **Fichier introuvable** à côté de son nom.
 
 Les modèles sont calibrés au même volume perçu à gain égal (écart < 1 dB).
 
@@ -142,7 +142,14 @@ La rangée du bas :
 
 **SAVE** enregistre le son en cours dans `Documents/Bass Amp/Presets/<nom>.bassamp`. Les flèches passent d'un preset à l'autre. En VST3, les presets d'usine apparaissent aussi comme programmes dans le DAW.
 
-Une **\*** dorée devant le nom du preset indique que le son a été modifié depuis son chargement. Charger un autre preset demande alors confirmation, pour ne pas perdre les réglages par erreur.
+Une **\*** dorée devant le nom du preset indique que le son a été modifié depuis son chargement. Charger un autre preset demande alors confirmation, pour ne pas perdre les réglages par erreur. **SAVE** demande aussi avant de remplacer un preset du même nom.
+
+Le bouton à trois traits à côté de **SAVE** ouvre le menu des presets :
+
+- **Renommer...** et **Supprimer...** le preset utilisateur chargé (un preset supprimé va dans la corbeille).
+- **Exporter...** enregistre le son en cours dans un zip, avec ses fichiers IR et capture NAM, pour le partager.
+- **Importer...** ajoute un preset qu'on t'a envoyé (un fichier `.bassamp` ou un zip exporté) ; son IR et sa capture vont dans `Documents/Bass Amp/Presets/Files`.
+- **Ouvrir le dossier des presets**.
 
 Chaque module a aussi ses presets, qui ne touchent que lui :
 
@@ -154,15 +161,15 @@ Chaque module a aussi ses presets, qui ne touchent que lui :
 
 - Survole un élément (pédale, potard, bouton, écran) pendant une seconde : une bulle explique à quoi il sert et comment l'utiliser.
 - Double-clic sur un potard : retour à sa valeur par défaut. Survol ou glisser : la valeur s'affiche.
-- **Ctrl+Z** (**Cmd+Z** sur Mac) annule le dernier réglage, **Ctrl+Maj+Z** ou **Ctrl+Y** le rétablit.
-- La fenêtre se redimensionne (coin en bas à droite) de 70 % à 160 %, et s'ouvre à la taille de l'écran.
+- **Ctrl+Z** (**Cmd+Z** sur Mac) annule le dernier changement (un potard, un preset chargé, une pédale ajoutée ou déplacée), **Ctrl+Maj+Z** ou **Ctrl+Y** le rétablit. Les réglages pilotés en MIDI ne sont pas concernés.
+- La fenêtre se redimensionne (coin en bas à droite) de 70 % à 160 %, et se rouvre à sa dernière taille.
 - Plein écran (appli autonome) : le bouton en haut à droite ou **F11**, **Échap** pour revenir en fenêtre.
 - Langue : le bouton à gauche du plein écran (English, Français, Español, Deutsch, Italiano, Português). Les bulles d'aide, les messages et les menus sont traduits ; les noms des réglages restent en anglais, comme sur le vrai matériel. Par défaut, la langue du système.
 - **IN CLIP** : l'entrée de la carte son sature, baisse le gain de l'interface. **OUT CLIP** : la sortie sature, baisse le Master.
-- Clic sur le bloc LEVELS : efface les témoins CLIP.
+- Clic sur le bloc LEVELS : efface les témoins CLIP. Clic sur **IN 1** sous le vumètre d'entrée : passe sur l'entrée 2 de la carte son (ou le canal droit d'une piste stéréo du DAW).
 - **MUTE** dans l'accordeur coupe la sortie pendant l'accordage. La molette sur l'accordeur change le diapason (La = 430 à 450 Hz), le double-clic revient à 440 Hz.
 - **REC** enregistre le son de sortie (effets compris) en WAV stéréo 24 bits dans `Documents/Bass Amp/Recordings`. **STOP** termine le fichier, **FILES** ouvre le dossier sur le dernier enregistrement. L'écriture sur disque se fait sur un thread séparé, donc elle n'ajoute ni latence ni craquement.
-- Le numéro de version est affiché à côté du logo.
+- Le numéro de version est affiché à côté du logo. Au lancement, Bass Amp demande à GitHub si une version plus récente existe : si oui, un bouton doré en haut ouvre sa page de téléchargement. Rien sur toi n'est envoyé.
 
 ## Latence
 
@@ -192,9 +199,9 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;
 cmake --build build --parallel
 ```
 
-La CI GitHub Actions compile et teste les deux plateformes à chaque push. Un tag `v*` publie automatiquement les zips et l'installateur Windows dans une release.
+La CI GitHub Actions compile et teste les deux plateformes à chaque push, et vérifie les plugins avec [pluginval](https://github.com/Tracktion/pluginval) (et `auval` pour l'AU). Un tag `v*` publie automatiquement les zips et l'installateur Windows dans une release.
 
-Tests DSP (accordeur, effets, modèles d'ampli, tone stack, baffles et IR, égaliseur, limiteur, ordre des pédales, MIDI, looper, métronome, lecteur, captures NAM, presets, annulation, traductions, stabilité de la chaîne) : `test.bat`.
+Tests DSP (accordeur, effets, modèles d'ampli, tone stack, baffles et IR, égaliseur, limiteur, ordre des pédales, MIDI, looper, métronome, lecteur, captures NAM, presets avec export et import, annulation, choix de l'entrée, traductions, stabilité de la chaîne) : `test.bat`.
 `test.bat --snapshot ui.png [preset]` exporte une capture de l'interface, avec le preset d'usine choisi.
 `test.bat --artwork dossier` exporte l'icône (1024 px) et l'écran de démarrage. L'icône des builds est `Resources/icon.png`.
 

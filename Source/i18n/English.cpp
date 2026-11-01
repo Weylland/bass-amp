@@ -203,6 +203,9 @@ const Translations& englishTranslations()
             { "ui.previousPreset", "PREVIOUS PRESET" },
             { "ui.nextPreset", "NEXT PRESET" },
             { "ui.savePreset", "SAVE\nSaves the current sound as a preset, in Documents/Bass Amp/Presets." },
+            { "ui.presetMenu", "PRESET MENU\nRename or delete the user preset loaded now, import a preset someone sent you, "
+                               "export this sound to share it (a zip with its IR and capture files), or open the presets "
+                               "folder." },
             { "ui.record", "REC\nRecords what comes out of the app (effects included) to WAV, in Documents/Bass Amp/Recordings. "
                            "Click again to stop." },
             { "ui.recordings", "FILES\nOpens the recordings folder." },
@@ -210,8 +213,9 @@ const Translations& englishTranslations()
                           "and low B on a five-string. Mouse wheel on the screen: reference A from 430 to 450 Hz; "
                           "double-click: back to 440 Hz." },
             { "ui.mute", "MUTE\nMutes the output while you tune." },
-            { "ui.meters", "LEVELS\nIN: what comes in (your bass); OUT: what goes out; COMP: compressor reduction. "
-                           "Red CLIP: overload, lower your interface gain (IN) or the Master (OUT). Click to clear the lights." },
+            { "ui.meters", "LEVELS\nIN: what comes in (your bass); OUT: what goes out; COMP: compressor reduction. Red CLIP: "
+                           "overload, lower your interface gain (IN) or the Master (OUT). Click to clear the lights. Click IN "
+                           "1 / IN 2 to choose the interface input your bass is plugged into." },
             { "ui.eqPresets", "EQ PRESETS\nReady-made curves: vocals, guitar, round bass, slap... Only the equalizer changes." },
             { "ui.eqBasic", "BASIC\n9-band graphic equalizer, with faders." },
             { "ui.eqAdvanced", "ADVANCED\nParametric equalizer: 6 points to drag on the curve, more precise." },
@@ -222,6 +226,8 @@ const Translations& englishTranslations()
                           "here." },
             { "ui.language", "LANGUAGE\nThe language of the help bubbles and menus. Control names stay in English, "
                              "as on real gear." },
+            { "ui.update", "NEW VERSION\nA newer version of Bass Amp is out. Click to open its download page. Bass Amp checks "
+                           "once per launch by asking GitHub; nothing about you is sent." },
             { "ui.fullScreen", "FULL SCREEN\nFills the whole screen with the app. F11 does the same, Escape goes back to a window." },
             { "ui.loadIr", "LOAD IR\nLoads a cabinet impulse response (WAV, AIFF, FLAC) and sets the cabinet to IR File." },
             { "ui.loadNam", "LOAD NAM\nLoads a .nam amp capture (TONE3000 has thousands). "

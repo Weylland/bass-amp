@@ -32,6 +32,7 @@
 #include "dsp/Tuner.h"
 #include "dsp/WahEffect.h"
 #include "PedalChain.h"
+#include "UndoHistory.h"
 #include "presets/PresetManager.h"
 
 class BassAmpProcessor : public juce::AudioProcessor, private juce::ValueTree::Listener
@@ -77,13 +78,20 @@ public:
 
     // Set by the standalone app; read and written on the message thread only.
     juce::String audioDeviceInfo;
+    int deviceInputs = 0;
 
-    // Every parameter change, grouped by gesture: Ctrl+Z / Ctrl+Shift+Z in the editor.
-    juce::UndoManager undoManager;
+    // The interface input the bass is plugged into: 0 for input 1, 1 for input 2.
+    std::atomic<int> inputChannel { 0 };
+    int getNumSelectableInputs() const { return juce::jmin (2, deviceInputs > 0 ? deviceInputs : getTotalNumInputChannels()); }
+
+    // The editor's last width, so it reopens at the same size. Message thread.
+    int editorWidth = 0;
+
     juce::AudioProcessorValueTreeState parameters;
     PresetManager presets { parameters };
     PedalChain pedalChain { parameters };
     MidiLearn midiLearn { parameters, MidiLearn::getDefaultFile(), { Looper::midiActions.begin(), Looper::midiActions.end() } };
+    UndoHistory undoHistory { parameters, [this] { return midiLearn.getMappedIds(); } };
     Tuner tuner;
     PeakMeter inputMeter, outputMeter, ampMeter;
     SpectrumTap spectrum;

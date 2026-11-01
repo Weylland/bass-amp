@@ -204,6 +204,9 @@ const Translations& portugueseTranslations()
             { "ui.previousPreset", "PRESET ANTERIOR" },
             { "ui.nextPreset", "PRÓXIMO PRESET" },
             { "ui.savePreset", "SAVE\nSalva o som atual como preset, em Documentos/Bass Amp/Presets." },
+            { "ui.presetMenu", "MENU DE PRESETS\nRenomeie ou exclua o preset de usuário carregado, importe um preset que te "
+                               "enviaram, exporte este som para compartilhar (um zip com seus arquivos de IR e captura) ou "
+                               "abra a pasta de presets." },
             { "ui.record", "REC\nGrava o que sai do app (com os efeitos), em WAV, em Documentos/Bass Amp/Recordings. "
                            "Clique de novo para parar." },
             { "ui.recordings", "FILES\nAbre a pasta das gravações." },
@@ -211,8 +214,9 @@ const Translations& portugueseTranslations()
                           "D G, e B grave para um baixo de cinco cordas. Roda do mouse na tela: Lá de referência de 430 a 450 "
                           "Hz; duplo clique: volta para 440 Hz." },
             { "ui.mute", "MUTE\nCorta a saída enquanto você afina." },
-            { "ui.meters", "NÍVEIS\nIN: o que entra (seu baixo); OUT: o que sai; COMP: redução do compressor. "
-                           "CLIP vermelho: saturação, abaixe o ganho da interface (IN) ou o master (OUT). Clique para apagar as luzes." },
+            { "ui.meters", "NÍVEIS\nIN: o que entra (seu baixo); OUT: o que sai; COMP: redução do compressor. CLIP vermelho: "
+                           "saturação, abaixe o ganho da interface (IN) ou o master (OUT). Clique para apagar as luzes. Clique "
+                           "em IN 1 / IN 2 para escolher a entrada da interface onde o baixo está ligado." },
             { "ui.eqPresets", "PRESETS DE EQ\nCurvas prontas: voz, guitarra, baixo redondo, slap… Só o equalizador muda." },
             { "ui.eqBasic", "BASIC\nEqualizador gráfico de 9 bandas com faders." },
             { "ui.eqAdvanced", "ADVANCED\nEqualizador paramétrico: 6 pontos para arrastar na curva, mais preciso." },
@@ -223,6 +227,8 @@ const Translations& portugueseTranslations()
                           "nada para ajustar aqui." },
             { "ui.language", "IDIOMA\nO idioma dos balões de ajuda e dos menus. Os nomes dos controles ficam em inglês, "
                              "como no equipamento de verdade." },
+            { "ui.update", "NOVA VERSÃO\nSaiu uma versão mais recente do Bass Amp. Clique para abrir a página de download. O "
+                           "Bass Amp verifica uma vez por abertura consultando o GitHub; nada sobre você é enviado." },
             { "ui.fullScreen", "TELA CHEIA\nAmplia o app para a tela inteira. F11 faz o mesmo, Esc volta para a janela." },
             { "ui.loadIr", "LOAD IR\nCarrega uma resposta ao impulso de caixa (WAV, AIFF, FLAC) e coloca a caixa em IR File." },
             { "ui.loadNam", "LOAD NAM\nCarrega uma captura de amp .nam (o TONE3000 oferece milhares). "
@@ -290,6 +296,26 @@ const Translations& portugueseTranslations()
             { "No audio device: Options > Audio/MIDI Settings", "Nenhum dispositivo de áudio: Opções > Configurações de áudio/MIDI" },
             { "latency", "latência" },
             { "Language", "Idioma" },
+            { "available", "disponível" },
+            { "Rename...", "Renomear..." },
+            { "Delete...", "Excluir..." },
+            { "Import...", "Importar..." },
+            { "Export...", "Exportar..." },
+            { "Open presets folder", "Abrir a pasta de presets" },
+            { "Rename preset", "Renomear o preset" },
+            { "Rename", "Renomear" },
+            { "Delete preset?", "Excluir o preset?" },
+            { "Delete", "Excluir" },
+            { "Import a preset", "Importar um preset" },
+            { "Export this sound", "Exportar este som" },
+            { "This file isn't a Bass Amp preset.", "Este arquivo não é um preset do Bass Amp." },
+            { "File not found", "Arquivo não encontrado" },
+            { "Replace preset?", "Substituir o preset?" },
+            { "A preset with this name already exists.", "Já existe um preset com este nome." },
+            { "Replace", "Substituir" },
+            { "Audio input is muted to avoid feedback loop", "A entrada de áudio está silenciada para evitar microfonia" },
+            { "Settings...", "Configurações..." },
+            { "Input", "Entrada" },
             { "Options", "Opções" },
             { "Audio/MIDI Settings", "Configurações de áudio/MIDI" },
             { "Audio/MIDI Settings...", "Configurações de áudio/MIDI..." },

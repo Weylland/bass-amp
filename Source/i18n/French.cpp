@@ -203,6 +203,9 @@ const Translations& frenchTranslations()
             { "ui.previousPreset", "PRESET PRÉCÉDENT" },
             { "ui.nextPreset", "PRESET SUIVANT" },
             { "ui.savePreset", "SAVE\nEnregistre le son actuel comme preset, dans Documents/Bass Amp/Presets." },
+            { "ui.presetMenu", "MENU DES PRESETS\nRenomme ou supprime le preset utilisateur chargé, importe un preset qu'on "
+                               "t'a envoyé, exporte ce son pour le partager (un zip avec ses fichiers IR et capture), ou ouvre "
+                               "le dossier des presets." },
             { "ui.record", "REC\nEnregistre ce qui sort de l'appli (effets compris) en WAV, dans Documents/Bass Amp/Recordings. "
                            "Clique à nouveau pour arrêter." },
             { "ui.recordings", "FILES\nOuvre le dossier des enregistrements." },
@@ -210,8 +213,10 @@ const Translations& frenchTranslations()
                           "juste. Mi La Ré Sol, et Si grave sur une cinq cordes. Molette sur l'écran : La de référence de 430 "
                           "à 450 Hz ; double-clic : retour à 440 Hz." },
             { "ui.mute", "MUTE\nCoupe le son de sortie pendant que tu t'accordes." },
-            { "ui.meters", "NIVEAUX\nIN : ce qui entre (ta basse) ; OUT : ce qui sort ; COMP : réduction du compresseur. "
-                           "CLIP rouge : saturation, baisse le gain de ta carte son (IN) ou le Master (OUT). Clique pour effacer les témoins." },
+            { "ui.meters", "NIVEAUX\nIN : ce qui entre (ta basse) ; OUT : ce qui sort ; COMP : réduction du compresseur. CLIP "
+                           "rouge : saturation, baisse le gain de ta carte son (IN) ou le Master (OUT). Clique pour effacer "
+                           "les témoins. Clique sur IN 1 / IN 2 pour choisir l'entrée de la carte son où ta basse est "
+                           "branchée." },
             { "ui.eqPresets", "PRESETS D'EQ\nDes courbes toutes prêtes : voix, guitare, basse ronde, slap… Seul l'égaliseur change." },
             { "ui.eqBasic", "BASIC\nÉgaliseur graphique 9 bandes, avec des faders." },
             { "ui.eqAdvanced", "ADVANCED\nÉgaliseur paramétrique : 6 points à glisser sur la courbe, plus précis." },
@@ -221,6 +226,9 @@ const Translations& frenchTranslations()
             { "ui.power", "POWER\nLe voyant d'alimentation, comme sur un vrai ampli : il reste allumé tant que l'appli tourne. "
                           "Il n'y a rien à régler ici." },
             { "ui.language", "LANGUE\nLa langue des bulles d'aide et des menus. Les noms des réglages restent en anglais, comme sur le vrai matériel." },
+            { "ui.update", "NOUVELLE VERSION\nUne version plus récente de Bass Amp est sortie. Clique pour ouvrir sa page de "
+                           "téléchargement. Bass Amp vérifie une fois par lancement en interrogeant GitHub ; rien sur toi "
+                           "n'est envoyé." },
             { "ui.fullScreen", "PLEIN ÉCRAN\nAgrandit l'appli à tout l'écran. F11 fait pareil, Échap revient en fenêtre." },
             { "ui.loadIr", "LOAD IR\nCharge une réponse impulsionnelle de baffle (WAV, AIFF, FLAC) et passe le baffle sur IR File." },
             { "ui.loadNam", "LOAD NAM\nCharge une capture .nam d'ampli (TONE3000 en propose des milliers). "
@@ -288,6 +296,26 @@ const Translations& frenchTranslations()
             { "No audio device: Options > Audio/MIDI Settings", "Aucun périphérique audio : Options > Réglages audio/MIDI" },
             { "latency", "latence" },
             { "Language", "Langue" },
+            { "available", "disponible" },
+            { "Rename...", "Renommer..." },
+            { "Delete...", "Supprimer..." },
+            { "Import...", "Importer..." },
+            { "Export...", "Exporter..." },
+            { "Open presets folder", "Ouvrir le dossier des presets" },
+            { "Rename preset", "Renommer le preset" },
+            { "Rename", "Renommer" },
+            { "Delete preset?", "Supprimer le preset ?" },
+            { "Delete", "Supprimer" },
+            { "Import a preset", "Importer un preset" },
+            { "Export this sound", "Exporter ce son" },
+            { "This file isn't a Bass Amp preset.", "Ce fichier n'est pas un preset Bass Amp." },
+            { "File not found", "Fichier introuvable" },
+            { "Replace preset?", "Remplacer le preset ?" },
+            { "A preset with this name already exists.", "Un preset porte déjà ce nom." },
+            { "Replace", "Remplacer" },
+            { "Audio input is muted to avoid feedback loop", "L'entrée audio est coupée pour éviter le larsen" },
+            { "Settings...", "Réglages..." },
+            { "Input", "Entrée" },
             { "Options", "Options" },
             { "Audio/MIDI Settings", "Réglages audio/MIDI" },
             { "Audio/MIDI Settings...", "Réglages audio/MIDI..." },

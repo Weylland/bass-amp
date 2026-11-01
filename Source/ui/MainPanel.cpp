@@ -65,6 +65,10 @@ MainPanel::MainPanel (BassAmpProcessor& processorToUse)
     addChildComponent (fullScreenButton);
     fullScreenButton.setTooltip (Help::get ("ui.fullScreen"));
     fullScreenButton.onClick = [this] { if (onToggleFullScreen != nullptr) onToggleFullScreen(); };
+    addChildComponent (updateButton);
+    updateButton.setColour (juce::TextButton::textColourOffId, Palette::gold);
+    updateButton.setTooltip (Help::get ("ui.update"));
+    updateButton.onClick = [this] { juce::URL (updateCheck->getNewerRelease().url).launchInDefaultBrowser(); };
     addAndMakeVisible (languageButton);
     languageButton.setButtonText (Language::getCurrent().toUpperCase());
     languageButton.setTooltip (Help::get ("ui.language"));
@@ -144,6 +148,15 @@ void MainPanel::timerCallback()
         repaint (headerArea);
     }
 
+    if (const auto release = updateCheck->getNewerRelease(); release.version != shownUpdate)
+    {
+        shownUpdate = release.version;
+        updateButton.setButtonText ("v" + release.version + " " + Language::tr ("available"));
+        updateButton.setVisible (true);
+        resized();
+        repaint (headerArea);
+    }
+
     if (const auto mapped = processor.midiLearn.getMappedIds(); mapped != shownMapped)
     {
         shownMapped = mapped;
@@ -172,7 +185,7 @@ void MainPanel::mouseDown (const juce::MouseEvent& event)
 {
     if (! event.mods.isPopupMenu())
     {
-        processor.undoManager.beginNewTransaction();
+        processor.undoHistory.checkpoint();
         return;
     }
 
@@ -265,7 +278,7 @@ void MainPanel::paint (juce::Graphics& g)
     g.setFont (Fonts::display (12.0f, false));
     auto deviceInfo = header.withLeft (recorderBar.getRight() + margin);
 
-    deviceInfo.setRight (languageButton.getX() - margin);
+    deviceInfo.setRight ((updateButton.isVisible() ? updateButton.getX() : languageButton.getX()) - margin);
 
     g.drawFittedText (shownDeviceInfo, deviceInfo, juce::Justification::centredRight, 1, 0.8f);
 }
@@ -280,6 +293,8 @@ void MainPanel::resized()
     fullScreenButton.setBounds (juce::Rectangle<int> (30, 30).withPosition (headerArea.getRight() - 8 - 30, (headerHeight - 30) / 2 + 2));
     const auto languageRight = fullScreenButton.isVisible() ? fullScreenButton.getX() - 8 : fullScreenButton.getRight();
     languageButton.setBounds (juce::Rectangle<int> (40, 30).withPosition (languageRight - 40, (headerHeight - 30) / 2 + 2));
+    const auto updateWidth = juce::roundToInt (juce::GlyphArrangement::getStringWidth (Fonts::label (13.0f), updateButton.getButtonText())) + 24;
+    updateButton.setBounds (juce::Rectangle<int> (updateWidth, 30).withPosition (languageButton.getX() - 8 - updateWidth, (headerHeight - 30) / 2 + 2));
 
     area.removeFromTop (6);
     preBoard.setBounds (area.removeFromTop (236));

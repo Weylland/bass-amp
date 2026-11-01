@@ -164,7 +164,12 @@ juce::String AmpHead::impulseResponseText() const
         return {};
 
     const auto file = processor.getCabinetImpulseResponse();
-    return file.existsAsFile() ? file.getFileNameWithoutExtension() : Language::tr ("no file loaded");
+
+    if (file == juce::File())
+        return Language::tr ("no file loaded");
+
+    return file.existsAsFile() ? file.getFileNameWithoutExtension()
+                               : file.getFileNameWithoutExtension() + " - " + Language::tr ("File not found");
 }
 
 bool AmpHead::showsCapture() const
@@ -179,8 +184,11 @@ juce::String AmpHead::captureText() const
 
     const auto file = processor.getCapture();
 
-    if (! file.existsAsFile())
+    if (file == juce::File())
         return Language::tr ("No capture loaded");
+
+    if (! file.existsAsFile())
+        return file.getFileNameWithoutExtension() + "\n" + Language::tr ("File not found");
 
     const auto capturedRate = processor.getCaptureSampleRate();
 

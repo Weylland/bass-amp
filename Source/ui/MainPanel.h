@@ -3,6 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "../PluginProcessor.h"
+#include "../UpdateCheck.h"
 #include "AmpHead.h"
 #include "EqPanel.h"
 #include "LevelMeters.h"
@@ -58,6 +59,9 @@ private:
     juce::String shownDeviceInfo;
     juce::String shownLearning;
     juce::StringArray shownMapped;
+    juce::String shownUpdate;
+    juce::SharedResourcePointer<UpdateCheck> updateCheck;
+    juce::TextButton updateButton;
 
     PresetBar presetBar;
     RecorderBar recorderBar;

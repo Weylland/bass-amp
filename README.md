@@ -17,7 +17,7 @@ Found a bug or have an idea? [Open an issue](https://github.com/Weylland/bass-am
 1. Download the latest version from the [releases page](https://github.com/Weylland/bass-amp/releases/latest) and install it (see [Windows](#install-windows) or [macOS](#install-macos)).
 2. Turn your speakers or headphones down before the first launch.
 3. Plug your bass into your audio interface and open Bass Amp.
-4. If you hear nothing, choose your interface in **Options → Audio/MIDI Settings** (top left of the window).
+4. If you hear nothing, choose your interface in **Options → Audio/MIDI Settings** (top left of the window). If your bass is plugged into input 2, click **IN 1** under the input meter and pick **Input 2**.
 5. Pick a sound in the preset list at the top, then hover any control for a second: a bubble explains what it does.
 
 ## Install (Windows)
@@ -69,7 +69,7 @@ Amp controls:
 - **DI Blend** mixes the direct signal (before the amp) with the amp and cabinet, as in a studio.
 - **Lo Cut** (20 to 250 Hz) and **Hi Cut** (1.5 to 20 kHz), at the top of the head: high-pass and low-pass filters on the amp output, to tighten the lows or soften the highs.
 
-Cabinets: 8x10, 4x10, 1x15, 2x12, 2x10 Hi-Fi, Off (DI only), or **IR File**. **LOAD IR** loads a cabinet impulse response (WAV, AIFF, FLAC) and switches the cabinet to IR File. The file path is saved with user presets and the DAW session. With no IR loaded, IR File lets the signal through unchanged.
+Cabinets: 8x10, 4x10, 1x15, 2x12, 2x10 Hi-Fi, Off (DI only), or **IR File**. **LOAD IR** loads a cabinet impulse response (WAV, AIFF, FLAC) and switches the cabinet to IR File. The file path is saved with user presets and the DAW session. With no IR loaded, IR File lets the signal through unchanged. If the file was moved or deleted, the head shows **File not found** next to its name.
 
 The models are matched to the same perceived loudness at equal gain (less than 1 dB apart).
 
@@ -142,7 +142,14 @@ The bottom row:
 
 **SAVE** saves the current sound in `Documents/Bass Amp/Presets/<name>.bassamp`. The arrows step through the presets. In VST3, the factory presets also show up as programs in the DAW.
 
-A gold **\*** before the preset name means the sound was changed since it was loaded. Loading another preset then asks for confirmation, so changes aren't lost by accident.
+A gold **\*** before the preset name means the sound was changed since it was loaded. Loading another preset then asks for confirmation, so changes aren't lost by accident. **SAVE** also asks before replacing a preset of the same name.
+
+The three-line button next to **SAVE** opens the preset menu:
+
+- **Rename...** and **Delete...** the user preset loaded now (deleted presets go to the recycle bin).
+- **Export...** saves the current sound as a zip, with its IR and NAM capture files, to share it.
+- **Import...** adds a preset someone sent you (a `.bassamp` file or an exported zip); its IR and capture go into `Documents/Bass Amp/Presets/Files`.
+- **Open presets folder**.
 
 Each module also has its own presets, which only touch it:
 
@@ -154,15 +161,15 @@ Each module also has its own presets, which only touch it:
 
 - Hover an element (pedal, knob, button, screen) for a second: a bubble explains what it's for and how to use it.
 - Double-click a knob: back to its default value. Hover or drag: the value shows.
-- **Ctrl+Z** (**Cmd+Z** on Mac) undoes the last change, **Ctrl+Shift+Z** or **Ctrl+Y** redoes it.
-- The window resizes (bottom right corner) from 70 % to 160 %, and opens at the size of the screen.
+- **Ctrl+Z** (**Cmd+Z** on Mac) undoes the last change (a knob, a preset load, a pedal added or moved), **Ctrl+Shift+Z** or **Ctrl+Y** redoes it. Controls driven by MIDI are left out.
+- The window resizes (bottom right corner) from 70 % to 160 %, and reopens at its last size.
 - Full screen (standalone app): the button at the top right or **F11**, **Esc** to go back to a window.
 - Language: the button left of full screen (English, Français, Español, Deutsch, Italiano, Português). Help bubbles, messages and menus are translated; control names stay in English, as on real gear. By default, the system language.
 - **IN CLIP**: the interface input clips, lower the interface gain. **OUT CLIP**: the output clips, lower the Master.
-- Click the LEVELS block: clears the CLIP lights.
+- Click the LEVELS block: clears the CLIP lights. Click **IN 1** under the input meter to use input 2 of the interface instead (or the right channel of a stereo DAW track).
 - **MUTE** in the tuner silences the output while tuning. The mouse wheel on the tuner changes the reference pitch (A = 430 to 450 Hz), a double-click goes back to 440 Hz.
 - **REC** records the output sound (effects included) as a 24-bit stereo WAV in `Documents/Bass Amp/Recordings`. **STOP** finishes the file, **FILES** opens the folder on the last recording. Writing to disk happens on a separate thread, so it adds no latency or crackles.
-- The version number is shown next to the logo.
+- The version number is shown next to the logo. At launch, Bass Amp asks GitHub whether a newer version exists: if so, a gold button at the top opens its download page. Nothing about you is sent.
 
 ## Latency
 
@@ -192,9 +199,9 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;
 cmake --build build --parallel
 ```
 
-GitHub Actions CI builds and tests both platforms on every push. A `v*` tag publishes the zips and the Windows installer in a release.
+GitHub Actions CI builds and tests both platforms on every push, and checks the plugins with [pluginval](https://github.com/Tracktion/pluginval) (and `auval` for the AU). A `v*` tag publishes the zips and the Windows installer in a release.
 
-DSP tests (tuner, effects, amp models, tone stack, cabinets and IRs, equalizer, limiter, pedal order, MIDI, looper, metronome, player, NAM captures, presets, undo, translations, chain stability): `test.bat`.
+DSP tests (tuner, effects, amp models, tone stack, cabinets and IRs, equalizer, limiter, pedal order, MIDI, looper, metronome, player, NAM captures, presets with export and import, undo, input choice, translations, chain stability): `test.bat`.
 `test.bat --snapshot ui.png [preset]` exports a picture of the interface, with the chosen factory preset.
 `test.bat --artwork folder` exports the icon (1024 px) and the splash screen. The build icon is `Resources/icon.png`.
 

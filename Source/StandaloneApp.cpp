@@ -131,6 +131,34 @@ namespace
     }
    #endif
 
+    // JUCE's window around the editor (the Options button, the muted input notice) draws its
+    // texts in English: each keeps its English text aside and shows its translation.
+    void translateWrapper (juce::Component& component)
+    {
+        const auto translated = [] (juce::Component& child, const juce::String& shown)
+        {
+            auto& properties = child.getProperties();
+
+            if (! properties.contains ("englishText"))
+                properties.set ("englishText", shown);
+
+            return Language::tr (properties["englishText"].toString().toRawUTF8());
+        };
+
+        for (auto* child : component.getChildren())
+        {
+            if (dynamic_cast<juce::AudioProcessorEditor*> (child) != nullptr)
+                continue;
+
+            if (auto* button = dynamic_cast<juce::TextButton*> (child))
+                button->setButtonText (translated (*button, button->getButtonText()));
+            else if (auto* label = dynamic_cast<juce::Label*> (child))
+                label->setText (translated (*label, label->getText()), juce::dontSendNotification);
+
+            translateWrapper (*child);
+        }
+    }
+
     juce::String describe (juce::AudioIODevice& device)
     {
         const auto sampleRate = device.getCurrentSampleRate();
@@ -161,7 +189,14 @@ public:
     const juce::String getApplicationName() override { return juce::CharPointer_UTF8 (JucePlugin_Name); }
     const juce::String getApplicationVersion() override { return JucePlugin_VersionString; }
     bool moreThanOneInstanceAllowed() override { return false; }
-    void anotherInstanceStarted (const juce::String&) override {}
+    void anotherInstanceStarted (const juce::String&) override
+    {
+        if (mainWindow != nullptr)
+        {
+            mainWindow->setMinimised (false);
+            mainWindow->toFront (true);
+        }
+    }
 
     void initialise (const juce::String&) override
     {
@@ -237,19 +272,10 @@ private:
         if (processor == nullptr)
             return;
 
-        // JUCE draws the title bar's Options button without translating it.
-        const auto options = Language::tr ("Options");
-
-        for (auto* child : mainWindow->getChildren())
-            if (auto* button = dynamic_cast<juce::TextButton*> (child); button != nullptr && button->getButtonText() != options)
-                for (const auto& info : Language::available)
-                    if (button->getButtonText() == (info.translations().messages.count ("Options") > 0
-                                                        ? juce::String::fromUTF8 (info.translations().messages.at ("Options"))
-                                                        : juce::String ("Options")))
-                        button->setButtonText (options);
-
+        translateWrapper (*mainWindow);
         auto* device = mainWindow->getDeviceManager().getCurrentAudioDevice();
         processor->audioDeviceInfo = device != nullptr ? describe (*device) : Language::tr ("No audio device: Options > Audio/MIDI Settings");
+        processor->deviceInputs = device != nullptr ? device->getActiveInputChannels().countNumberOfSetBits() : 0;
     }
 
     juce::ApplicationProperties appProperties;

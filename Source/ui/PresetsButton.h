@@ -2,7 +2,8 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-// The button that opens a module's preset menu: the three lines every pedal shows, then PRESETS.
+// The button that opens a preset menu: the three lines every pedal shows, then PRESETS, or the
+// lines alone when the button has no text.
 class PresetsButton : public juce::TextButton
 {
 public:
@@ -22,11 +23,18 @@ public:
         auto& theme = getLookAndFeel();
         theme.drawButtonBackground (g, *this, findColour (buttonColourId), shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
 
+        g.setColour (findColour (textColourOffId));
+
+        if (getButtonText().isEmpty())
+        {
+            drawIcon (g, getLocalBounds().toFloat().withSizeKeepingCentre (12.0f, 9.0f));
+            return;
+        }
+
         const auto font = theme.getTextButtonFont (*this, getHeight());
         const auto textWidth = juce::GlyphArrangement::getStringWidth (font, getButtonText());
         auto content = getLocalBounds().toFloat().withSizeKeepingCentre (textWidth + 16.0f, (float) getHeight());
 
-        g.setColour (findColour (textColourOffId));
         drawIcon (g, content.removeFromLeft (10.0f).withSizeKeepingCentre (10.0f, 8.0f));
         g.setFont (font);
         g.drawText (getButtonText(), content, juce::Justification::centredRight);

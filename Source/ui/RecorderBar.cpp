@@ -1,6 +1,7 @@
 #include "RecorderBar.h"
 #include "AmpLookAndFeel.h"
 #include "Help.h"
+#include "Message.h"
 
 namespace
 {
@@ -44,7 +45,10 @@ void RecorderBar::toggleRecording()
     else
     {
         const auto name = "Bass Amp " + juce::Time::getCurrentTime().formatted ("%Y-%m-%d %H-%M-%S") + ".wav";
-        recorder.start (Recorder::getDefaultDirectory().getChildFile (name));
+        const auto file = Recorder::getDefaultDirectory().getChildFile (name);
+
+        if (! recorder.start (file))
+            Message::show ("Error whilst saving", "Couldn't write to the specified file!", file.getFullPathName());
     }
 
     timerCallback();
