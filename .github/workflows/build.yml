@@ -88,13 +88,13 @@ jobs:
       - name: Test
         run: build\BassAmpTests_artefacts\Release\BassAmpTests.exe
 
+      # bash waits for pluginval, a GUI program, and gets its exit code; PowerShell doesn't.
       - name: Validate plugin
-        shell: pwsh
+        shell: bash
         run: |
-          Invoke-WebRequest https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Windows.zip -OutFile pluginval.zip
-          Expand-Archive pluginval.zip -DestinationPath pluginval
-          & pluginval\pluginval.exe --strictness-level 5 --validate-in-process "build\BassAmp_artefacts\Release\VST3\Bass Amp.vst3"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          curl -sSL -o pluginval.zip https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Windows.zip
+          7z x -y -opluginval pluginval.zip > /dev/null
+          ./pluginval/pluginval.exe --strictness-level 5 --validate-in-process "build/BassAmp_artefacts/Release/VST3/Bass Amp.vst3"
 
       - name: Package
         shell: bash
