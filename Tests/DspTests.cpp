@@ -1240,6 +1240,89 @@ namespace
         float run (int blocks, float input) { return run (blocks, [input] (int) { return input; }); }
     };
 
+    void testSeparateTracks()
+    {
+        // A 300 Hz song in the player and a 55 Hz bass: each file holds only its own. Over 0.2 s, both
+        // fall on whole cycles, so the bass doesn't leak into the song's measure. Faster than real
+        // time the player can miss a block, so the Player file is checked by its peak: the song alone
+        // never goes above 0.21.
+        const auto directory = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("BassAmpSplitTest");
+        directory.deleteRecursively();
+        const auto song = directory.getChildFile ("song.wav");
+        directory.createDirectory();
+
+        {
+            std::unique_ptr<juce::AudioFormatWriter> writer (juce::WavAudioFormat().createWriterFor (new juce::FileOutputStream (song), testSampleRate, 2, 24, {}, 0));
+            juce::AudioBuffer<float> tone (2, (int) testSampleRate * 3);
+
+            for (int i = 0; i < tone.getNumSamples(); ++i)
+                for (int channel = 0; channel < 2; ++channel)
+                    tone.setSample (channel, i, sine (300.0f, 0.3f) (i));
+
+            writer->writeFromAudioSampleBuffer (tone, 0, tone.getNumSamples());
+        }
+
+        auto processor = makeProcessor();
+        processor->prepareToPlay (testSampleRate, blockSize);
+        const auto loaded = processor->backingTrack.load (song);
+        processor->backingTrack.play();
+        juce::Thread::sleep (300);
+        processor->recorder.separateTracks.store (true);
+        const auto started = processor->recorder.start (directory.getChildFile ("Take.wav"));
+        render (*processor, bassTone (55.0f, 0.3f), 1.0);
+        processor->recorder.stop();
+        const auto files = processor->recorder.getLastFiles();
+
+        juce::AudioFormatManager formats;
+        formats.registerBasicFormats();
+
+        // The level of a frequency in a file, from the middle of it.
+        auto levelAt = [&formats] (const juce::File& file, float frequency)
+        {
+            std::unique_ptr<juce::AudioFormatReader> reader (formats.createReaderFor (file));
+
+            if (reader == nullptr || reader->bitsPerSample != 32)
+                return -1.0f;
+
+            juce::AudioBuffer<float> audio (1, (int) reader->lengthInSamples);
+            reader->read (&audio, 0, audio.getNumSamples(), 0, true, false);
+            const auto start = audio.getNumSamples() / 2, count = (int) testSampleRate / 5;
+            auto re = 0.0, im = 0.0;
+
+            for (int i = start; i < start + count; ++i)
+            {
+                const auto phase = juce::MathConstants<double>::twoPi * frequency * i / testSampleRate;
+                re += audio.getSample (0, i) * std::cos (phase);
+                im += audio.getSample (0, i) * std::sin (phase);
+            }
+
+            return (float) (2.0 * std::sqrt (re * re + im * im) / count);
+        };
+
+        const auto bassInBass = files.size() == 2 ? levelAt (files[0], 55.0f) : -1.0f;
+        const auto songInBass = files.size() == 2 ? levelAt (files[0], 300.0f) : -1.0f;
+        const auto songInPlayer = files.size() == 2 ? levelAt (files[1], 300.0f) : -1.0f;
+        auto playerPeak = 1.0f;
+
+        if (files.size() == 2)
+            if (std::unique_ptr<juce::AudioFormatReader> reader (formats.createReaderFor (files[1])); reader != nullptr)
+            {
+                juce::AudioBuffer<float> audio ((int) reader->numChannels, (int) reader->lengthInSamples);
+                reader->read (&audio, 0, audio.getNumSamples(), 0, true, true);
+                playerPeak = audio.getMagnitude (0, audio.getNumSamples());
+            }
+
+        check (loaded && started && files.size() == 2 && files[0].getFileName() == "Take - Bass.wav" && files[1].getFileName() == "Take - Player.wav"
+                   && bassInBass > 0.01f && songInPlayer > 0.1f && songInBass >= 0.0f && songInBass < 1.0e-3f && playerPeak < 0.215f,
+               "recorder splits the bass and the player",
+               "bass " + juce::String (bassInBass, 4) + " / " + juce::String (songInBass, 6) + ", player " + juce::String (songInPlayer, 4)
+                   + ", peak " + juce::String (playerPeak, 4));
+
+        processor->backingTrack.stop();
+        processor->releaseResources();
+        directory.deleteRecursively();
+    }
+
     void testLooper()
     {
         LooperRig rig;
@@ -1609,6 +1692,7 @@ int main (int argc, char* argv[])
     testInputChannel();
     testUpdateVersions();
     testRecorder();
+    testSeparateTracks();
     testLooper();
     testLooperStart();
     testLooperTrim();

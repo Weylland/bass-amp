@@ -212,6 +212,9 @@ const Translations& germanTranslations()
             { "ui.record", "REC\nNimmt auf, was aus der App kommt (mit Effekten), als WAV in Dokumente/Bass Amp/Recordings. "
                            "Erneut klicken zum Stoppen." },
             { "ui.recordings", "FILES\nÖffnet den Ordner mit den Aufnahmen." },
+            { "ui.recordSplit", "SPLIT\nAus: REC nimmt eine Datei auf, den Mix, den du hörst. An: zwei Dateien nebeneinander, "
+                                "„Bass“ (dein Sound mit seinen Loops) und „Player“ (der Song), um sie später in einer DAW "
+                                "abzumischen oder zu bearbeiten. Vor REC einstellen." },
             { "ui.tuner", "STIMMGERÄT\nSpiel eine leere Saite: die Note erscheint und die Nadel steht mittig, wenn die Saite "
                           "stimmt. E A D G, und tiefes H (B) beim Fünfsaiter. Mausrad auf dem Display: Kammerton A von 430 bis "
                           "450 Hz; Doppelklick: zurück auf 440 Hz." },

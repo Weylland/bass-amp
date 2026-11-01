@@ -115,6 +115,9 @@ void BassAmpProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     spectrum.prepare (sampleRate);
     recorder.prepare (sampleRate, getTotalNumOutputChannels());
     backingTrack.prepare (sampleRate, samplesPerBlock);
+    rigTrack.setSize (juce::jmax (1, getTotalNumOutputChannels()), samplesPerBlock);
+    playerTrack.setSize (juce::jmax (1, getTotalNumOutputChannels()), samplesPerBlock);
+    playerTrack.clear();
     looper.prepare (sampleRate, getTotalNumOutputChannels());
     metronome.prepare (sampleRate);
     gate.prepare (sampleRate);
@@ -232,13 +235,30 @@ void BassAmpProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mid
                 buffer.addSample (channel, i, backingTrack.getSample (channel, i));
 
     looper.process (outputBlock, metronome);
+
+    // The looper only adds its loops, so the rig with its loops is the output less the player.
+    if (recorder.separateTracks.load() && numSamples <= rigTrack.getNumSamples())
+    {
+        for (int channel = 0; channel < numOutputs; ++channel)
+        {
+            rigTrack.copyFrom (channel, 0, buffer, channel, 0, numSamples);
+
+            for (int i = 0; i < numSamples; ++i)
+            {
+                const auto player = reamp ? 0.0f : backingTrack.getSample (channel, i);
+                playerTrack.setSample (channel, i, player);
+                rigTrack.addSample (channel, i, -player);
+            }
+        }
+    }
+
     limiter.process (outputBlock);
 
     for (int channel = 0; channel < numOutputs; ++channel)
         outputMeter.push (buffer.getReadPointer (channel), numSamples);
 
     spectrum.push (buffer.getReadPointer (0), numSamples);
-    recorder.push (buffer, numOutputs, numSamples);
+    recorder.push (buffer, rigTrack, playerTrack, numOutputs, numSamples);
     metronome.process (outputBlock);
 
     if (muteOutput.load())

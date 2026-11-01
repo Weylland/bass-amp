@@ -211,6 +211,9 @@ const Translations& italianTranslations()
             { "ui.record", "REC\nRegistra ciò che esce dall'app (con gli effetti), in WAV, in Documenti/Bass Amp/Recordings. "
                            "Clicca di nuovo per fermare." },
             { "ui.recordings", "FILES\nApre la cartella delle registrazioni." },
+            { "ui.recordSplit", "SPLIT\nSpento: REC registra un solo file, il mix che senti. Acceso: due file affiancati, "
+                                "«Bass» (il tuo suono con i suoi loop) e «Player» (il brano), per bilanciarli o rielaborarli "
+                                "dopo in una DAW. Da impostare prima di REC." },
             { "ui.tuner", "ACCORDATORE\nSuona una corda a vuoto: la nota appare e l'ago è centrato quando è accordata. E A D "
                           "G, e B grave per un cinque corde. Rotella sullo schermo: La di riferimento da 430 a 450 Hz; doppio "
                           "clic: torna a 440 Hz." },

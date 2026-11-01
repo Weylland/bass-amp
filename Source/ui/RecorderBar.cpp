@@ -21,10 +21,14 @@ RecorderBar::RecorderBar (Recorder& recorderToUse)
     recordButton.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
     recordButton.onClick = [this] { toggleRecording(); };
     filesButton.onClick = [this] { showRecordings(); };
+    splitSwitch.setToggleState (recorder.separateTracks.load(), juce::dontSendNotification);
+    splitSwitch.onClick = [this] { recorder.separateTracks.store (splitSwitch.getToggleState()); };
     recordButton.setTooltip (Help::get ("ui.record"));
     filesButton.setTooltip (Help::get ("ui.recordings"));
+    splitSwitch.setTooltip (Help::get ("ui.recordSplit"));
 
     addAndMakeVisible (recordButton);
+    addAndMakeVisible (splitSwitch);
     addAndMakeVisible (filesButton);
 
     timerCallback();
@@ -75,6 +79,7 @@ void RecorderBar::timerCallback()
     const auto recording = recorder.isRecording();
     recordButton.setToggleState (recording, juce::dontSendNotification);
     recordButton.setButtonText (recording ? "STOP" : "REC");
+    splitSwitch.setEnabled (! recording);
 
     const auto text = recording ? formatTime (recorder.getRecordedSeconds()) : timeText;
 
@@ -106,5 +111,7 @@ void RecorderBar::resized()
     area.removeFromLeft (8);
     timeArea = area.removeFromLeft (62);
     area.removeFromLeft (4);
+    splitSwitch.setBounds (area.removeFromLeft (64).withSizeKeepingCentre (64, 24));
+    area.removeFromLeft (8);
     filesButton.setBounds (area.removeFromLeft (58));
 }

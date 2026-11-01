@@ -22,20 +22,46 @@ void Recorder::prepare (double newSampleRate, int newNumChannels)
     numChannels.store (juce::jmax (1, newNumChannels));
 }
 
-void Recorder::push (const juce::AudioBuffer<float>& buffer, int channelsToWrite, int numSamples)
+void Recorder::push (const juce::AudioBuffer<float>& mix, const juce::AudioBuffer<float>& rig, const juce::AudioBuffer<float>& player,
+                     int channelsToWrite, int numSamples)
 {
     const juce::SpinLock::ScopedTryLockType lock (writerLock);
 
-    if (! lock.isLocked())
+    if (! lock.isLocked() || ! recording.load())
         return;
 
-    if (auto* writer = activeWriter.load())
-    {
-        if (channelsToWrite >= numChannels.load() && writer->write (buffer.getArrayOfReadPointers(), numSamples))
-            recordedSamples += numSamples;
-        else
-            droppedSamples += numSamples;
-    }
+    const auto separate = writers.size() == 2;
+    auto written = channelsToWrite >= numChannels.load();
+
+    if (separate)
+        written = written && numSamples <= juce::jmin (rig.getNumSamples(), player.getNumSamples())
+                  && writers[0]->write (rig.getArrayOfReadPointers(), numSamples)
+                  && writers[1]->write (player.getArrayOfReadPointers(), numSamples);
+    else
+        written = written && writers[0]->write (mix.getArrayOfReadPointers(), numSamples);
+
+    if (written)
+        recordedSamples += numSamples;
+    else
+        droppedSamples += numSamples;
+}
+
+std::unique_ptr<juce::AudioFormatWriter::ThreadedWriter> Recorder::createWriter (const juce::File& file, int bitsPerSample)
+{
+    file.deleteFile();
+    auto stream = file.createOutputStream();
+
+    if (stream == nullptr)
+        return {};
+
+    const auto rate = sampleRate.load();
+    auto* writer = juce::WavAudioFormat().createWriterFor (stream.get(), rate, (unsigned int) numChannels.load(), bitsPerSample, {}, 0);
+
+    if (writer == nullptr)
+        return {};
+
+    stream.release();
+    return std::make_unique<juce::AudioFormatWriter::ThreadedWriter> (writer, writerThread, (int) (rate * bufferSeconds));
 }
 
 bool Recorder::start (const juce::File& file)
@@ -45,37 +71,51 @@ bool Recorder::start (const juce::File& file)
     if (! file.getParentDirectory().createDirectory())
         return false;
 
-    file.deleteFile();
-    auto stream = file.createOutputStream();
+    juce::Array<juce::File> files;
+    auto bitsPerSample = 24;
 
-    if (stream == nullptr)
-        return false;
+    if (separateTracks.load())
+    {
+        for (const auto* suffix : { " - Bass", " - Player" })
+            files.add (file.getSiblingFile (file.getFileNameWithoutExtension() + suffix + file.getFileExtension()));
 
-    const auto rate = sampleRate.load();
-    auto* writer = juce::WavAudioFormat().createWriterFor (stream.get(), rate, (unsigned int) numChannels.load(), 24, {}, 0);
+        bitsPerSample = 32;
+    }
+    else
+    {
+        files.add (file);
+    }
 
-    if (writer == nullptr)
-        return false;
+    std::vector<std::unique_ptr<juce::AudioFormatWriter::ThreadedWriter>> created;
 
-    stream.release();
-    threadedWriter = std::make_unique<juce::AudioFormatWriter::ThreadedWriter> (writer, writerThread, (int) (rate * bufferSeconds));
+    for (const auto& target : files)
+    {
+        created.push_back (createWriter (target, bitsPerSample));
+
+        if (created.back() == nullptr)
+            return false;
+    }
+
     recordedSamples = 0;
     droppedSamples = 0;
-    lastFile = file;
+    lastFiles = files;
 
     const juce::SpinLock::ScopedLockType lock (writerLock);
-    activeWriter = threadedWriter.get();
+    writers = std::move (created);
+    recording = true;
     return true;
 }
 
 void Recorder::stop()
 {
+    std::vector<std::unique_ptr<juce::AudioFormatWriter::ThreadedWriter>> finished;
+
     {
         const juce::SpinLock::ScopedLockType lock (writerLock);
-        activeWriter = nullptr;
+        recording = false;
+        finished = std::move (writers);
+        writers.clear();
     }
-
-    threadedWriter.reset();
 }
 
 double Recorder::getRecordedSeconds() const

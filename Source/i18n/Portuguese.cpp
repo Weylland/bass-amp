@@ -211,6 +211,9 @@ const Translations& portugueseTranslations()
             { "ui.record", "REC\nGrava o que sai do app (com os efeitos), em WAV, em Documentos/Bass Amp/Recordings. "
                            "Clique de novo para parar." },
             { "ui.recordings", "FILES\nAbre a pasta das gravações." },
+            { "ui.recordSplit", "SPLIT\nDesligado: REC grava um só arquivo, a mixagem que você ouve. Ligado: dois arquivos "
+                                "lado a lado, \"Bass\" (seu som com os loops) e \"Player\" (a música), para equilibrá-los ou "
+                                "retrabalhá-los depois numa DAW. Ajuste antes do REC." },
             { "ui.tuner", "AFINADOR\nToque uma corda solta: a nota aparece e a agulha fica no centro quando está afinada. E A "
                           "D G, e B grave para um baixo de cinco cordas. Roda do mouse na tela: Lá de referência de 430 a 450 "
                           "Hz; duplo clique: volta para 440 Hz." },

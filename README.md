@@ -174,6 +174,7 @@ In each of these menus, **Save...** adds the current settings of that module und
 - Click the LEVELS block: clears the CLIP lights. Click **IN 1** under the input meter to use input 2 of the interface instead (or the right channel of a stereo DAW track).
 - **MUTE** in the tuner silences the output while tuning. The mouse wheel on the tuner changes the reference pitch (A = 430 to 450 Hz), a double-click goes back to 440 Hz.
 - **REC** records the output sound (effects included) as a 24-bit stereo WAV in `Documents/Bass Amp/Recordings`. **STOP** finishes the file, **FILES** opens the folder on the last recording. Writing to disk happens on a separate thread, so it adds no latency or crackles.
+- **SPLIT**, set before **REC**, records two files side by side instead of the mix: `... - Bass.wav` (your rig, pedals and looper loops) and `... - Player.wav` (the song from the player), as 32-bit float WAVs, to balance or rework them later in a DAW. Put both at 0 dB and they add up to the mix, before the output limiter. With **RE-AMP**, the song goes through the rig, so it lands in the Bass file.
 - The version number is shown next to the logo. At launch, Bass Amp asks GitHub whether a newer version exists: if so, a gold button at the top opens its download page. Nothing about you is sent.
 
 ## Latency

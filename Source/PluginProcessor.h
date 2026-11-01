@@ -129,6 +129,7 @@ private:
     Delay delay;
     ReverbEffect reverb;
     OutputLimiter limiter;
+    juce::AudioBuffer<float> rigTrack, playerTrack;   // for recording separate tracks
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BassAmpProcessor)
 };

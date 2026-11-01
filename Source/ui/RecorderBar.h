@@ -3,8 +3,10 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "../dsp/Recorder.h"
+#include "ToggleSwitch.h"
 
-// REC/STOP button, elapsed time, and a button that shows the recordings in the file explorer.
+// REC/STOP button, elapsed time, SPLIT to record the bass and the player as separate tracks, and
+// a button that shows the recordings in the file explorer.
 class RecorderBar : public juce::Component, private juce::Timer
 {
 public:
@@ -21,6 +23,7 @@ private:
 
     Recorder& recorder;
     juce::TextButton recordButton { "REC" }, filesButton { "FILES" };
+    ToggleSwitch splitSwitch { "SPLIT" };
     juce::Rectangle<int> timeArea;
     juce::String timeText { "00:00" };
 };

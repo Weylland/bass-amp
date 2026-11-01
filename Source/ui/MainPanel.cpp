@@ -162,7 +162,6 @@ void MainPanel::timerCallback()
     if (const auto available = processor.showAudioSettings != nullptr; available != audioButton.isVisible())
     {
         audioButton.setVisible (available);
-        deviceInfo.setVisible (available);
         resized();
     }
 
@@ -299,7 +298,7 @@ void MainPanel::resized()
     headerArea = area.removeFromTop (headerHeight);
 
     presetBar.setBounds (juce::Rectangle<int> (440, 32).withPosition (250, (headerHeight - 32) / 2 + 2));
-    recorderBar.setBounds (juce::Rectangle<int> (200, 30).withPosition (presetBar.getRight() + 28, (headerHeight - 30) / 2 + 2));
+    recorderBar.setBounds (juce::Rectangle<int> (272, 30).withPosition (presetBar.getRight() + 28, (headerHeight - 30) / 2 + 2));
     fullScreenButton.setBounds (juce::Rectangle<int> (30, 30).withPosition (headerArea.getRight() - 8 - 30, (headerHeight - 30) / 2 + 2));
     const auto languageRight = fullScreenButton.isVisible() ? fullScreenButton.getX() - 8 : fullScreenButton.getRight();
     languageButton.setBounds (juce::Rectangle<int> (40, 30).withPosition (languageRight - 40, (headerHeight - 30) / 2 + 2));
@@ -310,6 +309,7 @@ void MainPanel::resized()
 
     const auto infoRight = updateButton.isVisible() ? updateButton.getX() : updateRight;
     deviceInfo.setBounds (headerArea.withLeft (recorderBar.getRight() + margin).withRight (infoRight - margin).reduced (0, 8));
+    deviceInfo.setVisible (audioButton.isVisible() && deviceInfo.getWidth() >= 100);
 
     area.removeFromTop (6);
     preBoard.setBounds (area.removeFromTop (236));

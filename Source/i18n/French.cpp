@@ -210,6 +210,9 @@ const Translations& frenchTranslations()
             { "ui.record", "REC\nEnregistre ce qui sort de l'appli (effets compris) en WAV, dans Documents/Bass Amp/Recordings. "
                            "Clique à nouveau pour arrêter." },
             { "ui.recordings", "FILES\nOuvre le dossier des enregistrements." },
+            { "ui.recordSplit", "SPLIT\nÉteint : REC enregistre un seul fichier, le mix que tu entends. Allumé : deux fichiers "
+                                "côte à côte, « Bass » (ton son avec ses boucles) et « Player » (le morceau), pour les doser "
+                                "ou les retravailler plus tard dans un DAW. À régler avant REC." },
             { "ui.tuner", "ACCORDEUR\nJoue une corde à vide : la note s'affiche et l'aiguille est au centre quand elle est "
                           "juste. Mi La Ré Sol, et Si grave sur une cinq cordes. Molette sur l'écran : La de référence de 430 "
                           "à 450 Hz ; double-clic : retour à 440 Hz." },

@@ -174,6 +174,7 @@ Dans chacun de ces menus, **Enregistrer...** ajoute les réglages actuels du mod
 - Clic sur le bloc LEVELS : efface les témoins CLIP. Clic sur **IN 1** sous le vumètre d'entrée : passe sur l'entrée 2 de la carte son (ou le canal droit d'une piste stéréo du DAW).
 - **MUTE** dans l'accordeur coupe la sortie pendant l'accordage. La molette sur l'accordeur change le diapason (La = 430 à 450 Hz), le double-clic revient à 440 Hz.
 - **REC** enregistre le son de sortie (effets compris) en WAV stéréo 24 bits dans `Documents/Bass Amp/Recordings`. **STOP** termine le fichier, **FILES** ouvre le dossier sur le dernier enregistrement. L'écriture sur disque se fait sur un thread séparé, donc elle n'ajoute ni latence ni craquement.
+- **SPLIT**, à régler avant **REC**, enregistre deux fichiers côte à côte au lieu du mix : `... - Bass.wav` (ton son, pédales et boucles du looper) et `... - Player.wav` (le morceau du lecteur), en WAV 32 bits flottants, pour les doser ou les retravailler plus tard dans un DAW. Les deux à 0 dB redonnent le mix, avant le limiteur de sortie. Avec **RE-AMP**, le morceau passe dans ton son, donc il se retrouve dans le fichier Bass.
 - Le numéro de version est affiché à côté du logo. Au lancement, Bass Amp demande à GitHub si une version plus récente existe : si oui, un bouton doré en haut ouvre sa page de téléchargement. Rien sur toi n'est envoyé.
 
 ## Latence
