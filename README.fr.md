@@ -124,9 +124,10 @@ La rangée du bas :
   - **AUTO** : sans métronome, la première boucle t'attend : l'enregistrement démarre à la première note que tu joues (en gardant les 20 ms d'avant), sans blanc au début de la boucle. Éteint : l'enregistrement démarre au clic.
   - **UNDO** / **REDO** sur la dernière prise ou la dernière couche.
   - Par piste : **STOP**, **CLEAR**, **REV** (à l'envers), **HALF** (demi-vitesse, une octave plus bas) et **LEVEL**.
+  - **TRIM** : tant qu'une piste est la seule boucle, coupe son début ou sa fin, pour un clic sur le pad arrivé un peu tôt ou tard. Glisse les deux poignées sur la forme d'onde pendant qu'elle tourne ; la prise entière est gardée et **RESET** la ramène.
   - **STOP ALL**, **CLEAR ALL**, et **EXPORT WAV** qui enregistre le mix des pistes dans `Documents/Bass Amp/Recordings`.
   - Clic droit sur un pad ou un bouton du looper : **MIDI learn**, pour le piloter depuis un contrôleur (pad, note ou footswitch CC).
-- **Metronome** : tempo de 40 à 240 BPM au potard ou avec **TAP**, volume, et un voyant par temps. Le clic n'est jamais enregistré par **REC**. Dans un DAW, le métronome et le looper suivent le tempo et les mesures du projet.
+- **Metronome** : un clic doux, tempo de 40 à 240 BPM au potard ou avec **TAP**, volume, et un voyant par temps. Le clic n'est jamais enregistré par **REC**. Dans un DAW, le métronome et le looper suivent le tempo et les mesures du projet.
 
 ## MIDI
 
@@ -203,7 +204,7 @@ cmake --build build --parallel
 
 La CI GitHub Actions compile et teste les deux plateformes à chaque push, et vérifie les plugins avec [pluginval](https://github.com/Tracktion/pluginval) (et `auval` pour l'AU). Un tag `v*` publie automatiquement les zips et l'installateur Windows dans une release.
 
-Tests DSP (accordeur, effets, modèles d'ampli, tone stack, baffles et IR, égaliseur, limiteur, ordre des pédales, MIDI, looper, métronome, lecteur, captures NAM, presets avec export et import, annulation, choix de l'entrée, traductions, stabilité de la chaîne) : `test.bat`.
+Tests DSP (accordeur, effets, modèles d'ampli, tone stack, baffles et IR, égaliseur, limiteur, ordre des pédales, MIDI, looper avec découpe, métronome, lecteur, captures NAM, presets avec export et import, annulation, choix de l'entrée, traductions, stabilité de la chaîne) : `test.bat`.
 `test.bat --snapshot ui.png [preset]` exporte une capture de l'interface, avec le preset d'usine choisi.
 `test.bat --artwork dossier` exporte l'icône (1024 px) et l'écran de démarrage. L'icône des builds est `Resources/icon.png`.
 

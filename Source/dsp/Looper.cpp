@@ -29,6 +29,8 @@ void Looper::prepare (double sampleRate, int newNumChannels)
         track.state = State::empty;
         track.recorded = 0;
         track.length.store (0);
+        track.start.store (0);
+        track.recordedLength.store (0);
         track.shownState.store (State::empty);
         track.progress.store (0.0f);
         track.shownSamples.store (0);
@@ -59,6 +61,54 @@ void Looper::trigger (int midiAction)
         clearAll();
 }
 
+void Looper::trimTrack (int track, int startSample, int endSample)
+{
+    auto& chosen = tracks[(size_t) track];
+    chosen.requestedStart.store (startSample);
+    chosen.requestedEnd.store (endSample);
+    chosen.trimRequest.store (true);
+}
+
+bool Looper::canTrim (int track) const
+{
+    const auto state = tracks[(size_t) track].shownState.load();
+
+    if (state != State::playing && state != State::overdubbing && state != State::stopped)
+        return false;
+
+    for (int other = 0; other < numTracks; ++other)
+        if (other != track && tracks[(size_t) other].shownState.load() != State::empty)
+            return false;
+
+    return tracks[(size_t) track].recordedLength.load() > 2 * (int) (rate * minTrimSeconds);
+}
+
+Looper::Trim Looper::getTrim (int track) const
+{
+    const auto& chosen = tracks[(size_t) track];
+    const auto start = chosen.start.load();
+    return { start, start + chosen.length.load(), chosen.recordedLength.load() };
+}
+
+std::vector<float> Looper::getOverview (int track, int points) const
+{
+    const auto& chosen = tracks[(size_t) track];
+    const auto recorded = chosen.recordedLength.load();
+    std::vector<float> peaks ((size_t) juce::jmax (0, points), 0.0f);
+
+    for (int point = 0; point < points && recorded > 0; ++point)
+    {
+        const auto from = (int) ((juce::int64) recorded * point / points);
+        const auto to = juce::jmax (from + 1, (int) ((juce::int64) recorded * (point + 1) / points));
+
+        for (int i = from; i < to; ++i)
+            for (int channel = 0; channel < numChannels; ++channel)
+                peaks[(size_t) point] = juce::jmax (peaks[(size_t) point], std::abs (chosen.sample (channel, i)));
+    }
+
+    return peaks;
+}
+
 double Looper::getLengthSeconds (int track) const
 {
     return (double) tracks[(size_t) track].shownSamples.load() / rate;
@@ -78,8 +128,9 @@ float Looper::Track::read (int channel, double position, int loopLength) const
     const auto first = (int) position;
     const auto second = first + 1 == loopLength ? 0 : first + 1;
     const auto fraction = (float) (position - first);
-    const auto a = takes[current[(size_t) (first >> chunkBits)]].getSample (channel, first);
-    const auto b = takes[current[(size_t) (second >> chunkBits)]].getSample (channel, second);
+    const auto offset = start.load();
+    const auto a = sample (channel, offset + first);
+    const auto b = sample (channel, offset + second);
     return a + fraction * (b - a);
 }
 
@@ -105,11 +156,11 @@ void Looper::Track::prepareChunkForWrite (int index)
 
     const auto from = current[chunk];
     const auto to = (juce::uint8) (1 - from);
-    const auto start = (int) chunk << chunkBits;
-    const auto count = juce::jmin (chunkSize, takes[0].getNumSamples() - start);
+    const auto first = (int) chunk << chunkBits;
+    const auto count = juce::jmin (chunkSize, takes[0].getNumSamples() - first);
 
     for (int channel = 0; channel < takes[0].getNumChannels(); ++channel)
-        takes[to].copyFrom (channel, start, takes[from], channel, start, count);
+        takes[to].copyFrom (channel, first, takes[from], channel, first, count);
 
     current[chunk] = to;
     touched[chunk] = generation;
@@ -117,7 +168,7 @@ void Looper::Track::prepareChunkForWrite (int index)
 
 void Looper::Track::flipTouchedChunks()
 {
-    const auto numChunks = (length.load() + chunkSize - 1) >> chunkBits;
+    const auto numChunks = (recordedLength.load() + chunkSize - 1) >> chunkBits;
 
     for (size_t chunk = 0; chunk < (size_t) numChunks; ++chunk)
         if (touched[chunk] == generation)
@@ -147,11 +198,39 @@ void Looper::finish (int index)
 {
     auto& track = tracks[(size_t) index];
     track.length.store (juce::jmax (1, track.recorded));
+    track.start.store (0);
+    track.recordedLength.store (track.length.load());
     track.state = track.stopWhenFinished ? State::stopped : State::playing;
     undoTrack = index;
     undoKind = Undo::recording;
     undone = false;
     updateMaster();
+}
+
+bool Looper::isOnlyTrack (int index) const
+{
+    for (int other = 0; other < numTracks; ++other)
+        if (other != index && tracks[(size_t) other].state != State::empty)
+            return false;
+
+    return tracks[(size_t) index].hasLoop();
+}
+
+// The loop keeps its origin, so a trimmed loop goes on from where its new length puts it.
+void Looper::trim (int index)
+{
+    auto& track = tracks[(size_t) index];
+    const auto recorded = track.recordedLength.load();
+    const auto minimum = (int) (rate * minTrimSeconds);
+
+    if (! isOnlyTrack (index) || recorded <= 2 * minimum)
+        return;
+
+    const auto start = juce::jlimit (0, recorded - minimum, track.requestedStart.load());
+    const auto end = juce::jlimit (start + minimum, recorded, track.requestedEnd.load());
+    track.start.store (start);
+    track.length.store (end - start);
+    masterLength = end - start;
 }
 
 void Looper::updateMaster()
@@ -270,6 +349,9 @@ void Looper::applyRequests (bool hasGrid)
         if (track.stopRequest.exchange (false))
             stop (index, hasGrid);
 
+        if (track.trimRequest.exchange (false))
+            trim (index);
+
         for (auto presses = track.presses.exchange (0); presses > 0; --presses)
             press (index, hasGrid);
     }
@@ -376,11 +458,12 @@ void Looper::process (juce::dsp::AudioBlock<float>& block, const Metronome& cloc
 
                 if (const auto written = (int) position; track.state == State::overdubbing && written != track.lastWritten)
                 {
-                    track.prepareChunkForWrite (written);
-                    auto& take = track.takes[track.current[(size_t) (written >> chunkBits)]];
+                    const auto inTake = track.start.load() + written;
+                    track.prepareChunkForWrite (inTake);
+                    auto& take = track.takes[track.current[(size_t) (inTake >> chunkBits)]];
 
                     for (int channel = 0; channel < channels; ++channel)
-                        take.addSample (channel, written, input[(size_t) channel]);
+                        take.addSample (channel, inTake, input[(size_t) channel]);
 
                     track.lastWritten = written;
                 }

@@ -30,6 +30,8 @@ LooperPanel::TrackColumn::TrackColumn (Looper& looper, int track)
 
     stopButton.setTooltip (Help::get ("ui.looperTrackStop"));
     clearButton.setTooltip (Help::get ("ui.looperTrackClear"));
+    trimButton.setTooltip (Help::get ("ui.looperTrim"));
+    trimButton.setEnabled (false);
     reverseSwitch.setTooltip (Help::get ("ui.looperReverse"));
     halfSwitch.setTooltip (Help::get ("ui.looperHalf"));
     level.setTooltip (Help::get ("ui.looperLevel"));
@@ -41,8 +43,9 @@ LooperPanel::LooperPanel (BassAmpProcessor& processor)
     for (int track = 0; track < Looper::numTracks; ++track)
     {
         auto* column = columns.add (new TrackColumn (looper, track));
+        column->trimButton.onClick = [this, track] { trimView.show (track); };
 
-        for (auto* component : std::initializer_list<juce::Component*> { &column->pad, &column->stopButton, &column->clearButton,
+        for (auto* component : std::initializer_list<juce::Component*> { &column->pad, &column->stopButton, &column->clearButton, &column->trimButton,
                                                                          &column->reverseSwitch, &column->halfSwitch, &column->level })
             addAndMakeVisible (component);
     }
@@ -79,6 +82,8 @@ LooperPanel::LooperPanel (BassAmpProcessor& processor)
                                                                      &clearAllButton, &exportButton, &closeButton })
         addAndMakeVisible (component);
 
+    addChildComponent (trimView);
+
     startTimerHz (30);
 }
 
@@ -96,8 +101,11 @@ void LooperPanel::timerCallback()
     redoButton.setEnabled (looper.canRedo());
     exportButton.setEnabled (looper.hasLoops());
 
-    for (auto* column : columns)
-        column->pad.repaint();
+    for (int track = 0; track < columns.size(); ++track)
+    {
+        columns[track]->trimButton.setEnabled (looper.canTrim (track));
+        columns[track]->pad.repaint();
+    }
 
     repaint (statusArea);
 
@@ -149,6 +157,7 @@ void LooperPanel::resized()
     statusArea = area.removeFromTop (20);
     area.removeFromTop (gap);
 
+    trimView.setBounds (area);
     const auto columnWidth = area.getWidth() / columns.size();
 
     for (auto* column : columns)
@@ -168,8 +177,10 @@ void LooperPanel::resized()
         auto top = controls.removeFromTop (controls.getHeight() / 2).withSizeKeepingCentre (controls.getWidth(), 28);
         auto bottom = controls.withSizeKeepingCentre (controls.getWidth(), 28);
         const auto half = (top.getWidth() - gap) / 2;
-        column->stopButton.setBounds (top.removeFromLeft (half));
-        column->clearButton.setBounds (top.removeFromRight (half));
+        const auto third = (top.getWidth() - 2 * gap) / 3;
+        column->stopButton.setBounds (top.removeFromLeft (third));
+        column->trimButton.setBounds (top.removeFromRight (third));
+        column->clearButton.setBounds (top.withSizeKeepingCentre (third, top.getHeight()));
         column->reverseSwitch.setBounds (bottom.removeFromLeft (half).withSizeKeepingCentre (half, 24));
         column->halfSwitch.setBounds (bottom.removeFromRight (half).withSizeKeepingCentre (half, 24));
     }

@@ -270,6 +270,12 @@ const Translations& germanTranslations()
                                  "in Dokumente/Bass Amp/Recordings." },
             { "ui.looperTrackStop", "STOP\nStoppt diese Spur, ohne sie zu löschen. Ein Klick auf ihr Pad startet sie wieder, im Takt." },
             { "ui.looperTrackClear", "CLEAR\nLöscht diese Spur." },
+            { "ui.looperTrim", "TRIM\nSchneidet den Anfang oder das Ende des Loops ab, wenn der Klick auf das Pad etwas zu "
+                               "früh oder zu spät kam. Zieh die Griffe auf der Wellenform, während er läuft. Nur solange diese "
+                               "Spur die einzige ist." },
+            { "ui.looperTrimReset", "RESET\nSpielt wieder die ganze Aufnahme, wie aufgenommen." },
+            { "ui.looperTrimDone", "DONE\nSchließt die Schnittansicht. Der Loop behält seinen neuen Anfang und sein neues "
+                                   "Ende." },
             { "ui.looperReverse", "REV\nSpielt die Spur rückwärts." },
             { "ui.looperHalf", "HALF\nSpielt die Spur mit halber Geschwindigkeit: eine Oktave tiefer." },
             { "ui.looperLevel", "LEVEL\nLautstärke der Spur." },
@@ -307,6 +313,7 @@ const Translations& germanTranslations()
             { "No audio device: Options > Audio/MIDI Settings", "Kein Audiogerät: Optionen > Audio/MIDI-Einstellungen" },
             { "latency", "Latenz" },
             { "Language", "Sprache" },
+            { "Drag the handles to cut the start or the end of the loop. The whole take is kept.", "Zieh die Griffe, um den Anfang oder das Ende des Loops abzuschneiden. Die ganze Aufnahme bleibt erhalten." },
             { "Synced to the metronome: a bar of count-in, then loops start and end on a bar.", "Mit dem Metronom synchron: ein Takt Vorzähler, dann beginnen und enden die Loops auf einem Takt." },
             { "Free: recording starts on your first note; the first loop sets the length the others follow.", "Frei: die Aufnahme startet mit deiner ersten Note; der erste Loop gibt die Länge vor, der die anderen folgen." },
             { "available", "verfügbar" },

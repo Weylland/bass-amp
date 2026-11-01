@@ -266,6 +266,10 @@ const Translations& englishTranslations()
                                  "in Documents/Bass Amp/Recordings." },
             { "ui.looperTrackStop", "STOP\nStops this track without erasing it. A click on its pad restarts it, in time." },
             { "ui.looperTrackClear", "CLEAR\nErases this track." },
+            { "ui.looperTrim", "TRIM\nCuts the start or the end of the loop, for a click on the pad that came a bit early or "
+                               "late. Drag the handles on the waveform while it plays. Only while this track is the only one." },
+            { "ui.looperTrimReset", "RESET\nPlays the whole take again, as recorded." },
+            { "ui.looperTrimDone", "DONE\nCloses the trim view. The loop keeps its new start and end." },
             { "ui.looperReverse", "REV\nPlays the track backwards." },
             { "ui.looperHalf", "HALF\nPlays the track at half speed: an octave lower." },
             { "ui.looperLevel", "LEVEL\nTrack volume." },

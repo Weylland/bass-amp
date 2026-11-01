@@ -1343,6 +1343,37 @@ namespace
                "looper counts in a bar", juce::String (recorded, 3) + " s recorded after the count-in");
     }
 
+    void testLooperTrim()
+    {
+        // A one-second take whose samples tell where they were recorded, trimmed to 0.1 s .. 0.9 s.
+        LooperRig rig;
+        auto& looper = rig.looper;
+        const auto ramp = [] (int n) { return (float) n / 100000.0f; };
+
+        looper.pressTrack (0);
+        rig.run (100, ramp);
+        looper.pressTrack (0);
+        rig.run (1, 0.0f);
+        looper.trimTrack (0, 4800, 43200);
+        const auto played = rig.run (1, 0.0f);
+        const auto trim = looper.getTrim (0);
+
+        // The loop plays the kept part from its origin: at sample 48959, (48959 % 38400) past 4800.
+        const auto expected = (float) (4800 + 48959 % 38400) / 100000.0f;
+        check (trim.start == 4800 && trim.end == 43200 && trim.recorded == 48000 && std::abs (played - expected) < 1.0e-5f
+                   && std::abs (looper.getLengthSeconds (0) - 0.8) < 1.0e-9,
+               "looper trims the start and the end of a loop",
+               juce::String (looper.getLengthSeconds (0), 3) + " s, plays " + juce::String (played, 5));
+
+        looper.pressTrack (1);
+        rig.run (1, 0.0f);
+        looper.trimTrack (0, 0, 48000);
+        rig.run (1, 0.0f);
+
+        check (! looper.canTrim (0) && looper.getTrim (0).start == 4800, "looper keeps the trim once another track starts",
+               "start " + juce::String (looper.getTrim (0).start));
+    }
+
     void testMetronome()
     {
         Metronome metronome;
@@ -1545,6 +1576,7 @@ int main (int argc, char* argv[])
     testRecorder();
     testLooper();
     testLooperStart();
+    testLooperTrim();
     testLooperPlayback();
     testMetronome();
     testMetronomeFollowsHost();

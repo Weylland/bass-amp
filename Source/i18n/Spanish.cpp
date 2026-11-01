@@ -271,6 +271,11 @@ const Translations& spanishTranslations()
                                  "en Documentos/Bass Amp/Recordings." },
             { "ui.looperTrackStop", "STOP\nPara esta pista sin borrarla. Un clic en su pad la relanza, a tiempo." },
             { "ui.looperTrackClear", "CLEAR\nBorra esta pista." },
+            { "ui.looperTrim", "TRIM\nCorta el principio o el final del bucle, para un clic en el pad que llegó un poco pronto "
+                               "o tarde. Arrastra los tiradores sobre la forma de onda mientras suena. Solo mientras esta "
+                               "pista sea la única." },
+            { "ui.looperTrimReset", "RESET\nVuelve a tocar la toma entera, tal como se grabó." },
+            { "ui.looperTrimDone", "DONE\nCierra la vista de recorte. El bucle conserva su nuevo principio y su nuevo final." },
             { "ui.looperReverse", "REV\nReproduce la pista al revés." },
             { "ui.looperHalf", "HALF\nReproduce la pista a mitad de velocidad: una octava más grave." },
             { "ui.looperLevel", "LEVEL\nVolumen de la pista." },
@@ -308,6 +313,7 @@ const Translations& spanishTranslations()
             { "No audio device: Options > Audio/MIDI Settings", "No hay dispositivo de audio: Opciones > Ajustes de audio/MIDI" },
             { "latency", "latencia" },
             { "Language", "Idioma" },
+            { "Drag the handles to cut the start or the end of the loop. The whole take is kept.", "Arrastra los tiradores para cortar el principio o el final del bucle. La toma entera se conserva." },
             { "Synced to the metronome: a bar of count-in, then loops start and end on a bar.", "Sincronizado con el metrónomo: un compás de cuenta atrás, luego los loops empiezan y terminan en un compás." },
             { "Free: recording starts on your first note; the first loop sets the length the others follow.", "Libre: la grabación empieza con tu primera nota; el primer loop marca la duración que siguen los demás." },
             { "available", "disponible" },

@@ -14,6 +14,8 @@
 // The first loop can wait for the bass: with AUTO, recording starts on the first note played,
 // keeping a few milliseconds before it for the attack. With SYNC, COUNT-IN gives a full bar of
 // clicks before it.
+// While it is the only loop, a track can be trimmed at both ends, for a late click on the pad.
+// The trim only moves where playback starts and ends: the whole take is kept.
 // Buttons and MIDI only post requests; the audio thread acts on them at the next block.
 class Looper
 {
@@ -40,6 +42,7 @@ public:
     void redo()                       { redoRequest.store (true); }
     void stopOrPlayAll()              { stopAllRequest.store (true); }
     void clearAll()                   { clearAllRequest.store (true); }
+    void trimTrack (int track, int startSample, int endSample);
     void trigger (int midiAction);
 
     std::atomic<bool> sync { true }, autoStart { true }, countIn { true };
@@ -60,6 +63,15 @@ public:
     bool canRedo() const                     { return redoable.load(); }
     bool isSynced() const                    { return synced.load(); }
     bool hasLoops() const;
+    bool canTrim (int track) const;
+    double getSampleRate() const             { return rate; }
+
+    struct Trim { int start = 0, end = 0, recorded = 0; };
+    Trim getTrim (int track) const;
+
+    // The peak of each of `points` slices of the whole take, for drawing it. Reads the take
+    // while the audio thread may overdub it, so a slice can be a block late.
+    std::vector<float> getOverview (int track, int points) const;
 
     // Writes every playing track (or every recorded one when none plays) to a 24-bit WAV,
     // over one turn of the longest loop.
@@ -74,6 +86,7 @@ private:
     static constexpr double preRollSeconds = 0.02;
     static constexpr double countInGraceSeconds = 0.1;
     static constexpr float startLevel = 0.02f;
+    static constexpr double minTrimSeconds = 0.1;
     static constexpr int chunkBits = 9, chunkSize = 1 << chunkBits;
 
     struct Track
@@ -89,16 +102,18 @@ private:
         int recorded = 0, lastWritten = -1;
         juce::int64 armedAt = 0;
         bool stopWhenFinished = false;
-        std::atomic<int> length { 0 };
+        std::atomic<int> length { 0 }, start { 0 }, recordedLength { 0 };
         std::atomic<juce::int64> origin { 0 };
 
         TrackControls controls;
         std::atomic<int> presses { 0 };
-        std::atomic<bool> stopRequest { false }, clearRequest { false };
+        std::atomic<bool> stopRequest { false }, clearRequest { false }, trimRequest { false };
+        std::atomic<int> requestedStart { 0 }, requestedEnd { 0 };
         std::atomic<State> shownState { State::empty };
         std::atomic<float> progress { 0.0f };
         std::atomic<int> shownSamples { 0 };
 
+        float sample (int channel, int index) const { return takes[current[(size_t) (index >> chunkBits)]].getSample (channel, index); }
         float read (int channel, double position, int loopLength) const;
         double playPosition (juce::int64 now, int loopLength) const;
         void prepareChunkForWrite (int index);
@@ -114,6 +129,8 @@ private:
     void clear (int track);
     void startRecording (Track&, int fromPreRoll = 0);
     void finish (int track);
+    void trim (int track);
+    bool isOnlyTrack (int track) const;
     void applyUndo (bool redoing);
     void updateMaster();
 

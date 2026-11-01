@@ -268,6 +268,10 @@ const Translations& portugueseTranslations()
                                  "em Documentos/Bass Amp/Recordings." },
             { "ui.looperTrackStop", "STOP\nPara esta faixa sem apagá-la. Um clique no seu pad a reinicia, no tempo." },
             { "ui.looperTrackClear", "CLEAR\nApaga esta faixa." },
+            { "ui.looperTrim", "TRIM\nCorta o início ou o fim do loop, para um clique no pad que chegou um pouco cedo ou "
+                               "tarde. Arrasta as alças na forma de onda enquanto toca. Só enquanto esta faixa for a única." },
+            { "ui.looperTrimReset", "RESET\nVolta a tocar a gravação inteira, tal como foi gravada." },
+            { "ui.looperTrimDone", "DONE\nFecha a vista de corte. O loop mantém o novo início e o novo fim." },
             { "ui.looperReverse", "REV\nToca a faixa ao contrário." },
             { "ui.looperHalf", "HALF\nToca a faixa na metade da velocidade: uma oitava abaixo." },
             { "ui.looperLevel", "LEVEL\nVolume da faixa." },
@@ -305,6 +309,7 @@ const Translations& portugueseTranslations()
             { "No audio device: Options > Audio/MIDI Settings", "Nenhum dispositivo de áudio: Opções > Configurações de áudio/MIDI" },
             { "latency", "latência" },
             { "Language", "Idioma" },
+            { "Drag the handles to cut the start or the end of the loop. The whole take is kept.", "Arrasta as alças para cortar o início ou o fim do loop. A gravação inteira é mantida." },
             { "Synced to the metronome: a bar of count-in, then loops start and end on a bar.", "Sincronizado com o metrônomo: um compasso de contagem, depois os loops começam e terminam num compasso." },
             { "Free: recording starts on your first note; the first loop sets the length the others follow.", "Livre: a gravação começa na sua primeira nota; o primeiro loop define a duração que os outros seguem." },
             { "available", "disponível" },

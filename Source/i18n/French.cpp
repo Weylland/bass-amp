@@ -268,6 +268,11 @@ const Translations& frenchTranslations()
                                  "dans Documents/Bass Amp/Recordings." },
             { "ui.looperTrackStop", "STOP\nArrête cette piste sans l'effacer. Un clic sur son pad la relance, en place." },
             { "ui.looperTrackClear", "CLEAR\nEfface cette piste." },
+            { "ui.looperTrim", "TRIM\nCoupe le début ou la fin de la boucle, pour un clic sur le pad arrivé un peu tôt ou "
+                               "tard. Glisse les poignées sur la forme d'onde pendant qu'elle tourne. Seulement tant que cette "
+                               "piste est la seule." },
+            { "ui.looperTrimReset", "RESET\nRejoue la prise entière, telle qu'enregistrée." },
+            { "ui.looperTrimDone", "DONE\nFerme la vue de découpe. La boucle garde son nouveau début et sa nouvelle fin." },
             { "ui.looperReverse", "REV\nJoue la piste à l'envers." },
             { "ui.looperHalf", "HALF\nJoue la piste deux fois plus lentement : une octave plus bas." },
             { "ui.looperLevel", "LEVEL\nVolume de la piste." },
@@ -305,6 +310,7 @@ const Translations& frenchTranslations()
             { "No audio device: Options > Audio/MIDI Settings", "Aucun périphérique audio : Options > Réglages audio/MIDI" },
             { "latency", "latence" },
             { "Language", "Langue" },
+            { "Drag the handles to cut the start or the end of the loop. The whole take is kept.", "Glisse les poignées pour couper le début ou la fin de la boucle. La prise entière est gardée." },
             { "Synced to the metronome: a bar of count-in, then loops start and end on a bar.", "Calé sur le métronome : une mesure de décompte, puis les boucles démarrent et finissent sur une mesure." },
             { "Free: recording starts on your first note; the first loop sets the length the others follow.", "Libre : l'enregistrement démarre à ta première note ; la première boucle donne la longueur que suivent les autres." },
             { "available", "disponible" },

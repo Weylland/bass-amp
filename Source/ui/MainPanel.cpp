@@ -289,8 +289,8 @@ void MainPanel::paint (juce::Graphics& g)
     g.setColour (Palette::textDim);
     g.setFont (Fonts::display (10.0f, false));
     const auto logoWidth = juce::GlyphArrangement::getStringWidth (Fonts::display (34.0f).withKerningFactor (0.1f), "BASS AMP");
-    g.drawText (juce::String ("v") + JucePlugin_VersionString, logo.withTrimmedLeft (logoWidth + 4.0f).withTrimmedTop (31.0f).withHeight (12.0f),
-                juce::Justification::centredLeft);
+    g.drawText (juce::String ("v") + JucePlugin_VersionString, logo.withWidth (logoWidth).withTrimmedTop (42.0f).withHeight (12.0f),
+                juce::Justification::centredRight);
 }
 
 void MainPanel::resized()

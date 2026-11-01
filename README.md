@@ -124,9 +124,10 @@ The bottom row:
   - **AUTO**: without the metronome, the first loop waits for you: recording starts on the first note you play (with 20 ms kept before it), so the loop has no silence at the start. Off: recording starts on the click.
   - **UNDO** / **REDO** on the last take or the last layer.
   - Per track: **STOP**, **CLEAR**, **REV** (reverse), **HALF** (half speed, one octave down) and **LEVEL**.
+  - **TRIM**: while a track is the only loop, cuts its start or its end, for a click on the pad that came a bit early or late. Drag the two handles on the waveform while it plays; the whole take is kept and **RESET** brings it back.
   - **STOP ALL**, **CLEAR ALL**, and **EXPORT WAV**, which saves the track mix in `Documents/Bass Amp/Recordings`.
   - Right-click a pad or a looper button: **MIDI learn**, to drive it from a controller (pad, note or CC footswitch).
-- **Metronome**: tempo from 40 to 240 BPM with the knob or **TAP**, volume, and one light per beat. The click is never recorded by **REC**. In a DAW, the metronome and the looper follow the project tempo and bars.
+- **Metronome**: a soft click, tempo from 40 to 240 BPM with the knob or **TAP**, volume, and one light per beat. The click is never recorded by **REC**. In a DAW, the metronome and the looper follow the project tempo and bars.
 
 ## MIDI
 
@@ -203,7 +204,7 @@ cmake --build build --parallel
 
 GitHub Actions CI builds and tests both platforms on every push, and checks the plugins with [pluginval](https://github.com/Tracktion/pluginval) (and `auval` for the AU). A `v*` tag publishes the zips and the Windows installer in a release.
 
-DSP tests (tuner, effects, amp models, tone stack, cabinets and IRs, equalizer, limiter, pedal order, MIDI, looper, metronome, player, NAM captures, presets with export and import, undo, input choice, translations, chain stability): `test.bat`.
+DSP tests (tuner, effects, amp models, tone stack, cabinets and IRs, equalizer, limiter, pedal order, MIDI, looper with trim, metronome, player, NAM captures, presets with export and import, undo, input choice, translations, chain stability): `test.bat`.
 `test.bat --snapshot ui.png [preset]` exports a picture of the interface, with the chosen factory preset.
 `test.bat --artwork folder` exports the icon (1024 px) and the splash screen. The build icon is `Resources/icon.png`.
 

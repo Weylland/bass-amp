@@ -2,8 +2,8 @@
 
 #include <juce_dsp/juce_dsp.h>
 
-// Click track for practice: a short sine blip on every beat, higher on the first beat of the
-// bar. It is mixed in after the recorder so it never ends up in recordings. In a DAW it takes
+// Click track for practice: a soft sine tock on every beat, higher on the first beat of the
+// bar. It fades in over a few milliseconds and stays in the mids, so it is easy on the ears. It is mixed in after the recorder so it never ends up in recordings. In a DAW it takes
 // the song's tempo, and its beats while the song plays.
 class Metronome
 {
@@ -17,7 +17,8 @@ public:
     void prepare (double newSampleRate)
     {
         sampleRate = newSampleRate;
-        decay = std::exp (-1.0f / (0.012f * (float) sampleRate));
+        decay = std::exp (-1.0f / (0.025f * (float) sampleRate));
+        attackStep = 1.0f / (0.003f * (float) sampleRate);
         reset();
     }
 
@@ -74,8 +75,9 @@ public:
                 beat = (beat + 1) % juce::jmax (1, beatsPerBar.load());
                 currentBeat.store (beat);
                 envelope = 1.0f;
+                attack = 0.0f;
                 clickPhase = 0.0f;
-                clickIncrement = juce::MathConstants<float>::twoPi * (beat == 0 ? 2000.0f : 1400.0f) / (float) sampleRate;
+                clickIncrement = juce::MathConstants<float>::twoPi * (beat == 0 ? 1050.0f : 780.0f) / (float) sampleRate;
             }
 
             samplesToNextBeat -= 1.0;
@@ -83,7 +85,8 @@ public:
             if (envelope < 0.001f)
                 continue;
 
-            const auto click = std::sin (clickPhase) * envelope * gain;
+            attack = juce::jmin (1.0f, attack + attackStep);
+            const auto click = std::sin (clickPhase) * envelope * attack * gain;
             clickPhase += clickIncrement;
             envelope *= decay;
 
@@ -105,6 +108,6 @@ private:
 
     double sampleRate = 44100.0, samplesToNextBeat = 0.0;
     int beat = -1;
-    float envelope = 0.0f, decay = 0.0f, clickPhase = 0.0f, clickIncrement = 0.0f;
+    float envelope = 0.0f, decay = 0.0f, attack = 0.0f, attackStep = 0.0f, clickPhase = 0.0f, clickIncrement = 0.0f;
     std::atomic<int> currentBeat { -1 };
 };

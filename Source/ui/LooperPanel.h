@@ -5,10 +5,12 @@
 #include "../PluginProcessor.h"
 #include "ActionButton.h"
 #include "LoopPad.h"
+#include "LoopTrimView.h"
 #include "ToggleSwitch.h"
 
-// The full looper, over the pedalboards: a big pad per track with its STOP, CLEAR, REV,
-// HALF and level, and the global SYNC, UNDO, REDO, STOP ALL, CLEAR ALL and EXPORT.
+// The full looper, over the pedalboards: a big pad per track with its STOP, CLEAR, TRIM, REV,
+// HALF and level, and the global SYNC, UNDO, REDO, STOP ALL, CLEAR ALL and EXPORT. TRIM opens
+// the trim view over the tracks.
 class LooperPanel : public juce::Component, private juce::Timer
 {
 public:
@@ -26,7 +28,7 @@ private:
         TrackColumn (Looper&, int track);
 
         LoopPad pad;
-        juce::TextButton stopButton { "STOP" }, clearButton { "CLEAR" };
+        juce::TextButton stopButton { "STOP" }, clearButton { "CLEAR" }, trimButton { "TRIM" };
         ToggleSwitch reverseSwitch { "REV" }, halfSwitch { "HALF" };
         juce::Slider level { juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::NoTextBox };
         juce::Rectangle<int> labelArea, levelLabelArea;
@@ -41,6 +43,7 @@ private:
     ActionButton undoButton { "UNDO" }, redoButton { "REDO" }, stopAllButton { "STOP ALL" }, clearAllButton { "CLEAR ALL" };
     juce::TextButton exportButton { "EXPORT WAV" }, closeButton { "CLOSE" };
     juce::String exportMessage;
+    LoopTrimView trimView { looper };
 
     juce::Rectangle<int> titleArea, statusArea;
 
