@@ -65,6 +65,13 @@ MainPanel::MainPanel (BassAmpProcessor& processorToUse)
     addChildComponent (fullScreenButton);
     fullScreenButton.setTooltip (Help::get ("ui.fullScreen"));
     fullScreenButton.onClick = [this] { if (onToggleFullScreen != nullptr) onToggleFullScreen(); };
+    for (auto* button : std::initializer_list<juce::Button*> { &audioButton, &deviceInfo })
+    {
+        addChildComponent (button);
+        button->setTooltip (Help::get ("ui.audioSettings"));
+        button->onClick = [this] { if (processor.showAudioSettings != nullptr) processor.showAudioSettings(); };
+    }
+
     addChildComponent (updateButton);
     updateButton.setColour (juce::TextButton::textColourOffId, Palette::gold);
     updateButton.setTooltip (Help::get ("ui.update"));
@@ -78,8 +85,8 @@ MainPanel::MainPanel (BassAmpProcessor& processorToUse)
 
     addParameterHelp (*this);
     addMouseListener (this, true);
-    shownDeviceInfo = processor.audioDeviceInfo;
     setSize (designWidth, designHeight);
+    timerCallback();
     startTimerHz (15);
 }
 
@@ -140,12 +147,23 @@ void MainPanel::FullScreenButton::paintButton (juce::Graphics& g, bool shouldDra
     g.strokePath (corners, juce::PathStrokeType (1.6f, juce::PathStrokeType::mitered, juce::PathStrokeType::square));
 }
 
+void MainPanel::DeviceInfoButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool)
+{
+    g.setColour (shouldDrawButtonAsHighlighted ? Palette::gold : Palette::textDim);
+    g.setFont (Fonts::display (12.0f, false));
+    g.drawFittedText (getButtonText(), getLocalBounds(), juce::Justification::centredRight, 2, 0.8f);
+}
+
 void MainPanel::timerCallback()
 {
-    if (processor.audioDeviceInfo != shownDeviceInfo)
+    if (processor.audioDeviceInfo != deviceInfo.getButtonText())
+        deviceInfo.setButtonText (processor.audioDeviceInfo);
+
+    if (const auto available = processor.showAudioSettings != nullptr; available != audioButton.isVisible())
     {
-        shownDeviceInfo = processor.audioDeviceInfo;
-        repaint (headerArea);
+        audioButton.setVisible (available);
+        deviceInfo.setVisible (available);
+        resized();
     }
 
     if (const auto release = updateCheck->getNewerRelease(); release.version != shownUpdate)
@@ -273,14 +291,6 @@ void MainPanel::paint (juce::Graphics& g)
     const auto logoWidth = juce::GlyphArrangement::getStringWidth (Fonts::display (34.0f).withKerningFactor (0.1f), "BASS AMP");
     g.drawText (juce::String ("v") + JucePlugin_VersionString, logo.withTrimmedLeft (logoWidth + 4.0f).withTrimmedTop (31.0f).withHeight (12.0f),
                 juce::Justification::centredLeft);
-
-    g.setColour (Palette::textDim);
-    g.setFont (Fonts::display (12.0f, false));
-    auto deviceInfo = header.withLeft (recorderBar.getRight() + margin);
-
-    deviceInfo.setRight ((updateButton.isVisible() ? updateButton.getX() : languageButton.getX()) - margin);
-
-    g.drawFittedText (shownDeviceInfo, deviceInfo, juce::Justification::centredRight, 1, 0.8f);
 }
 
 void MainPanel::resized()
@@ -293,8 +303,13 @@ void MainPanel::resized()
     fullScreenButton.setBounds (juce::Rectangle<int> (30, 30).withPosition (headerArea.getRight() - 8 - 30, (headerHeight - 30) / 2 + 2));
     const auto languageRight = fullScreenButton.isVisible() ? fullScreenButton.getX() - 8 : fullScreenButton.getRight();
     languageButton.setBounds (juce::Rectangle<int> (40, 30).withPosition (languageRight - 40, (headerHeight - 30) / 2 + 2));
+    audioButton.setBounds (juce::Rectangle<int> (66, 30).withPosition (languageButton.getX() - 8 - 66, (headerHeight - 30) / 2 + 2));
+    const auto updateRight = audioButton.isVisible() ? audioButton.getX() : languageButton.getX();
     const auto updateWidth = juce::roundToInt (juce::GlyphArrangement::getStringWidth (Fonts::label (13.0f), updateButton.getButtonText())) + 24;
-    updateButton.setBounds (juce::Rectangle<int> (updateWidth, 30).withPosition (languageButton.getX() - 8 - updateWidth, (headerHeight - 30) / 2 + 2));
+    updateButton.setBounds (juce::Rectangle<int> (updateWidth, 30).withPosition (updateRight - 8 - updateWidth, (headerHeight - 30) / 2 + 2));
+
+    const auto infoRight = updateButton.isVisible() ? updateButton.getX() : updateRight;
+    deviceInfo.setBounds (headerArea.withLeft (recorderBar.getRight() + margin).withRight (infoRight - margin).reduced (0, 8));
 
     area.removeFromTop (6);
     preBoard.setBounds (area.removeFromTop (236));

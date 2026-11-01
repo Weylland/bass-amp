@@ -17,7 +17,7 @@ Un bug, une idée ? [Ouvre une issue](https://github.com/Weylland/bass-amp/issue
 1. Télécharge la dernière version sur la [page des releases](https://github.com/Weylland/bass-amp/releases/latest) et installe-la (voir [Windows](#installation-windows) ou [macOS](#installation-macos)).
 2. Baisse le volume de tes enceintes ou de ton casque avant le premier lancement.
 3. Branche ta basse sur ta carte son et ouvre Bass Amp.
-4. Si tu n'entends rien, choisis ta carte son dans **Options → Audio/MIDI Settings** (en haut à gauche de la fenêtre). Si ta basse est branchée sur l'entrée 2, clique sur **IN 1** sous le vumètre d'entrée et choisis **Entrée 2**.
+4. Si tu n'entends rien, clique sur **AUDIO** en haut à droite et choisis ta carte son : pilote (ASIO sous Windows), entrée et sortie, fréquence et taille du buffer. Si ta basse est branchée sur l'entrée 2, clique sur **IN 1** sous le vumètre d'entrée et choisis **Entrée 2**.
 5. Choisis un son dans la liste des presets en haut, puis survole un réglage pendant une seconde : une bulle explique à quoi il sert.
 
 ## Installation (Windows)
@@ -42,7 +42,7 @@ L'appli n'est pas notarisée par Apple. Au premier lancement, macOS refuse de l'
 xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/VST3/"Bass Amp.vst3" ~/Library/Audio/Plug-Ins/Components/"Bass Amp.component"
 ```
 
-Sur Mac, l'entrée est coupée au premier lancement, car l'entrée par défaut est souvent le micro intégré. Choisis ta carte son dans **Options → Audio/MIDI Settings**, puis décoche **Mute audio input**. macOS demande aussi l'autorisation d'accès au micro : accepte-la, sinon la basse reste muette.
+Sur Mac, l'entrée est coupée au premier lancement, car l'entrée par défaut est souvent le micro intégré. Clique sur **AUDIO** en haut à droite, choisis ta carte son, puis décoche **Mute audio input**. macOS demande aussi l'autorisation d'accès au micro : accepte-la, sinon la basse reste muette.
 
 ## Ampli
 
@@ -120,6 +120,8 @@ La rangée du bas :
 - **Player** : **LOAD** ouvre un fichier (WAV, AIFF, FLAC, OGG, MP3) pour jouer par-dessus, avec lecture, pause, stop, barre de position, boucle et volume. **RE-AMP** envoie le fichier dans l'entrée de la chaîne à la place de la basse, pour repasser une piste DI dans les pédales et l'ampli.
 - **Looper** : 4 pistes de 30 s pour construire un morceau en live. Sur un pad, le 1er clic enregistre, le 2e lance la boucle, puis chaque clic superpose une couche (**DUB**) ou revient à la lecture. **OPEN** ouvre le looper complet :
   - **SYNC** : avec le métronome en marche, les boucles démarrent et finissent sur une mesure (l'enregistrement attend la mesure suivante). Sinon la première boucle donne la longueur que suivent les autres.
+  - **COUNT-IN** : avec **SYNC** et le métronome en marche, la première boucle attend une mesure entière de clics avant d'enregistrer, pour savoir quand entrer.
+  - **AUTO** : sans métronome, la première boucle t'attend : l'enregistrement démarre à la première note que tu joues (en gardant les 20 ms d'avant), sans blanc au début de la boucle. Éteint : l'enregistrement démarre au clic.
   - **UNDO** / **REDO** sur la dernière prise ou la dernière couche.
   - Par piste : **STOP**, **CLEAR**, **REV** (à l'envers), **HALF** (demi-vitesse, une octave plus bas) et **LEVEL**.
   - **STOP ALL**, **CLEAR ALL**, et **EXPORT WAV** qui enregistre le mix des pistes dans `Documents/Bass Amp/Recordings`.
@@ -176,7 +178,7 @@ Chaque module a aussi ses presets, qui ne touchent que lui :
 - Le SDK ASIO de Steinberg (GPLv3) est dans `libs/asiosdk` : le support ASIO est compilé automatiquement.
 - Au premier lancement, l'appli choisit le pilote ASIO de l'interface déjà utilisée (les pilotes génériques comme ASIO4ALL ou Realtek passent en dernier), avec un buffer de 64 samples. Sans ASIO, elle passe en WASAPI exclusif.
 - En ASIO, l'entrée et la sortie sont sur la même interface : branche ton casque ou tes enceintes sur la carte son.
-- La taille du buffer ASIO se règle dans le panneau du pilote (**Options → Audio/MIDI Settings → Control Panel**).
+- **AUDIO** en haut à droite (ou un clic sur la ligne du pilote à côté) ouvre les réglages audio et MIDI : pilote, carte son, canaux, fréquence, taille du buffer et entrées MIDI. La taille du buffer ASIO se règle dans le panneau du pilote (**AUDIO → Control Panel**). Les mêmes réglages sont aussi dans **Options → Réglages audio/MIDI**, dans la barre de titre.
 - La ligne en haut à droite affiche le pilote, le buffer et la latence aller-retour estimée.
 - Aucun effet n'ajoute de latence : pas de look-ahead, oversampling en IIR à phase minimale, et l'accordeur analyse le signal hors du thread audio.
 

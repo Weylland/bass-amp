@@ -78,6 +78,7 @@ public:
 
     // Set by the standalone app; read and written on the message thread only.
     juce::String audioDeviceInfo;
+    std::function<void()> showAudioSettings;
     int deviceInputs = 0;
 
     // The interface input the bass is plugged into: 0 for input 1, 1 for input 2.

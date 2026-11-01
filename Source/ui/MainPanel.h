@@ -20,7 +20,8 @@
 // meters, the EQ and the post-amp pedalboard, then the practice row (player, looper,
 // metronome). The full looper opens over the pedalboards. The editor scales it to the window.
 // Right-clicking a control opens its MIDI learn menu; a gold dot marks the controls a MIDI
-// control drives. Hovering a control for a second explains it.
+// control drives. Hovering a control for a second explains it. In the standalone app, AUDIO
+// and the driver line open the audio and MIDI settings.
 class MainPanel : public juce::Component, private juce::Timer
 {
 public:
@@ -50,18 +51,27 @@ private:
         void paintButton (juce::Graphics&, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
     };
 
+    // The driver, buffer and latency line: a click opens the audio settings.
+    class DeviceInfoButton : public juce::Button
+    {
+    public:
+        DeviceInfoButton() : juce::Button ("Audio device") {}
+        void paintButton (juce::Graphics&, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+    };
+
     void timerCallback() override;
     void showMidiMenu (const juce::String& paramId);
     void showLanguageMenu();
     juce::Rectangle<int> learningArea() const;
 
     BassAmpProcessor& processor;
-    juce::String shownDeviceInfo;
     juce::String shownLearning;
     juce::StringArray shownMapped;
     juce::String shownUpdate;
     juce::SharedResourcePointer<UpdateCheck> updateCheck;
     juce::TextButton updateButton;
+    juce::TextButton audioButton { "AUDIO" };
+    DeviceInfoButton deviceInfo;
 
     PresetBar presetBar;
     RecorderBar recorderBar;

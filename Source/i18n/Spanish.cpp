@@ -229,6 +229,9 @@ const Translations& spanishTranslations()
                           "funciona. Aquí no hay nada que ajustar." },
             { "ui.language", "IDIOMA\nEl idioma de las burbujas de ayuda y los menús. Los nombres de los controles quedan en inglés, "
                              "como en el equipo real." },
+            { "ui.audioSettings", "AUDIO\nLos ajustes de audio y MIDI: driver (ASIO, WASAPI…), interfaz, canales de entrada y "
+                                  "salida, frecuencia de muestreo, tamaño del búfer (más pequeño = menos latencia) y entradas "
+                                  "MIDI. Hacer clic en la línea del driver al lado hace lo mismo." },
             { "ui.update", "NUEVA VERSIÓN\nHay una versión más reciente de Bass Amp. Haz clic para abrir su página de "
                            "descarga. Bass Amp lo comprueba una vez por arranque preguntando a GitHub; no se envía nada sobre "
                            "ti." },
@@ -247,8 +250,9 @@ const Translations& spanishTranslations()
             { "ui.playerVolume", "VOL\nVolumen de la canción." },
             { "ui.looper", "LOOPER\n4 pistas de bucles para construir un tema en directo. Haz clic en un pad para grabar, "
                            "OPEN para el looper completo." },
-            { "ui.loopPad", "PISTA\n1.er clic: graba. 2.º clic: el bucle suena. Después cada clic añade una capa (DUB) "
-                            "o vuelve a la reproducción. Clic derecho: MIDI learn, para lanzarla con un pad o un pedal." },
+            { "ui.loopPad", "PISTA\n1.er clic: graba (con AUTO, espera tu primera nota; con COUNT-IN, un compás entero). 2.º "
+                            "clic: el bucle suena. Después cada clic añade una capa (DUB) o vuelve a la reproducción. Clic "
+                            "derecho: MIDI learn, para lanzarla con un pad o un pedal." },
             { "ui.looperOpen", "OPEN\nAbre el looper completo: ajustes de cada pista, deshacer, exportar." },
             { "ui.looperClose", "CLOSE\nCierra el looper: los bucles siguen sonando." },
             { "ui.looperStopAll", "STOP ALL\nPara todas las pistas, o las relanza si todo está parado. Vuelven a tiempo." },
@@ -258,6 +262,11 @@ const Translations& spanishTranslations()
             { "ui.looperSync", "SYNC\nCon el metrónomo en marcha, los bucles empiezan y terminan en un compás: "
                                "lanza la grabación y espera al compás siguiente. "
                                "Si no, el primer bucle fija la duración que siguen los demás." },
+            { "ui.looperCountIn", "COUNT-IN\nCon SYNC y el metrónomo en marcha, el primer loop espera un compás entero de "
+                                  "clics antes de grabar, para saber cuándo entrar." },
+            { "ui.looperAuto", "AUTO\nSin metrónomo, el primer loop te espera: tras el clic en su pad, la grabación empieza "
+                               "con la primera nota que tocas, sin silencio al principio del loop. Apagado: la grabación "
+                               "empieza con el clic." },
             { "ui.looperExport", "EXPORT WAV\nGuarda la mezcla de las pistas que suenan en un archivo WAV, "
                                  "en Documentos/Bass Amp/Recordings." },
             { "ui.looperTrackStop", "STOP\nPara esta pista sin borrarla. Un clic en su pad la relanza, a tiempo." },
@@ -299,6 +308,8 @@ const Translations& spanishTranslations()
             { "No audio device: Options > Audio/MIDI Settings", "No hay dispositivo de audio: Opciones > Ajustes de audio/MIDI" },
             { "latency", "latencia" },
             { "Language", "Idioma" },
+            { "Synced to the metronome: a bar of count-in, then loops start and end on a bar.", "Sincronizado con el metrónomo: un compás de cuenta atrás, luego los loops empiezan y terminan en un compás." },
+            { "Free: recording starts on your first note; the first loop sets the length the others follow.", "Libre: la grabación empieza con tu primera nota; el primer loop marca la duración que siguen los demás." },
             { "available", "disponible" },
             { "Rename...", "Renombrar..." },
             { "Delete...", "Eliminar..." },

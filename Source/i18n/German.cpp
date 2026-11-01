@@ -229,6 +229,9 @@ const Translations& germanTranslations()
                           "Hier gibt es nichts einzustellen." },
             { "ui.language", "SPRACHE\nDie Sprache der Hilfeblasen und Menüs. Die Reglernamen bleiben auf Englisch, "
                              "wie auf echtem Equipment." },
+            { "ui.audioSettings", "AUDIO\nDie Audio- und MIDI-Einstellungen: Treiber (ASIO, WASAPI…), Interface, Ein- und "
+                                  "Ausgangskanäle, Samplerate, Puffergröße (kleiner = weniger Latenz) und MIDI-Eingänge. Ein "
+                                  "Klick auf die Treiberzeile daneben tut dasselbe." },
             { "ui.update", "NEUE VERSION\nEine neuere Version von Bass Amp ist erschienen. Klicke, um ihre Download-Seite zu "
                            "öffnen. Bass Amp prüft einmal pro Start bei GitHub; es werden keine Daten über dich gesendet." },
             { "ui.fullScreen", "VOLLBILD\nVergrößert die App auf den ganzen Bildschirm. F11 macht dasselbe, Escape führt zurück ins Fenster." },
@@ -246,8 +249,9 @@ const Translations& germanTranslations()
             { "ui.playerVolume", "VOL\nLautstärke des Songs." },
             { "ui.looper", "LOOPER\n4 Loop-Spuren, um live einen Song aufzubauen. Klick auf ein Pad zum Aufnehmen, "
                            "OPEN für den vollständigen Looper." },
-            { "ui.loopPad", "SPUR\n1. Klick: Aufnahme. 2. Klick: der Loop läuft. Danach fügt jeder Klick eine Schicht hinzu (DUB) "
-                            "oder kehrt zur Wiedergabe zurück. Rechtsklick: MIDI Learn, um sie mit einem Pad oder Fußschalter auszulösen." },
+            { "ui.loopPad", "SPUR\n1. Klick: Aufnahme (mit AUTO wartet sie auf deine erste Note, mit COUNT-IN auf einen ganzen "
+                            "Takt). 2. Klick: der Loop läuft. Danach fügt jeder Klick eine Schicht hinzu (DUB) oder kehrt zur "
+                            "Wiedergabe zurück. Rechtsklick: MIDI Learn, um sie mit einem Pad oder Fußschalter auszulösen." },
             { "ui.looperOpen", "OPEN\nÖffnet den vollständigen Looper: Einstellungen jeder Spur, Rückgängig, Export." },
             { "ui.looperClose", "CLOSE\nSchließt den Looper: die Loops laufen weiter." },
             { "ui.looperStopAll", "STOP ALL\nStoppt alle Spuren oder startet sie neu, wenn alle gestoppt sind. Sie kommen im Takt zurück." },
@@ -257,6 +261,11 @@ const Translations& germanTranslations()
             { "ui.looperSync", "SYNC\nWenn das Metronom läuft, beginnen und enden Loops auf einem Takt: "
                                "starte die Aufnahme und sie wartet auf den nächsten Takt. "
                                "Sonst bestimmt der erste Loop die Länge, der die anderen folgen." },
+            { "ui.looperCountIn", "COUNT-IN\nMit SYNC und laufendem Metronom wartet der erste Loop einen ganzen Takt Klicks "
+                                  "ab, bevor er aufnimmt, damit du weißt, wann du einsetzt." },
+            { "ui.looperAuto", "AUTO\nOhne Metronom wartet der erste Loop auf dich: nach dem Klick auf sein Pad startet die "
+                               "Aufnahme mit der ersten gespielten Note, ohne Stille am Anfang. Aus: die Aufnahme startet mit "
+                               "dem Klick." },
             { "ui.looperExport", "EXPORT WAV\nSpeichert die Mischung der laufenden Spuren als WAV-Datei "
                                  "in Dokumente/Bass Amp/Recordings." },
             { "ui.looperTrackStop", "STOP\nStoppt diese Spur, ohne sie zu löschen. Ein Klick auf ihr Pad startet sie wieder, im Takt." },
@@ -298,6 +307,8 @@ const Translations& germanTranslations()
             { "No audio device: Options > Audio/MIDI Settings", "Kein Audiogerät: Optionen > Audio/MIDI-Einstellungen" },
             { "latency", "Latenz" },
             { "Language", "Sprache" },
+            { "Synced to the metronome: a bar of count-in, then loops start and end on a bar.", "Mit dem Metronom synchron: ein Takt Vorzähler, dann beginnen und enden die Loops auf einem Takt." },
+            { "Free: recording starts on your first note; the first loop sets the length the others follow.", "Frei: die Aufnahme startet mit deiner ersten Note; der erste Loop gibt die Länge vor, der die anderen folgen." },
             { "available", "verfügbar" },
             { "Rename...", "Umbenennen..." },
             { "Delete...", "Löschen..." },

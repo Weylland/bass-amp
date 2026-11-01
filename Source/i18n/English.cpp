@@ -226,6 +226,9 @@ const Translations& englishTranslations()
                           "here." },
             { "ui.language", "LANGUAGE\nThe language of the help bubbles and menus. Control names stay in English, "
                              "as on real gear." },
+            { "ui.audioSettings", "AUDIO\nThe audio and MIDI settings: driver (ASIO, WASAPI...), interface, input and output "
+                                  "channels, sample rate, buffer size (smaller means less latency), and MIDI inputs. Clicking "
+                                  "the driver line next to it does the same." },
             { "ui.update", "NEW VERSION\nA newer version of Bass Amp is out. Click to open its download page. Bass Amp checks "
                            "once per launch by asking GitHub; nothing about you is sent." },
             { "ui.fullScreen", "FULL SCREEN\nFills the whole screen with the app. F11 does the same, Escape goes back to a window." },
@@ -242,8 +245,9 @@ const Translations& englishTranslations()
                           "through the pedals and amp, and try settings without playing." },
             { "ui.playerVolume", "VOL\nSong volume." },
             { "ui.looper", "LOOPER\n4 loop tracks to build a song live. Click a pad to record, OPEN for the full looper." },
-            { "ui.loopPad", "TRACK\n1st click: records. 2nd click: the loop plays. Then each click adds a layer (DUB) "
-                            "or goes back to playing. Right-click: MIDI learn, to trigger it from a pad or a footswitch." },
+            { "ui.loopPad", "TRACK\n1st click: records (with AUTO, it waits for your first note; with COUNT-IN, for a full "
+                            "bar). 2nd click: the loop plays. Then each click adds a layer (DUB) or goes back to playing. "
+                            "Right-click: MIDI learn, to trigger it from a pad or a footswitch." },
             { "ui.looperOpen", "OPEN\nOpens the full looper: settings for each track, undo, export." },
             { "ui.looperClose", "CLOSE\nCloses the looper: the loops keep playing." },
             { "ui.looperStopAll", "STOP ALL\nStops every track, or restarts them if all are stopped. They come back in time." },
@@ -253,6 +257,11 @@ const Translations& englishTranslations()
             { "ui.looperSync", "SYNC\nWhile the metronome runs, loops start and stop on a bar: "
                                "start recording and it waits for the next bar. "
                                "Otherwise, the first loop sets the length the others follow." },
+            { "ui.looperCountIn", "COUNT-IN\nWith SYNC and the metronome running, the first loop waits for a full bar of "
+                                  "clicks before recording, so you know when to come in." },
+            { "ui.looperAuto", "AUTO\nWithout the metronome, the first loop waits for you: after the click on its pad, "
+                               "recording starts on the first note you play, so the loop has no silence at the start. Off: "
+                               "recording starts on the click." },
             { "ui.looperExport", "EXPORT WAV\nSaves the mix of the playing tracks to a WAV file, "
                                  "in Documents/Bass Amp/Recordings." },
             { "ui.looperTrackStop", "STOP\nStops this track without erasing it. A click on its pad restarts it, in time." },

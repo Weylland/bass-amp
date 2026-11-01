@@ -227,6 +227,9 @@ const Translations& portugueseTranslations()
                           "nada para ajustar aqui." },
             { "ui.language", "IDIOMA\nO idioma dos balões de ajuda e dos menus. Os nomes dos controles ficam em inglês, "
                              "como no equipamento de verdade." },
+            { "ui.audioSettings", "ÁUDIO\nAs configurações de áudio e MIDI: driver (ASIO, WASAPI…), interface, canais de "
+                                  "entrada e saída, taxa de amostragem, tamanho do buffer (menor = menos latência) e entradas "
+                                  "MIDI. Clicar na linha do driver ao lado faz o mesmo." },
             { "ui.update", "NOVA VERSÃO\nSaiu uma versão mais recente do Bass Amp. Clique para abrir a página de download. O "
                            "Bass Amp verifica uma vez por abertura consultando o GitHub; nada sobre você é enviado." },
             { "ui.fullScreen", "TELA CHEIA\nAmplia o app para a tela inteira. F11 faz o mesmo, Esc volta para a janela." },
@@ -244,8 +247,9 @@ const Translations& portugueseTranslations()
             { "ui.playerVolume", "VOL\nVolume da música." },
             { "ui.looper", "LOOPER\n4 faixas em loop para construir uma música ao vivo. Clique num pad para gravar, "
                            "OPEN para o looper completo." },
-            { "ui.loopPad", "FAIXA\n1º clique: grava. 2º clique: o loop começa. Depois cada clique adiciona uma camada (DUB) "
-                            "ou volta à reprodução. Clique direito: MIDI learn, para disparar por um pad ou footswitch." },
+            { "ui.loopPad", "FAIXA\n1º clique: grava (com AUTO, espera a tua primeira nota; com COUNT-IN, um compasso "
+                            "inteiro). 2º clique: o loop começa. Depois cada clique adiciona uma camada (DUB) ou volta à "
+                            "reprodução. Clique direito: MIDI learn, para disparar por um pad ou footswitch." },
             { "ui.looperOpen", "OPEN\nAbre o looper completo: ajustes de cada faixa, desfazer, exportar." },
             { "ui.looperClose", "CLOSE\nFecha o looper: os loops continuam tocando." },
             { "ui.looperStopAll", "STOP ALL\nPara todas as faixas, ou as reinicia se todas estiverem paradas. Elas voltam no tempo." },
@@ -255,6 +259,11 @@ const Translations& portugueseTranslations()
             { "ui.looperSync", "SYNC\nQuando o metrônomo está tocando, os loops começam e terminam num compasso: "
                                "inicie a gravação e ela espera o próximo compasso. "
                                "Senão, o primeiro loop define a duração que os outros seguem." },
+            { "ui.looperCountIn", "COUNT-IN\nCom SYNC e o metrônomo ligado, o primeiro loop espera um compasso inteiro de "
+                                  "cliques antes de gravar, para você saber quando entrar." },
+            { "ui.looperAuto", "AUTO\nSem metrônomo, o primeiro loop espera por você: depois do clique no pad, a gravação "
+                               "começa na primeira nota que você toca, sem silêncio no início do loop. Desligado: a gravação "
+                               "começa no clique." },
             { "ui.looperExport", "EXPORT WAV\nSalva a mixagem das faixas que estão tocando num arquivo WAV, "
                                  "em Documentos/Bass Amp/Recordings." },
             { "ui.looperTrackStop", "STOP\nPara esta faixa sem apagá-la. Um clique no seu pad a reinicia, no tempo." },
@@ -296,6 +305,8 @@ const Translations& portugueseTranslations()
             { "No audio device: Options > Audio/MIDI Settings", "Nenhum dispositivo de áudio: Opções > Configurações de áudio/MIDI" },
             { "latency", "latência" },
             { "Language", "Idioma" },
+            { "Synced to the metronome: a bar of count-in, then loops start and end on a bar.", "Sincronizado com o metrônomo: um compasso de contagem, depois os loops começam e terminam num compasso." },
+            { "Free: recording starts on your first note; the first loop sets the length the others follow.", "Livre: a gravação começa na sua primeira nota; o primeiro loop define a duração que os outros seguem." },
             { "available", "disponível" },
             { "Rename...", "Renomear..." },
             { "Delete...", "Excluir..." },

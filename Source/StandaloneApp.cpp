@@ -233,6 +233,9 @@ public:
         for (const auto& input : juce::MidiInput::getAvailableDevices())
             mainWindow->getDeviceManager().setMidiInputDeviceEnabled (input.identifier, true);
 
+        if (auto* processor = dynamic_cast<BassAmpProcessor*> (mainWindow->getAudioProcessor()))
+            processor->showAudioSettings = [this] { mainWindow->pluginHolder->showAudioSettingsDialog(); };
+
         mainWindow->setVisible (true);
         splash->deleteAfterDelay (juce::RelativeTime::seconds (2.0), true);
         startTimer (500);

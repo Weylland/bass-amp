@@ -1176,8 +1176,10 @@ namespace
         juce::AudioBuffer<float> buffer { 2, 480 }, clicks { 2, 480 };
         int elapsed = 0;
 
-        LooperRig()
+        LooperRig (bool waitsForPlayer = false)
         {
+            looper.autoStart.store (waitsForPlayer);
+            looper.countIn.store (waitsForPlayer);
             looper.prepare (testSampleRate, 2);
             metronome.prepare (testSampleRate);
             metronome.volume.store (0.0f);
@@ -1308,6 +1310,39 @@ namespace
                juce::String (synced.looper.getLengthSeconds (0), 3) + " s at 120 BPM in 4/4");
     }
 
+    void testLooperStart()
+    {
+        // AUTO: half a second of silence after the press, then the bass. The loop starts 20 ms
+        // (960 samples) before the first note and holds no silence before that.
+        LooperRig rig (true);
+        rig.looper.pressTrack (0);
+        rig.run (50, 0.001f);
+        const auto waitedForNote = rig.looper.getState (0) == Looper::State::armed;
+        rig.run (10, 0.5f);
+        rig.looper.pressTrack (0);
+        rig.run (1, 0.0f);
+        const auto length = rig.looper.getLengthSeconds (0);
+
+        check (waitedForNote && std::abs (length - (4800.0 + 960.0) / testSampleRate) < 1.0e-6,
+               "looper starts on the first note", juce::String (length * 1000.0, 1) + " ms loop for 100 ms played");
+
+        // COUNT-IN at 120 BPM in 4/4 (a bar is 96000 samples): pressed a quarter into a bar,
+        // recording skips the next bar line and starts on the one after.
+        LooperRig synced (true);
+        synced.metronome.bpm.store (120.0f);
+        synced.metronome.enabled.store (true);
+        synced.run (50, 0.0f);
+        synced.looper.pressTrack (0);
+        synced.run (160, 0.2f);
+        const auto countingIn = synced.looper.getState (0) == Looper::State::armed;
+        synced.run (200, 0.2f);
+        const auto recording = synced.looper.getState (0) == Looper::State::recording;
+        const auto recorded = synced.looper.getLengthSeconds (0);
+
+        check (countingIn && recording && std::abs (recorded - (360 * 480 - 192000 + 24000) / testSampleRate) < 1.0e-6,
+               "looper counts in a bar", juce::String (recorded, 3) + " s recorded after the count-in");
+    }
+
     void testMetronome()
     {
         Metronome metronome;
@@ -1431,6 +1466,7 @@ static int saveEditorSnapshot (const juce::File& target, int preset, const juce:
     auto processor = makeProcessor();
     processor->setCurrentProgram (preset);
     processor->audioDeviceInfo = "ASIO  |  64 smp @ 48.0 kHz  |  latency ~4.2 ms";
+    processor->showAudioSettings = [] {};
 
     std::unique_ptr<juce::AudioProcessorEditor> editor (processor->createEditor());
     editor->setSize (MainPanel::designWidth, MainPanel::designHeight);
@@ -1508,6 +1544,7 @@ int main (int argc, char* argv[])
     testUpdateVersions();
     testRecorder();
     testLooper();
+    testLooperStart();
     testLooperPlayback();
     testMetronome();
     testMetronomeFollowsHost();

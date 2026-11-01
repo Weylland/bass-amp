@@ -17,7 +17,7 @@ Found a bug or have an idea? [Open an issue](https://github.com/Weylland/bass-am
 1. Download the latest version from the [releases page](https://github.com/Weylland/bass-amp/releases/latest) and install it (see [Windows](#install-windows) or [macOS](#install-macos)).
 2. Turn your speakers or headphones down before the first launch.
 3. Plug your bass into your audio interface and open Bass Amp.
-4. If you hear nothing, choose your interface in **Options → Audio/MIDI Settings** (top left of the window). If your bass is plugged into input 2, click **IN 1** under the input meter and pick **Input 2**.
+4. If you hear nothing, click **AUDIO** at the top right and choose your interface: driver (ASIO on Windows), input and output, sample rate and buffer size. If your bass is plugged into input 2, click **IN 1** under the input meter and pick **Input 2**.
 5. Pick a sound in the preset list at the top, then hover any control for a second: a bubble explains what it does.
 
 ## Install (Windows)
@@ -42,7 +42,7 @@ The app isn't notarized by Apple. On first launch, macOS refuses to open it: go 
 xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/VST3/"Bass Amp.vst3" ~/Library/Audio/Plug-Ins/Components/"Bass Amp.component"
 ```
 
-On a Mac, the input is muted on first launch, because the default input is often the built-in microphone. Choose your interface in **Options → Audio/MIDI Settings**, then untick **Mute audio input**. macOS also asks for microphone access: allow it, or the bass stays silent.
+On a Mac, the input is muted on first launch, because the default input is often the built-in microphone. Click **AUDIO** at the top right, choose your interface, then untick **Mute audio input**. macOS also asks for microphone access: allow it, or the bass stays silent.
 
 ## Amp
 
@@ -120,6 +120,8 @@ The bottom row:
 - **Player**: **LOAD** opens a file (WAV, AIFF, FLAC, OGG, MP3) to play along, with play, pause, stop, position bar, loop and volume. **RE-AMP** feeds the file into the chain input instead of the bass, to run a DI track through the pedals and the amp again.
 - **Looper**: 4 tracks of 30 s to build a song live. On a pad, the 1st click records, the 2nd plays the loop, then each click adds a layer (**DUB**) or goes back to playback. **OPEN** opens the full looper:
   - **SYNC**: with the metronome running, loops start and end on a bar (recording waits for the next bar). Otherwise the first loop sets the length the others follow.
+  - **COUNT-IN**: with **SYNC** and the metronome running, the first loop waits for a full bar of clicks before recording, so you know when to come in.
+  - **AUTO**: without the metronome, the first loop waits for you: recording starts on the first note you play (with 20 ms kept before it), so the loop has no silence at the start. Off: recording starts on the click.
   - **UNDO** / **REDO** on the last take or the last layer.
   - Per track: **STOP**, **CLEAR**, **REV** (reverse), **HALF** (half speed, one octave down) and **LEVEL**.
   - **STOP ALL**, **CLEAR ALL**, and **EXPORT WAV**, which saves the track mix in `Documents/Bass Amp/Recordings`.
@@ -176,7 +178,7 @@ Each module also has its own presets, which only touch it:
 - Steinberg's ASIO SDK (GPLv3) is in `libs/asiosdk`: ASIO support is built in automatically.
 - On first launch, the app picks the ASIO driver of the interface already in use (generic drivers such as ASIO4ALL or Realtek come last), with a 64-sample buffer. Without ASIO, it uses exclusive WASAPI.
 - With ASIO, input and output are on the same interface: plug your headphones or speakers into the interface.
-- The ASIO buffer size is set in the driver panel (**Options → Audio/MIDI Settings → Control Panel**).
+- **AUDIO** at the top right (or a click on the driver line next to it) opens the audio and MIDI settings: driver, interface, channels, sample rate, buffer size and MIDI inputs. The ASIO buffer size is set in the driver panel (**AUDIO → Control Panel**). The same settings are also in **Options → Audio/MIDI Settings** in the title bar.
 - The line at the top right shows the driver, the buffer and the estimated round-trip latency.
 - No effect adds latency: no look-ahead, minimum-phase IIR oversampling, and the tuner analyses the signal off the audio thread.
 

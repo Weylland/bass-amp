@@ -49,6 +49,10 @@ LooperPanel::LooperPanel (BassAmpProcessor& processor)
 
     syncSwitch.setToggleState (looper.sync.load(), juce::dontSendNotification);
     syncSwitch.onClick = [this] { looper.sync.store (syncSwitch.getToggleState()); };
+    countInSwitch.setToggleState (looper.countIn.load(), juce::dontSendNotification);
+    countInSwitch.onClick = [this] { looper.countIn.store (countInSwitch.getToggleState()); };
+    autoSwitch.setToggleState (looper.autoStart.load(), juce::dontSendNotification);
+    autoSwitch.onClick = [this] { looper.autoStart.store (autoSwitch.getToggleState()); };
     undoButton.onClick = [this] { looper.undo(); };
     redoButton.onClick = [this] { looper.redo(); };
     stopAllButton.onClick = [this] { looper.stopOrPlayAll(); };
@@ -62,6 +66,8 @@ LooperPanel::LooperPanel (BassAmpProcessor& processor)
     clearAllButton.setComponentID ("looper_clear_all");
 
     syncSwitch.setTooltip (Help::get ("ui.looperSync"));
+    countInSwitch.setTooltip (Help::get ("ui.looperCountIn"));
+    autoSwitch.setTooltip (Help::get ("ui.looperAuto"));
     undoButton.setTooltip (Help::get ("ui.looperUndo"));
     redoButton.setTooltip (Help::get ("ui.looperRedo"));
     stopAllButton.setTooltip (Help::get ("ui.looperStopAll"));
@@ -69,7 +75,7 @@ LooperPanel::LooperPanel (BassAmpProcessor& processor)
     exportButton.setTooltip (Help::get ("ui.looperExport"));
     closeButton.setTooltip (Help::get ("ui.looperClose"));
 
-    for (auto* component : std::initializer_list<juce::Component*> { &syncSwitch, &undoButton, &redoButton, &stopAllButton,
+    for (auto* component : std::initializer_list<juce::Component*> { &syncSwitch, &countInSwitch, &autoSwitch, &undoButton, &redoButton, &stopAllButton,
                                                                      &clearAllButton, &exportButton, &closeButton })
         addAndMakeVisible (component);
 
@@ -133,6 +139,10 @@ void LooperPanel::resized()
     undoButton.setBounds (header.removeFromRight (64).withSizeKeepingCentre (64, 26));
     header.removeFromRight (16);
     syncSwitch.setBounds (header.removeFromRight (72).withSizeKeepingCentre (72, 24));
+    header.removeFromRight (gap);
+    countInSwitch.setBounds (header.removeFromRight (104).withSizeKeepingCentre (104, 24));
+    header.removeFromRight (gap);
+    autoSwitch.setBounds (header.removeFromRight (72).withSizeKeepingCentre (72, 24));
     titleArea = header;
 
     area.removeFromTop (4);
@@ -173,8 +183,11 @@ void LooperPanel::paint (juce::Graphics& g)
     g.setFont (Fonts::display (22.0f).withKerningFactor (0.12f));
     g.drawText ("LOOPER", titleArea, juce::Justification::centredLeft);
 
-    const auto status = looper.isSynced() ? Language::tr ("Synced to the metronome: loops start and end on a bar.")
-                                          : Language::tr ("Free: the first loop sets the length the others follow.");
+    const auto status = looper.isSynced()
+                            ? (looper.countIn.load() ? Language::tr ("Synced to the metronome: a bar of count-in, then loops start and end on a bar.")
+                                                     : Language::tr ("Synced to the metronome: loops start and end on a bar."))
+                            : (looper.autoStart.load() ? Language::tr ("Free: recording starts on your first note; the first loop sets the length the others follow.")
+                                                       : Language::tr ("Free: the first loop sets the length the others follow."));
     g.setColour (Palette::textDim);
     g.setFont (Fonts::label (12.0f));
     g.drawText (status, statusArea, juce::Justification::centredLeft);

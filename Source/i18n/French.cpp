@@ -226,6 +226,9 @@ const Translations& frenchTranslations()
             { "ui.power", "POWER\nLe voyant d'alimentation, comme sur un vrai ampli : il reste allumé tant que l'appli tourne. "
                           "Il n'y a rien à régler ici." },
             { "ui.language", "LANGUE\nLa langue des bulles d'aide et des menus. Les noms des réglages restent en anglais, comme sur le vrai matériel." },
+            { "ui.audioSettings", "AUDIO\nLes réglages audio et MIDI : pilote (ASIO, WASAPI…), carte son, canaux d'entrée et "
+                                  "de sortie, fréquence d'échantillonnage, taille du buffer (plus petit = moins de latence) et "
+                                  "entrées MIDI. Cliquer sur la ligne du pilote à côté fait pareil." },
             { "ui.update", "NOUVELLE VERSION\nUne version plus récente de Bass Amp est sortie. Clique pour ouvrir sa page de "
                            "téléchargement. Bass Amp vérifie une fois par lancement en interrogeant GitHub ; rien sur toi "
                            "n'est envoyé." },
@@ -244,8 +247,9 @@ const Translations& frenchTranslations()
             { "ui.playerVolume", "VOL\nVolume du morceau." },
             { "ui.looper", "LOOPER\n4 pistes de boucles pour construire un morceau en live. Clique un pad pour enregistrer, "
                            "OPEN pour le looper complet." },
-            { "ui.loopPad", "PISTE\n1er clic : enregistre. 2e clic : la boucle tourne. Ensuite chaque clic superpose une couche (DUB) "
-                            "ou revient à la lecture. Clic droit : MIDI learn, pour la lancer avec un pad ou une pédale." },
+            { "ui.loopPad", "PISTE\n1er clic : enregistre (avec AUTO, attend ta première note ; avec COUNT-IN, une mesure "
+                            "entière). 2e clic : la boucle tourne. Ensuite chaque clic superpose une couche (DUB) ou revient à "
+                            "la lecture. Clic droit : MIDI learn, pour la lancer avec un pad ou une pédale." },
             { "ui.looperOpen", "OPEN\nOuvre le looper complet : réglages de chaque piste, annuler, export." },
             { "ui.looperClose", "CLOSE\nReferme le looper : les boucles continuent de tourner." },
             { "ui.looperStopAll", "STOP ALL\nArrête toutes les pistes, ou les relance si tout est arrêté. Elles repartent en place." },
@@ -255,6 +259,11 @@ const Translations& frenchTranslations()
             { "ui.looperSync", "SYNC\nQuand le métronome tourne, les boucles démarrent et s'arrêtent sur une mesure : "
                                "lance l'enregistrement, il attend le début de la mesure suivante. "
                                "Sinon, la première boucle donne la longueur que suivent les autres." },
+            { "ui.looperCountIn", "COUNT-IN\nAvec SYNC et le métronome en marche, la première boucle attend une mesure entière "
+                                  "de clics avant d'enregistrer, pour savoir quand entrer." },
+            { "ui.looperAuto", "AUTO\nSans métronome, la première boucle t'attend : après le clic sur son pad, "
+                               "l'enregistrement démarre à la première note que tu joues, sans blanc au début de la boucle. "
+                               "Éteint : l'enregistrement démarre au clic." },
             { "ui.looperExport", "EXPORT WAV\nEnregistre le mélange des pistes qui tournent en un fichier WAV, "
                                  "dans Documents/Bass Amp/Recordings." },
             { "ui.looperTrackStop", "STOP\nArrête cette piste sans l'effacer. Un clic sur son pad la relance, en place." },
@@ -296,6 +305,8 @@ const Translations& frenchTranslations()
             { "No audio device: Options > Audio/MIDI Settings", "Aucun périphérique audio : Options > Réglages audio/MIDI" },
             { "latency", "latence" },
             { "Language", "Langue" },
+            { "Synced to the metronome: a bar of count-in, then loops start and end on a bar.", "Calé sur le métronome : une mesure de décompte, puis les boucles démarrent et finissent sur une mesure." },
+            { "Free: recording starts on your first note; the first loop sets the length the others follow.", "Libre : l'enregistrement démarre à ta première note ; la première boucle donne la longueur que suivent les autres." },
             { "available", "disponible" },
             { "Rename...", "Renommer..." },
             { "Delete...", "Supprimer..." },

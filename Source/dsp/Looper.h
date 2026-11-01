@@ -11,6 +11,9 @@
 // first loop. Every track stays in phase with the others, so a stopped track comes back in
 // time. The last recording or overdub can be undone and redone. A track can play reversed
 // or at half speed (an octave down). Up to 30 seconds per track.
+// The first loop can wait for the bass: with AUTO, recording starts on the first note played,
+// keeping a few milliseconds before it for the attack. With SYNC, COUNT-IN gives a full bar of
+// clicks before it.
 // Buttons and MIDI only post requests; the audio thread acts on them at the next block.
 class Looper
 {
@@ -39,7 +42,7 @@ public:
     void clearAll()                   { clearAllRequest.store (true); }
     void trigger (int midiAction);
 
-    std::atomic<bool> sync { true };
+    std::atomic<bool> sync { true }, autoStart { true }, countIn { true };
 
     struct TrackControls
     {
@@ -68,6 +71,9 @@ public:
 
 private:
     static constexpr double maxSeconds = 30.0;
+    static constexpr double preRollSeconds = 0.02;
+    static constexpr double countInGraceSeconds = 0.1;
+    static constexpr float startLevel = 0.02f;
     static constexpr int chunkBits = 9, chunkSize = 1 << chunkBits;
 
     struct Track
@@ -81,6 +87,7 @@ private:
 
         State state = State::empty;
         int recorded = 0, lastWritten = -1;
+        juce::int64 armedAt = 0;
         bool stopWhenFinished = false;
         std::atomic<int> length { 0 };
         std::atomic<juce::int64> origin { 0 };
@@ -105,7 +112,7 @@ private:
     void press (int track, bool hasGrid);
     void stop (int track, bool hasGrid);
     void clear (int track);
-    void startRecording (Track&);
+    void startRecording (Track&, int fromPreRoll = 0);
     void finish (int track);
     void applyUndo (bool redoing);
     void updateMaster();
@@ -116,6 +123,8 @@ private:
     juce::int64 transport = 0;
     int masterLength = 0;
     juce::int64 masterOrigin = 0;
+    juce::AudioBuffer<float> preRoll;
+    int preRollPosition = 0;
 
     int undoTrack = -1;
     Undo undoKind = Undo::none;

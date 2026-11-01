@@ -37,7 +37,7 @@ private:
 
     Looper& looper;
     juce::OwnedArray<TrackColumn> columns;
-    ToggleSwitch syncSwitch { "SYNC" };
+    ToggleSwitch syncSwitch { "SYNC" }, countInSwitch { "COUNT-IN" }, autoSwitch { "AUTO" };
     ActionButton undoButton { "UNDO" }, redoButton { "REDO" }, stopAllButton { "STOP ALL" }, clearAllButton { "CLEAR ALL" };
     juce::TextButton exportButton { "EXPORT WAV" }, closeButton { "CLOSE" };
     juce::String exportMessage;

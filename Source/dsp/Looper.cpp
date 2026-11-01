@@ -34,6 +34,10 @@ void Looper::prepare (double sampleRate, int newNumChannels)
         track.shownSamples.store (0);
     }
 
+    preRoll.setSize (numChannels, juce::jmax (1, (int) (sampleRate * preRollSeconds)));
+    preRoll.clear();
+    preRollPosition = 0;
+
     transport = 0;
     masterLength = 0;
     undoTrack = -1;
@@ -120,11 +124,23 @@ void Looper::Track::flipTouchedChunks()
             current[chunk] ^= 1;
 }
 
-void Looper::startRecording (Track& track)
+// The pre-roll samples are the ones just before now, so the loop starts that much earlier.
+void Looper::startRecording (Track& track, int fromPreRoll)
 {
-    track.origin.store (transport);
+    track.origin.store (transport - fromPreRoll);
     track.recorded = 0;
     track.state = State::recording;
+
+    const auto size = preRoll.getNumSamples();
+
+    for (int k = 0; k < fromPreRoll; ++k, ++track.recorded)
+    {
+        auto& take = track.takes[track.current[(size_t) (track.recorded >> chunkBits)]];
+        const auto source = (preRollPosition - fromPreRoll + k + size) % size;
+
+        for (int channel = 0; channel < numChannels; ++channel)
+            take.setSample (channel, track.recorded, preRoll.getSample (channel, source));
+    }
 }
 
 void Looper::finish (int index)
@@ -164,8 +180,9 @@ void Looper::press (int index, bool hasGrid)
             ++track.generation;
             track.stopWhenFinished = false;
             track.recorded = 0;
+            track.armedAt = transport;
 
-            if (hasGrid)
+            if (hasGrid || autoStart.load())
                 track.state = State::armed;
             else
                 startRecording (track);
@@ -286,6 +303,7 @@ void Looper::process (juce::dsp::AudioBlock<float>& block, const Metronome& cloc
 
     const auto channels = juce::jmin ((int) block.getNumChannels(), numChannels);
     const auto barLength = barSync ? clock.getBarLength() : 0.0;
+    const auto countInLength = countIn.load() ? barLength - countInGraceSeconds * rate : 0.0;
     auto nextBar = barSync ? clock.getSamplesToNextBar() : 0.0;
 
     for (int i = 0; i < (int) block.getNumSamples(); ++i)
@@ -305,16 +323,35 @@ void Looper::process (juce::dsp::AudioBlock<float>& block, const Metronome& cloc
         }
 
         std::array<float, 2> input {}, added {};
+        auto peak = 0.0f;
 
         for (int channel = 0; channel < channels; ++channel)
+        {
             input[(size_t) channel] = block.getSample (channel, i);
+            peak = juce::jmax (peak, std::abs (input[(size_t) channel]));
+        }
 
         for (int index = 0; index < numTracks; ++index)
         {
             auto& track = tracks[(size_t) index];
 
             if (boundary && track.state == State::armed)
-                startRecording (track);
+            {
+                // The first loop waits for a full bar of count-in, or for the first note.
+                if (barSync)
+                {
+                    if (masterLength > 0 || (double) (transport - track.armedAt) >= countInLength)
+                        startRecording (track);
+                }
+                else if (masterLength > 0)
+                {
+                    startRecording (track);
+                }
+                else if (peak >= startLevel)
+                {
+                    startRecording (track, (int) juce::jmin ((juce::int64) preRoll.getNumSamples(), transport - track.armedAt));
+                }
+            }
             else if (boundary && track.state == State::finishing)
                 finish (index);
 
@@ -351,8 +388,12 @@ void Looper::process (juce::dsp::AudioBlock<float>& block, const Metronome& cloc
         }
 
         for (int channel = 0; channel < channels; ++channel)
+        {
             block.setSample (channel, i, input[(size_t) channel] + added[(size_t) channel]);
+            preRoll.setSample (channel, preRollPosition, input[(size_t) channel]);
+        }
 
+        preRollPosition = (preRollPosition + 1) % preRoll.getNumSamples();
         ++transport;
     }
 
