@@ -384,6 +384,8 @@ namespace
         auto processor = makeProcessor();
         setParam (*processor, ParamIds::ampMaster, 6.0f);
         setParam (*processor, ParamIds::ampModel, 0.0f);
+        setParam (*processor, ParamIds::eqOn, 1.0f);
+        setParam (*processor, ParamIds::graphicEq[2], 12.0f);
         const auto limited = render (*processor, sine (100.0f, 1.0f), 0.5);
         setParam (*processor, ParamIds::limiterOn, 0.0f);
         const auto open = render (*processor, sine (100.0f, 1.0f), 0.5);
@@ -665,11 +667,11 @@ namespace
             detail << ampModels[(size_t) model].name << " " << juce::String (thd[(size_t) model], 1) << " %  ";
         }
 
-        // Nordic Drive keeps the fundamental clean under its crossover, so it only has to beat Italian Hi-Fi.
-        check (thd[hiFi] < 3.0f && thd[westCoast] < 6.0f && thd[superValve] > 3.0f && thd[superValve] < 15.0f
+        // Only Italian Hi-Fi stays clean: the West Coast 800 captures already break up at gain 5.
+        check (thd[hiFi] < 3.0f && thd[westCoast] > thd[hiFi] && thd[superValve] > 3.0f && thd[superValve] < 15.0f
                    && thd[nordicDrive] > thd[hiFi] && thd[tweed] > thd[superValve] && thd[flipTop] > thd[hiFi]
                    && thd[stompDi] > thd[hiFi],
-               "amp models: clean heads stay clean, tube heads break up", detail.trim());
+               "amp models: the Hi-Fi head stays clean, the others break up", detail.trim());
     }
 
     // Level of a full-scale sine through a passive tone stack, in dB.

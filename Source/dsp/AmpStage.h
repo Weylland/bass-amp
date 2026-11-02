@@ -5,10 +5,13 @@
 #include "../Parameters.h"
 #include "AmpModels.h"
 #include "NamModel.h"
+#include "TubeCircuit.h"
 
 // Bass head: preamp gain stages, model voicing, tone stack, contour and switches, and power
 // amp with sag, all 2x oversampled, or a NAM capture followed by the tone stack; then the
 // cabinet (filters or an impulse response) and a clean DI blended in, and the low and high cuts.
+// A tube-circuit model runs its tone stack between two modelled triode stages, as the real head
+// does, into a modelled push-pull power amp.
 class AmpStage
 {
 public:
@@ -86,6 +89,10 @@ public:
 
         diBuffer.assign ((size_t) maxBlockSize, 0.0f);
         capture.prepare (sampleRate, maxBlockSize);
+
+        preampTube.prepare (oversampledRate);
+        driverTube.prepare (oversampledRate);
+        powerTubes.prepare (oversampledRate);
 
         sagAttack = timeCoefficient (0.01f, oversampledRate);
         sagRelease = timeCoefficient (0.15f, oversampledRate);
@@ -174,6 +181,18 @@ public:
                 continue;
             }
 
+            if (amp.tubeCircuit)
+            {
+                const auto drive = preGain.getNextValue();
+                x = tone (preampTube.process (x * drive) / std::sqrt (drive));
+
+                if (amp.secondStageGain > 0.0f)
+                    x = driverTube.process (x * amp.secondStageGain) / amp.secondStageGain;
+
+                data[i] = powerTubes.process (amp.powerDrive * x, amp.sag) / amp.powerDrive;
+                continue;
+            }
+
             auto cleanLows = 0.0f;
 
             if (amp.crossoverHz > 0.0f)
@@ -188,7 +207,7 @@ public:
             if (amp.secondStageGain > 0.0f)
                 x = secondCoupling.processSample (stage (x * amp.secondStageGain)) / amp.secondStageGain;
 
-            x = tone (x / std::sqrt (drive) + cleanLows);
+            x = tone ((x + cleanLows * drive) / std::sqrt (drive));
 
             const auto level = std::abs (x);
             sagEnvelope = level + (level > sagEnvelope ? sagAttack : sagRelease) * (sagEnvelope - level);
@@ -227,11 +246,10 @@ public:
 private:
     static constexpr size_t maxImpulseResponseSamples = 48000;
 
-    // Cubic soft clipper: flat-topped like transistors and op-amps, smooth below the knee.
+    // Flat-topped like transistors and op-amps: nearly linear below the knee, then levels off at ±1.
     static float solidStateClip (float x)
     {
-        const auto clipped = juce::jlimit (-1.5f, 1.5f, x);
-        return clipped - clipped * clipped * clipped * (4.0f / 27.0f);
+        return x / std::cbrt (1.0f + std::abs (x * x * x));
     }
 
     bool cabIsOff() const { return currentCab == 0; }
@@ -356,6 +374,8 @@ private:
     juce::dsp::StateVariableTPTFilter<float> crossoverLow, crossoverHigh;
     juce::dsp::IIR::Filter<float> firstCoupling, secondCoupling, bassFilter, midFilter, trebleFilter;
     PassiveToneStack passiveStack;
+    TubeCircuit::TriodeStage preampTube, driverTube;
+    TubeCircuit::PushPull powerTubes;
     std::array<juce::dsp::IIR::Filter<float>, 4> voicing;
     std::array<juce::dsp::IIR::Filter<float>, 4> character;
     std::array<juce::dsp::IIR::Filter<float>, 6> cabinet;

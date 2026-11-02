@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(BassAmp VERSION 0.13.0)
+project(BassAmp VERSION 0.14.0)
 
 # Static MSVC runtime: the app and plugin run without the Visual C++ redistributable.
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
