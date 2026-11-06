@@ -214,7 +214,7 @@ const Translations& englishTranslations()
                                 "(your rig with its loops) and \"Player\" (the song), to balance or rework them later in a "
                                 "DAW. Set it before REC." },
             { "ui.tuner", "TUNER\nPlay an open string: the note shows and the needle is centred when it is in tune. E A D G, "
-                          "and low B on a five-string. Mouse wheel on the screen: reference A from 430 to 450 Hz; "
+                          "and low B on a five-string. - and + buttons or mouse wheel: reference A from 430 to 450 Hz; "
                           "double-click: back to 440 Hz." },
             { "ui.mute", "MUTE\nMutes the output while you tune." },
             { "ui.meters", "LEVELS\nIN: what comes in (your bass); OUT: what goes out; COMP: compressor reduction. Red CLIP: "

@@ -215,7 +215,7 @@ const Translations& portugueseTranslations()
                                 "lado a lado, \"Bass\" (seu som com os loops) e \"Player\" (a música), para equilibrá-los ou "
                                 "retrabalhá-los depois numa DAW. Ajuste antes do REC." },
             { "ui.tuner", "AFINADOR\nToque uma corda solta: a nota aparece e a agulha fica no centro quando está afinada. E A "
-                          "D G, e B grave para um baixo de cinco cordas. Roda do mouse na tela: Lá de referência de 430 a 450 "
+                          "D G, e B grave para um baixo de cinco cordas. Botões - e + ou roda do mouse: Lá de referência de 430 a 450 "
                           "Hz; duplo clique: volta para 440 Hz." },
             { "ui.mute", "MUTE\nCorta a saída enquanto você afina." },
             { "ui.meters", "NÍVEIS\nIN: o que entra (seu baixo); OUT: o que sai; COMP: redução do compressor. CLIP vermelho: "

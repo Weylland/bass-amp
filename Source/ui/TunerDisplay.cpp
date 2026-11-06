@@ -33,6 +33,16 @@ TunerDisplay::TunerDisplay (BassAmpProcessor& processorToUse)
     setTooltip (Help::get ("ui.tuner"));
     addAndMakeVisible (muteButton);
 
+    for (auto* button : { &lowerButton, &raiseButton })
+    {
+        button->setRepeatSpeed (400, 80);
+        button->setTooltip (Help::get ("ui.tuner"));
+        addAndMakeVisible (button);
+    }
+
+    lowerButton.onClick = [this] { setReference (reference - 1.0f); };
+    raiseButton.onClick = [this] { setReference (reference + 1.0f); };
+
     if (const auto saved = referenceFile().loadFileAsString().getFloatValue(); saved >= 430.0f && saved <= 450.0f)
         reference = saved;
 
@@ -95,6 +105,10 @@ void TunerDisplay::paint (juce::Graphics& g)
     g.setFont (Fonts::display (20.0f).withKerningFactor (0.12f));
     g.drawText ("TUNER", titleArea, juce::Justification::centredLeft);
 
+    g.setColour (Palette::text);
+    g.setFont (Fonts::display (15.0f, false));
+    g.drawText ("A = " + juce::String (juce::roundToInt (reference)) + " Hz", referenceArea, juce::Justification::centred);
+
     Draw::screen (g, screenArea.toFloat(), 8.0f);
     auto area = screenArea.reduced (10, 8);
 
@@ -120,9 +134,7 @@ void TunerDisplay::paint (juce::Graphics& g)
     g.setFont (Fonts::display (13.0f, false));
     g.setColour (Palette::textDim);
 
-    if (! hasPitch)
-        g.drawText ("A = " + juce::String (juce::roundToInt (reference)) + " Hz", infoRow, juce::Justification::centred);
-    else
+    if (hasPitch)
     {
         const auto frequency = reference * std::pow (2.0f, (smoothedMidi - 69.0f) / 12.0f);
         const auto centsText = (cents >= 0.0f ? "+" : "") + juce::String (juce::roundToInt (cents)) + " ct";
@@ -150,6 +162,10 @@ void TunerDisplay::resized()
     auto header = area.removeFromTop (28);
     muteButton.setBounds (header.removeFromRight (64).withSizeKeepingCentre (64, 24));
     titleArea = header;
-    area.removeFromTop (8);
+    area.removeFromTop (6);
+    referenceArea = area.removeFromTop (24);
+    lowerButton.setBounds (referenceArea.removeFromLeft (32));
+    raiseButton.setBounds (referenceArea.removeFromRight (32));
+    area.removeFromTop (6);
     screenArea = area;
 }

@@ -215,7 +215,7 @@ const Translations& italianTranslations()
                                 "«Bass» (il tuo suono con i suoi loop) e «Player» (il brano), per bilanciarli o rielaborarli "
                                 "dopo in una DAW. Da impostare prima di REC." },
             { "ui.tuner", "ACCORDATORE\nSuona una corda a vuoto: la nota appare e l'ago è centrato quando è accordata. E A D "
-                          "G, e B grave per un cinque corde. Rotella sullo schermo: La di riferimento da 430 a 450 Hz; doppio "
+                          "G, e B grave per un cinque corde. Tasti - e + o rotella: La di riferimento da 430 a 450 Hz; doppio "
                           "clic: torna a 440 Hz." },
             { "ui.mute", "MUTE\nZittisce l'uscita mentre accordi." },
             { "ui.meters", "LIVELLI\nIN: ciò che entra (il tuo basso); OUT: ciò che esce; COMP: riduzione del compressore. "

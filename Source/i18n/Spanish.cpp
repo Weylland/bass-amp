@@ -216,7 +216,7 @@ const Translations& spanishTranslations()
                                 "juntos, «Bass» (tu sonido con sus bucles) y «Player» (la canción), para equilibrarlos o "
                                 "retocarlos después en un DAW. Ajústalo antes de REC." },
             { "ui.tuner", "AFINADOR\nToca una cuerda al aire: aparece la nota y la aguja queda centrada cuando está afinada. E "
-                          "A D G, y B grave en un bajo de cinco cuerdas. Rueda sobre la pantalla: La de referencia de 430 a "
+                          "A D G, y B grave en un bajo de cinco cuerdas. Botones - y + o rueda: La de referencia de 430 a "
                           "450 Hz; doble clic: vuelve a 440 Hz." },
             { "ui.mute", "MUTE\nSilencia la salida mientras afinas." },
             { "ui.meters", "NIVELES\nIN: lo que entra (tu bajo); OUT: lo que sale; COMP: reducción del compresor. CLIP rojo: "

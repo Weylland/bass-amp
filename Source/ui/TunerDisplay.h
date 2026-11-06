@@ -5,8 +5,8 @@
 #include "../PluginProcessor.h"
 
 // Note name, cents needle and frequency, plus a button that mutes the output while tuning.
-// The mouse wheel on the screen sets the reference A (430 to 450 Hz), double-click resets it
-// to 440 Hz; the choice is kept for every session.
+// The - and + buttons or the mouse wheel set the reference A (430 to 450 Hz), double-click
+// resets it to 440 Hz; the choice is kept for every session.
 class TunerDisplay : public juce::Component, public juce::SettableTooltipClient, private juce::Timer
 {
 public:
@@ -23,8 +23,8 @@ private:
     void setReference (float hertz);
 
     BassAmpProcessor& processor;
-    juce::TextButton muteButton { "MUTE" };
-    juce::Rectangle<int> titleArea, screenArea;
+    juce::TextButton muteButton { "MUTE" }, lowerButton { "-" }, raiseButton { "+" };
+    juce::Rectangle<int> titleArea, referenceArea, screenArea;
 
     float reference = 440.0f;
     float smoothedMidi = 0.0f;

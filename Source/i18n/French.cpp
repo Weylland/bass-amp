@@ -214,7 +214,7 @@ const Translations& frenchTranslations()
                                 "côte à côte, « Bass » (ton son avec ses boucles) et « Player » (le morceau), pour les doser "
                                 "ou les retravailler plus tard dans un DAW. À régler avant REC." },
             { "ui.tuner", "ACCORDEUR\nJoue une corde à vide : la note s'affiche et l'aiguille est au centre quand elle est "
-                          "juste. Mi La Ré Sol, et Si grave sur une cinq cordes. Molette sur l'écran : La de référence de 430 "
+                          "juste. Mi La Ré Sol, et Si grave sur une cinq cordes. Boutons - et + ou molette : La de référence de 430 "
                           "à 450 Hz ; double-clic : retour à 440 Hz." },
             { "ui.mute", "MUTE\nCoupe le son de sortie pendant que tu t'accordes." },
             { "ui.meters", "NIVEAUX\nIN : ce qui entre (ta basse) ; OUT : ce qui sort ; COMP : réduction du compresseur. CLIP "

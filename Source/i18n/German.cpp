@@ -216,7 +216,7 @@ const Translations& germanTranslations()
                                 "„Bass“ (dein Sound mit seinen Loops) und „Player“ (der Song), um sie später in einer DAW "
                                 "abzumischen oder zu bearbeiten. Vor REC einstellen." },
             { "ui.tuner", "STIMMGERÄT\nSpiel eine leere Saite: die Note erscheint und die Nadel steht mittig, wenn die Saite "
-                          "stimmt. E A D G, und tiefes H (B) beim Fünfsaiter. Mausrad auf dem Display: Kammerton A von 430 bis "
+                          "stimmt. E A D G, und tiefes H (B) beim Fünfsaiter. Tasten - und + oder Mausrad: Kammerton A von 430 bis "
                           "450 Hz; Doppelklick: zurück auf 440 Hz." },
             { "ui.mute", "MUTE\nSchaltet den Ausgang stumm, während du stimmst." },
             { "ui.meters", "PEGEL\nIN: was hereinkommt (dein Bass); OUT: was hinausgeht; COMP: Reduktion des Kompressors. "
